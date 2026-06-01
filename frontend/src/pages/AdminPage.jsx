@@ -133,7 +133,7 @@ export default function AdminPage() {
       floor: room.floor,
       capacity: room.capacity,
       is_vip: room.is_vip,
-      amenities: (room.amenities || []).map((a) => a.name).join(', '),
+      amenities: (room.amenities || []).map((a) => a.amenity || a.name || a).join(', '),
     });
     setError('');
     setShowForm(true);
@@ -360,7 +360,7 @@ export default function AdminPage() {
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
                             {(room.amenities || []).slice(0, 3).map((a, i) => (
-                              <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{a.name || a}</span>
+                              <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{a.amenity || a.name || a}</span>
                             ))}
                             {(room.amenities || []).length > 3 && (
                               <span className="text-xs text-gray-400">+{(room.amenities || []).length - 3}</span>
