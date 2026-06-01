@@ -396,11 +396,127 @@ document.addEventListener('keydown', (e) => {
   <div class="ri rp3"><div class="rtitle">Native dialog → Modal custom <span class="pt pt3">P3 — Nice to have</span></div><div class="rdesc">AdminPage dùng <code>confirm()</code>/<code>alert()</code> của browser — trải nghiệm kém, không style được. Nên thay bằng modal confirmation component nhất quán với design system TailwindCSS.</div></div>
 </section>
 
+<section>
+  <h2><span class="sn">9</span> Production Deployment</h2>
+  <p class="sub">Hướng dẫn deploy toàn bộ hệ thống lên môi trường public — miễn phí hoàn toàn</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px;">
+    <div style="padding:16px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;color:#fff;text-align:center;">
+      <div style="font-size:22px;margin-bottom:6px;">🌐</div>
+      <div style="font-size:11px;opacity:.8;margin-bottom:4px;">FRONTEND</div>
+      <div style="font-weight:700;font-size:13px;">Vercel</div>
+      <div style="font-size:10px;margin-top:6px;opacity:.9;word-break:break-all;">ghn-booking-meeting.vercel.app</div>
+    </div>
+    <div style="padding:16px;background:linear-gradient(135deg,#f093fb,#f5576c);border-radius:12px;color:#fff;text-align:center;">
+      <div style="font-size:22px;margin-bottom:6px;">⚙️</div>
+      <div style="font-size:11px;opacity:.8;margin-bottom:4px;">BACKEND</div>
+      <div style="font-weight:700;font-size:13px;">Render</div>
+      <div style="font-size:10px;margin-top:6px;opacity:.9;word-break:break-all;">ghn-booking-meeting.onrender.com</div>
+    </div>
+    <div style="padding:16px;background:linear-gradient(135deg,#4facfe,#00f2fe);border-radius:12px;color:#fff;text-align:center;">
+      <div style="font-size:22px;margin-bottom:6px;">🗄️</div>
+      <div style="font-size:11px;opacity:.8;margin-bottom:4px;">DATABASE</div>
+      <div style="font-weight:700;font-size:13px;">Supabase</div>
+      <div style="font-size:10px;margin-top:6px;opacity:.9;">PostgreSQL 14 · Free tier</div>
+    </div>
+  </div>
+
+  <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:20px;margin-bottom:24px;font-size:12px;">
+    <div style="font-weight:700;font-size:13px;margin-bottom:12px;">🏗️ Kiến trúc Production</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div style="background:#EEF2FF;border:1px solid #818CF8;border-radius:8px;padding:8px 14px;text-align:center;">
+        <div style="font-weight:600;color:#4338CA;">Browser</div><div style="font-size:10px;color:#6366F1;">User / Admin</div>
+      </div>
+      <div style="color:#94A3B8;font-size:16px;">→ HTTPS →</div>
+      <div style="background:#F0FDF4;border:1px solid #4ADE80;border-radius:8px;padding:8px 14px;text-align:center;">
+        <div style="font-weight:600;color:#166534;">Vercel CDN</div><div style="font-size:10px;color:#16A34A;">React + Vite SPA</div>
+      </div>
+      <div style="color:#94A3B8;font-size:16px;">→ API calls →</div>
+      <div style="background:#FFF7ED;border:1px solid #FB923C;border-radius:8px;padding:8px 14px;text-align:center;">
+        <div style="font-weight:600;color:#9A3412;">Render</div><div style="font-size:10px;color:#EA580C;">Node.js + Express</div>
+      </div>
+      <div style="color:#94A3B8;font-size:16px;">→ Pooler →</div>
+      <div style="background:#F0F9FF;border:1px solid #38BDF8;border-radius:8px;padding:8px 14px;text-align:center;">
+        <div style="font-weight:600;color:#0C4A6E;">Supabase</div><div style="font-size:10px;color:#0284C7;">PostgreSQL 14</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
+    <div class="card" style="border-top:3px solid #38BDF8;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#0284C7;">① Database — Supabase</div>
+      <ol style="font-size:12px;line-height:2;padding-left:16px;color:#374151;margin:0;">
+        <li>Tạo project tại <strong>supabase.com</strong></li>
+        <li>Region: <strong>Southeast Asia (Singapore)</strong></li>
+        <li>SQL Editor → chạy <code>SETUP_DATABASE.sql</code></li>
+        <li>Chọn <strong>"Run without RLS"</strong></li>
+        <li>Settings → Database → copy <strong>Session Pooler</strong> URL</li>
+      </ol>
+      <div style="margin-top:10px;padding:8px;background:#F0F9FF;border-radius:6px;font-size:11px;color:#0369A1;">⚠️ Dùng <strong>Session Pooler</strong> — Render free tier chỉ hỗ trợ IPv4, Direct connection dùng IPv6</div>
+    </div>
+    <div class="card" style="border-top:3px solid #FB923C;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#EA580C;">② Backend — Render</div>
+      <ol style="font-size:12px;line-height:2;padding-left:16px;color:#374151;margin:0;">
+        <li>New → <strong>Web Service</strong> → connect GitHub repo</li>
+        <li>Root Directory: <code>backend</code></li>
+        <li>Build Command: <code>npm install</code></li>
+        <li>Start Command: <code>npm start</code></li>
+        <li>Instance Type: <strong>Free</strong></li>
+      </ol>
+      <div style="margin-top:10px;padding:8px;background:#FFF7ED;border-radius:6px;font-size:11px;color:#9A3412;">Env vars: <code>DATABASE_URL</code> · <code>JWT_SECRET</code> · <code>NODE_ENV=production</code> · <code>ALLOWED_ORIGINS</code></div>
+    </div>
+    <div class="card" style="border-top:3px solid #818CF8;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#4338CA;">③ Frontend — Vercel</div>
+      <ol style="font-size:12px;line-height:2;padding-left:16px;color:#374151;margin:0;">
+        <li>Add New → <strong>Project</strong> → import GitHub repo</li>
+        <li>Root Directory: <code>frontend</code></li>
+        <li>Framework: <strong>Vite</strong> (auto-detect)</li>
+        <li>Env var: <code>VITE_API_URL</code> = Render URL + <code>/api</code></li>
+        <li>Deploy → ~2 phút xong</li>
+      </ol>
+      <div style="margin-top:10px;padding:8px;background:#EEF2FF;border-radius:6px;font-size:11px;color:#3730A3;">File <code>vercel.json</code> đã có sẵn trong repo để handle React Router SPA redirects</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:700;font-size:14px;margin-bottom:14px;">🐛 Issues gặp phải &amp; cách fix</div>
+    <table style="width:100%;font-size:12px;border-collapse:collapse;">
+      <tr style="background:#F9FAFB;">
+        <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E5E7EB;">Lỗi</th>
+        <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E5E7EB;">Nguyên nhân</th>
+        <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E5E7EB;">Fix</th>
+      </tr>
+      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;"><code>Unknown command: "intall"</code></td><td style="padding:8px 12px;">Typo Build Command trên Render</td><td style="padding:8px 12px;color:#059669;">Sửa thành <code>npm install</code></td></tr>
+      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;"><code>ENETUNREACH</code> (IPv6)</td><td style="padding:8px 12px;">Render free tier không hỗ trợ IPv6</td><td style="padding:8px 12px;color:#059669;">Dùng Supabase <strong>Session Pooler</strong> URL</td></tr>
+      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;"><code>password authentication failed</code></td><td style="padding:8px 12px;"><code>[YOUR-PASSWORD]</code> chưa được thay thế</td><td style="padding:8px 12px;color:#059669;">Reset DB password Supabase → cập nhật <code>DATABASE_URL</code></td></tr>
+      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;">404 Not Found trên Vercel</td><td style="padding:8px 12px;">React Router cần redirect về <code>index.html</code></td><td style="padding:8px 12px;color:#059669;">Thêm <code>vercel.json</code> với rewrite <code>/* → /index.html</code></td></tr>
+      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;">Login xoay hoài</td><td style="padding:8px 12px;"><code>VITE_API_URL</code> thiếu <code>/api</code></td><td style="padding:8px 12px;color:#059669;">Sửa thành <code>https://xxx.onrender.com/api</code> → Redeploy</td></tr>
+      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;">CORS blocked</td><td style="padding:8px 12px;"><code>ALLOWED_ORIGINS</code> chưa khớp domain Vercel</td><td style="padding:8px 12px;color:#059669;">Set đúng URL Vercel (không có dấu <code>/</code> cuối)</td></tr>
+      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;"><code>column "cancellation_message" does not exist</code></td><td style="padding:8px 12px;">Schema SQL thiếu 2 column so với Sequelize model</td><td style="padding:8px 12px;color:#059669;"><code>ALTER TABLE bookings ADD COLUMN IF NOT EXISTS...</code> trên Supabase</td></tr>
+      <tr><td style="padding:8px 12px;">Admin tab trắng — React error #31</td><td style="padding:8px 12px;">Render object <code>{id, amenity}</code> thay vì string</td><td style="padding:8px 12px;color:#059669;">Fix <code>a.name</code> → <code>a.amenity || a.name || a</code></td></tr>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <div style="font-weight:700;font-size:14px;margin-bottom:14px;">👤 Demo Accounts</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+      <div style="padding:12px;background:#FEF3C7;border-radius:8px;text-align:center;"><div style="font-size:18px;margin-bottom:4px;">👑</div><div style="font-weight:700;font-size:12px;">Admin GHN</div><div style="font-size:11px;color:#92400E;margin-top:4px;">admin@ghn.vn</div></div>
+      <div style="padding:12px;background:#EDE9FE;border-radius:8px;text-align:center;"><div style="font-size:18px;margin-bottom:4px;">⭐</div><div style="font-weight:700;font-size:12px;">VIP Nguyễn</div><div style="font-size:11px;color:#5B21B6;margin-top:4px;">vip@ghn.vn</div></div>
+      <div style="padding:12px;background:#F0FDF4;border-radius:8px;text-align:center;"><div style="font-size:18px;margin-bottom:4px;">👤</div><div style="font-weight:700;font-size:12px;">John Trần</div><div style="font-size:11px;color:#166534;margin-top:4px;">john@ghn.vn</div></div>
+      <div style="padding:12px;background:#F0F9FF;border-radius:8px;text-align:center;"><div style="font-size:18px;margin-bottom:4px;">👤</div><div style="font-weight:700;font-size:12px;">Mary Nguyễn</div><div style="font-size:11px;color:#0C4A6E;margin-top:4px;">jane@ghn.vn</div></div>
+    </div>
+    <div style="margin-top:12px;padding:10px;background:#F1F5F9;border-radius:8px;font-size:11px;color:#475569;text-align:center;">
+      ⏳ Render free tier sleep sau 15 phút không có traffic — lần đầu đăng nhập có thể chờ ~30–60 giây để server wake up
+    </div>
+  </div>
+</section>
+
 </div>
 
 <div class="footer">
   <strong>GHN Meeting Room Booking</strong> — Project Report • 1 tháng 6, 2026<br>
   <span style="margin-top:4px;display:block;">React 18 + Vite · Node.js + Express 4.18 · PostgreSQL 14 · Sequelize 6 · JWT</span>
+  <span style="margin-top:4px;display:block;font-size:11px;opacity:.7;">Deploy: Vercel (Frontend) · Render (Backend) · Supabase (Database)</span>
 </div>
 </body>
 </html>
