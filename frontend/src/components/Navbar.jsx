@@ -34,14 +34,14 @@ export default function Navbar() {
             {isAdmin && (
               <>
                 <Link
-                  to="/dashboard"
+                  to="/"
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                    location.pathname === '/dashboard'
+                    location.pathname === '/'
                       ? 'bg-ghn-orange-light text-ghn-orange'
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  <span>🏠</span> Dashboard
+                  <span>📅</span> Lịch phòng
                 </Link>
                 <Link
                   to="/analytics"
@@ -61,7 +61,7 @@ export default function Navbar() {
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  <span>⚙️</span> Admin
+                  <span>⚙️</span> Bảng điều khiển quản trị
                 </Link>
               </>
             )}
@@ -90,9 +90,9 @@ export default function Navbar() {
         {/* Mobile admin nav */}
         {isAdmin && (
           <div className="md:hidden flex items-center gap-1 pb-2 overflow-x-auto px-0">
-            <Link to="/dashboard" className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-200 ${location.pathname === '/dashboard' ? 'bg-ghn-orange-light text-ghn-orange' : 'text-gray-600 hover:bg-gray-100'}`}>🏠 Dashboard</Link>
+            <Link to="/" className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-200 ${location.pathname === '/' ? 'bg-ghn-orange-light text-ghn-orange' : 'text-gray-600 hover:bg-gray-100'}`}>📅 Lịch phòng</Link>
             <Link to="/analytics" className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-200 ${location.pathname === '/analytics' ? 'bg-ghn-orange-light text-ghn-orange' : 'text-gray-600 hover:bg-gray-100'}`}>📊 Thống kê</Link>
-            <Link to="/admin" className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-200 ${location.pathname.startsWith('/admin') ? 'bg-ghn-orange-light text-ghn-orange' : 'text-gray-600 hover:bg-gray-100'}`}>⚙️ Admin</Link>
+            <Link to="/admin" className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-200 ${location.pathname.startsWith('/admin') ? 'bg-ghn-orange-light text-ghn-orange' : 'text-gray-600 hover:bg-gray-100'}`}>⚙️ Bảng điều khiển quản trị</Link>
           </div>
         )}
       </div>

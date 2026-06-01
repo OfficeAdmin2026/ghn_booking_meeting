@@ -6,6 +6,9 @@ const BookingController = require('../controllers/BookingController');
 // GET /api/bookings - Get my bookings
 router.get('/', authMiddleware, BookingController.getMyBookings);
 
+// GET /api/bookings/freeze-status - Check if booking is currently frozen
+router.get('/freeze-status', authMiddleware, BookingController.getFreezeStatus);
+
 // GET /api/bookings/room/:roomId - Get all bookings for a room (calendar view)
 router.get('/room/:roomId', authMiddleware, BookingController.getRoomBookings);
 

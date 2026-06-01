@@ -71,6 +71,11 @@ const Booking = sequelize.define('bookings', {
     allowNull: true,
     comment: 'Message left by admin when cancelling someone else\'s booking'
   },
+  is_admin_hidden: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    comment: 'Admin can book now but users cannot see until freeze ends'
+  },
   created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW

@@ -123,20 +123,7 @@ function yToMin(y) {
   return Math.max(START_HOUR * 60, Math.min(END_HOUR * 60, Math.round(raw / 30) * 30));
 }
 
-/** Returns true if `date` falls within today..end-of-next-week */
-function isBookableDate(date) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dayOfWeek = today.getDay();
-  const thisMonday = new Date(today);
-  thisMonday.setDate(today.getDate() + (dayOfWeek === 0 ? -6 : 1 - dayOfWeek));
-  const maxDate = new Date(thisMonday);
-  maxDate.setDate(thisMonday.getDate() + 13); // Sun of next week
-  maxDate.setHours(23, 59, 59, 999);
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d >= today && d <= maxDate;
-}
+
 
 function SectionToggle({ label, open, onToggle }) {
   return (
@@ -222,6 +209,10 @@ export default function CalendarPage() {
 
   // Slot booking warning
   const [slotWarning, setSlotWarning] = useState('');
+  // Freeze status - can user book?
+  const [canBook, setCanBook] = useState(true);
+  // Cached schedule settings from getFreezeStatus
+  const [freezeSchedule, setFreezeSchedule] = useState(null);
   // Current user — init from localStorage so it's available synchronously on first render
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -239,6 +230,9 @@ export default function CalendarPage() {
   const [cancelLoading, setCancelLoading]   = useState(false);
   const [cancelError,   setCancelError]     = useState('');
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  // Admin cancel with message
+  const [adminCancelMode,    setAdminCancelMode]    = useState(false);
+  const [adminCancelMessage, setAdminCancelMessage] = useState('');
   // Edit booking
   const [editMode,      setEditMode]        = useState(false);
   const [editTitle,     setEditTitle]       = useState('');
@@ -250,16 +244,34 @@ export default function CalendarPage() {
   const [editError,     setEditError]       = useState('');
 
   /* ── derived filter options ── */
-  const offices = [...new Set(rooms.map((r) => r.location).filter(Boolean))].sort();
+  // Chuẩn hóa tên văn phòng: gộp các biến thể 'Rivera Park', 'RiveraPark', 'rivera park' thành 'Rivera Park'
+  function normalizeOfficeName(name) {
+    if (!name) return '';
+    // Loại bỏ khoảng trắng thừa, viết hoa chữ cái đầu, gộp các biến thể Rivera Park
+    const cleaned = name.replace(/\s+/g, '').toLowerCase();
+    if (cleaned === 'riverapark') return 'Rivera Park';
+    // Có thể bổ sung thêm các quy tắc khác nếu cần
+    // Viết hoa chữ cái đầu mỗi từ
+    return name
+      .toLowerCase()
+      .replace(/(^|\s)\S/g, (t) => t.toUpperCase())
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  const offices = [...new Set(
+    rooms
+      .map((r) => normalizeOfficeName(r.location))
+      .filter(Boolean)
+  )].sort();
   const floors  = [...new Set(
     rooms
-      .filter((r) => !selOffice || r.location === selOffice)
+      .filter((r) => !selOffice || normalizeOfficeName(r.location) === selOffice)
       .map((r) => r.floor)
       .filter(Boolean)
   )].sort();
 
   const filteredRooms = rooms.filter((r) => {
-    const matchOffice = !selOffice || r.location === selOffice;
+    const matchOffice = !selOffice || normalizeOfficeName(r.location) === selOffice;
     const matchFloor  = !selFloor  || r.floor    === selFloor;
     const matchSearch = !roomSearch ||
       r.name.toLowerCase().includes(roomSearch.toLowerCase()) ||
@@ -270,6 +282,23 @@ export default function CalendarPage() {
   /* ── load current user once ── */
   useEffect(() => {
     authApi.getMe().then((res) => setCurrentUser(res.data.data?.user || null)).catch(() => {});
+  }, []);
+
+  /* ── check freeze status on mount and periodically ── */
+  useEffect(() => {
+    const checkFreeze = async () => {
+      try {
+        const res = await bookingsApi.getFreezeStatus();
+        setCanBook(res.data.data?.can_book !== false);
+        if (res.data.data?.schedule) setFreezeSchedule(res.data.data.schedule);
+      } catch (err) {
+        console.error('Failed to check freeze status:', err);
+        setCanBook(true);
+      }
+    };
+    checkFreeze();
+    const interval = setInterval(checkFreeze, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   /* ── real-time now line ── */
@@ -299,7 +328,7 @@ export default function CalendarPage() {
       const endIso = location.state.endTime
         ? new Date(location.state.endTime).toISOString()
         : new Date(d.getTime() + 3600000).toISOString();
-      setModalSlot({ startTime: d.toISOString(), endTime: endIso });
+      tryOpenModal(d.toISOString(), endIso);
     }
   }, [rooms, location.state]);
 
@@ -322,8 +351,21 @@ export default function CalendarPage() {
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
   /* ── calendar navigation ── */
-  const prevWeek  = () => { const d = new Date(anchorDate); d.setDate(d.getDate() - 7);  setAnchorDate(d); };
-  const nextWeek  = () => { const d = new Date(anchorDate); d.setDate(d.getDate() + 7);  setAnchorDate(d); };
+  // Removed duplicate prevWeek definition
+  const nextWeek  = () => {
+    const d = new Date(anchorDate);
+    d.setDate(d.getDate() + 7);
+    setAnchorDate(d);
+    setCalYear(d.getFullYear());
+    setCalMonth(d.getMonth());
+  };
+  const prevWeek  = () => {
+    const d = new Date(anchorDate);
+    d.setDate(d.getDate() - 7);
+    setAnchorDate(d);
+    setCalYear(d.getFullYear());
+    setCalMonth(d.getMonth());
+  };
   const prevMonth = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } else setCalMonth(m => m - 1); };
   const nextMonth = () => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } else setCalMonth(m => m + 1); };
 
@@ -334,7 +376,66 @@ export default function CalendarPage() {
     setCalMonth(date.getMonth());
   }
 
+  /* ── synchronous booking-window check using cached state ── */
+  function checkDateBookable(date) {
+    if (currentUser?.role === 'admin') return { allowed: true };
+    if (!canBook) {
+      return { allowed: false, message: '🔒 Hệ thống đang đóng băng. Bạn chưa thể đặt phòng.' };
+    }
+    if (!freezeSchedule?.enabled) return { allowed: true };
+
+    const { openDay, openTime, openLabel } = freezeSchedule;
+    const [openHour, openMin] = openTime.split(':').map(Number);
+
+    const vnNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+    const dow = vnNow.getDay();
+
+    // Monday of current week
+    const thisMonday = new Date(vnNow);
+    thisMonday.setDate(vnNow.getDate() + (dow === 0 ? -6 : 1 - dow));
+    thisMonday.setHours(0, 0, 0, 0);
+
+    const nextMonday = new Date(thisMonday);
+    nextMonday.setDate(thisMonday.getDate() + 7);
+    const nextSunday = new Date(nextMonday);
+    nextSunday.setDate(nextMonday.getDate() + 6);
+    nextSunday.setHours(23, 59, 59, 999);
+
+    // Opening time of this week (openDay: 0=Sun, 1=Mon... convert to Mon-anchored offset)
+    const openOffset = openDay === 0 ? 6 : openDay - 1;
+    const openingThisWeek = new Date(thisMonday);
+    openingThisWeek.setDate(thisMonday.getDate() + openOffset);
+    openingThisWeek.setHours(openHour, openMin, 0, 0);
+
+    const hasOpened = vnNow >= openingThisWeek;
+
+    const targetNoon = new Date(date);
+    targetNoon.setHours(12, 0, 0, 0);
+
+    if (!hasOpened) {
+      if (targetNoon >= thisMonday && targetNoon < nextMonday) return { allowed: true };
+      return { allowed: false, message: `Bạn chưa thể đặt phòng trong khoảng thời gian này. Lịch đặt sẽ được mở sau ${openLabel}.` };
+    } else {
+      if (targetNoon >= thisMonday && targetNoon <= nextSunday) return { allowed: true };
+      return { allowed: false, message: `Bạn chưa thể đặt phòng trong khoảng thời gian này. Lịch đặt sẽ được mở sau ${openLabel}.` };
+    }
+  }
+
   /* ── room availability search ── */
+  async function tryOpenModal(startTime, endTime) {
+    if (currentUser?.role === 'admin') {
+      setModalSlot({ startTime, endTime });
+      return;
+    }
+    const check = checkDateBookable(new Date(startTime));
+    if (!check.allowed) {
+      setSlotWarning(check.message);
+      setTimeout(() => setSlotWarning(''), 8000);
+      return;
+    }
+    setModalSlot({ startTime, endTime });
+  }
+
   async function handleRoomSearch(e) {
     e.preventDefault();
     setSrchError('');
@@ -358,7 +459,7 @@ export default function CalendarPage() {
 
   function clearSearch() {
     setSrchResults(null);
-    setSrchError('');
+    setSrchError(''); // Unused now since date constraint removed
   }
 
   function selectSearchRoom(room) {
@@ -366,17 +467,13 @@ export default function CalendarPage() {
     if (room.location) setSelOffice(room.location);
     if (room.floor)    setSelFloor(room.floor);
     const d = new Date(srchStart);
-    if (!isBookableDate(d)) {
-      setSrchError('Chỉ có thể đặt phòng trong tuần hiện tại và tuần tiếp theo.');
-      return;
-    }
     setAnchorDate(d);
     setCalYear(d.getFullYear());
     setCalMonth(d.getMonth());
-    setModalSlot({
-      startTime: new Date(srchStart).toISOString(),
-      endTime:   new Date(srchEnd).toISOString(),
-    });
+    tryOpenModal(
+      new Date(srchStart).toISOString(),
+      new Date(srchEnd).toISOString(),
+    );
   }
 
   /* ── fetch my bookings when tab switches ── */
@@ -434,14 +531,16 @@ export default function CalendarPage() {
   }
 
   /* ── cancel booking ── */
-  async function handleCancelBooking() {
+  async function handleCancelBooking(message = null) {
     if (!cancelModal) return;
     setCancelLoading(true);
     setCancelError('');
     try {
-      await bookingsApi.cancel(cancelModal.id);
+      await bookingsApi.cancel(cancelModal.id, message);
       setCancelModal(null);
       setConfirmingCancel(false);
+      setAdminCancelMode(false);
+      setAdminCancelMessage('');
       setMyBookingsRefresh((v) => v + 1);
       setBookings((prev) => prev.filter((b) => b.id !== cancelModal.id));
     } catch (err) {
@@ -455,16 +554,20 @@ export default function CalendarPage() {
   function handleDayMouseDown(e, dayDate) {
     if (e.button !== 0) return;
     if (!selRoom) return;
-    if (!isBookableDate(dayDate)) {
-      setSlotWarning('Chỉ có thể đặt phòng trong tuần hiện tại và tuần tiếp theo.');
-      setTimeout(() => setSlotWarning(''), 3000);
-      return;
+
+    // Immediate synchronous check — no API call needed
+    const check = checkDateBookable(dayDate);
+    if (!check.allowed) {
+      setSlotWarning(check.message);
+      setTimeout(() => setSlotWarning(''), 8000);
+    } else {
+      setSlotWarning('');
     }
-    setSlotWarning('');
+
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const startMin = Math.min(yToMin(y), (END_HOUR - 1) * 60);
-    dragInfo.current = { dayDate, dayEl: e.currentTarget, startMin };
+    dragInfo.current = { dayDate, dayEl: e.currentTarget, startMin, blocked: !check.allowed };
     setDragSel({
       dayDateStr: toVNDateStr(dayDate),
       startMin,
@@ -485,16 +588,19 @@ export default function CalendarPage() {
     }
     function onUp(e) {
       if (!dragInfo.current) return;
-      const { dayDate, dayEl, startMin } = dragInfo.current;
+      const { dayDate, dayEl, startMin, blocked } = dragInfo.current;
       dragInfo.current = null;
       const rect = dayEl.getBoundingClientRect();
       const y = e.clientY - rect.top;
       const raw = yToMin(y);
-      // treat as single click if barely moved → default 1 hr
       const endMin = raw <= startMin + 15
         ? Math.min(startMin + 60, END_HOUR * 60)
         : Math.min(END_HOUR * 60, Math.max(startMin + 30, raw));
       setDragSel(null);
+
+      // Already warned on mousedown — don't open modal
+      if (blocked) return;
+
       const start = new Date(dayDate);
       start.setHours(Math.floor(startMin / 60), startMin % 60, 0, 0);
       const end = new Date(dayDate);
@@ -693,11 +799,13 @@ export default function CalendarPage() {
                     onChange={(e) => {
                       const newFloor = e.target.value;
                       setSelFloor(newFloor);
-                      const first = rooms.find((r) =>
-                        (!selOffice || r.location === selOffice) &&
-                        (!newFloor || r.floor === newFloor)
-                      );
-                      if (first) { setSelRoom(first); }
+                      // Nếu phòng hiện tại không còn thuộc tầng mới, reset phòng
+                      if (
+                        selRoom &&
+                        (normalizeOfficeName(selRoom.location) !== selOffice || (newFloor && selRoom.floor !== newFloor))
+                      ) {
+                        setSelRoom(null);
+                      }
                     }}
                     disabled={floors.length === 0}
                     className="mt-1 w-full px-2 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:border-ghn-orange bg-white disabled:opacity-40"
@@ -744,7 +852,7 @@ export default function CalendarPage() {
                         ) : filteredRooms.map((r) => (
                           <li key={r.id}>
                             <button
-                              onClick={() => { setSelRoom(r); setSelFloor(r.floor || ''); setSelOffice(r.location || ''); setShowRoomDrop(false); setRoomSearch(''); }}
+                              onClick={() => { setSelRoom(r); setShowRoomDrop(false); setRoomSearch(''); }}
                               className={`w-full text-left px-3 py-2 text-sm hover:bg-orange-50 transition-colors ${
                                 selRoom?.id === r.id ? 'bg-orange-50 text-ghn-orange font-medium' : 'text-gray-700'
                               }`}
@@ -752,7 +860,7 @@ export default function CalendarPage() {
                               <div className="font-medium">{r.name}</div>
                               {r.location && (
                                 <div className="text-xs text-gray-400 mt-0.5">
-                                  {r.location}{r.floor ? ` • Tầng ${fmtFloor(r.floor)}` : ''} • {r.capacity} người
+                                  {normalizeOfficeName(r.location)}{r.floor ? ` • Tầng ${fmtFloor(r.floor)}` : ''} • {r.capacity} người
                                 </div>
                               )}
                             </button>
@@ -821,7 +929,7 @@ export default function CalendarPage() {
                     >
                       <option value="">Tất cả</option>
                       {(srchLocation
-                        ? rooms.filter((r) => r.location === srchLocation)
+                        ? rooms.filter((r) => normalizeOfficeName(r.location) === srchLocation)
                         : rooms
                       ).map((r) => r.floor).filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).sort()
                         .map((f) => <option key={f} value={f}>Tầng {fmtFloor(f)}</option>)}
@@ -1058,14 +1166,13 @@ export default function CalendarPage() {
             <div className="w-14 flex-shrink-0 border-r border-gray-100" />
             {weekDays.map((d) => {
               const ds = toVNDateStr(d);
-              const isToday    = ds === today;
-              const isBookable = isBookableDate(d);
+              const isToday = ds === today;
               return (
                 <div
                   key={ds}
                   className={`flex-1 min-w-0 text-center py-2 border-r border-gray-100 last:border-r-0 ${
                     isToday ? 'bg-orange-50' : ''
-                  } ${!isBookable ? 'opacity-40' : ''}`}
+                  }`}
                 >
                   <div className={`text-xs font-medium ${isToday ? 'text-ghn-orange' : 'text-gray-500'}`}>
                     {DAY_LABELS[d.getDay()]}
@@ -1146,7 +1253,7 @@ export default function CalendarPage() {
                     key={ds}
                     className={`flex-1 min-w-0 relative border-r border-gray-100 last:border-r-0 ${
                       isToday ? 'bg-orange-50/30' : ''
-                    } ${selRoom && isBookableDate(d) ? 'cursor-crosshair' : ''}`}
+                    } ${selRoom ? 'cursor-crosshair' : ''}`}
                     style={{ minHeight: HOUR_HEIGHT * timeSlots.length }}
                     onMouseDown={(e) => handleDayMouseDown(e, d)}
                   >
@@ -1249,7 +1356,7 @@ export default function CalendarPage() {
       {cancelModal && (() => {
         const isOwn = currentUser && cancelModal.user_id === currentUser.id;
         const room  = cancelModal.room || selRoom || {};
-        const closeAll = () => { setCancelModal(null); setCancelError(''); setConfirmingCancel(false); setEditMode(false); setEditError(''); };
+        const closeAll = () => { setCancelModal(null); setCancelError(''); setConfirmingCancel(false); setEditMode(false); setEditError(''); setAdminCancelMode(false); setAdminCancelMessage(''); };
         return (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -1357,9 +1464,20 @@ export default function CalendarPage() {
                         <p className="text-sm text-gray-700 leading-relaxed">{cancelModal.notes}</p>
                       </div>
                     )}
+                    {cancelModal.status === 'cancelled' && cancelModal.cancellation_message && (
+                      <div className="border-t border-red-100 pt-3 bg-red-50 -mx-5 -mb-3 px-5 py-3 rounded-b-xl">
+                        <p className="text-[11px] font-medium text-red-600 uppercase tracking-wide mb-1">⚠️ Lý do hủy</p>
+                        <p className="text-sm text-red-700 leading-relaxed font-medium">{cancelModal.cancellation_message}</p>
+                      </div>
+                    )}
+                    {cancelModal.status === 'cancelled' && !cancelModal.cancellation_message && (
+                      <div className="border-t border-red-100 pt-3 bg-red-50 -mx-5 -mb-3 px-5 py-3 rounded-b-xl">
+                        <p className="text-[11px] font-medium text-red-600 uppercase tracking-wide">⚠️ Đã hủy</p>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Actions — own only */}
+                  {/* Actions — own booking */}
                   {isOwn && (
                     confirmingCancel ? (
                       <div className="px-5 pb-5">
@@ -1369,7 +1487,7 @@ export default function CalendarPage() {
                         </div>
                         {cancelError && <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{cancelError}</div>}
                         <div className="flex gap-3">
-                          <button onClick={handleCancelBooking} disabled={cancelLoading}
+                          <button onClick={() => handleCancelBooking()} disabled={cancelLoading}
                             className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition-colors disabled:opacity-50">
                             {cancelLoading ? (
                               <span className="flex items-center justify-center gap-2">
@@ -1402,6 +1520,56 @@ export default function CalendarPage() {
                         <button onClick={() => setConfirmingCancel(true)}
                           className="flex-1 py-2.5 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 font-semibold text-sm transition-colors">
                           Hủy đặt phòng
+                        </button>
+                      </div>
+                    )
+                  )}
+
+                  {/* Admin cancel for other users' bookings */}
+                  {currentUser?.role === 'admin' && !isOwn && cancelModal.status !== 'cancelled' && (
+                    adminCancelMode ? (
+                      <div className="px-5 pb-5">
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3">
+                          <p className="text-sm font-semibold text-red-700 mb-1">Hủy lịch của người dùng</p>
+                          <p className="text-xs text-red-500 mb-2">Người đặt sẽ thấy lý do hủy này khi xem lịch của mình.</p>
+                          <textarea
+                            value={adminCancelMessage}
+                            onChange={(e) => setAdminCancelMessage(e.target.value)}
+                            placeholder="Lời nhắn gửi người dùng (không bắt buộc)..."
+                            rows={3}
+                            className="w-full border border-red-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-red-400 bg-white"
+                          />
+                        </div>
+                        {cancelError && <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{cancelError}</div>}
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handleCancelBooking(adminCancelMessage || null)}
+                            disabled={cancelLoading}
+                            className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition-colors disabled:opacity-50"
+                          >
+                            {cancelLoading ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Đang hủy...
+                              </span>
+                            ) : 'Xác nhận hủy'}
+                          </button>
+                          <button
+                            onClick={() => { setAdminCancelMode(false); setAdminCancelMessage(''); setCancelError(''); }}
+                            disabled={cancelLoading}
+                            className="flex-1 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold text-sm transition-colors"
+                          >
+                            Giữ lại
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="px-5 pb-5">
+                        <button
+                          onClick={() => setAdminCancelMode(true)}
+                          className="w-full py-2.5 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 font-semibold text-sm transition-colors"
+                        >
+                          Hủy lịch (Admin)
                         </button>
                       </div>
                     )

@@ -88,7 +88,7 @@ class BookingService {
 
   /**
    * Lấy tất cả booking của 1 phòng trong khoảng thời gian.
-   * isAdmin=true → trả hết; isAdmin=false → ẩn booking trong "locked period" (ngoài cửa sổ đặt phòng)
+   * isAdmin=true → trả hết; isAdmin=false → chỉ trả non-hidden + hidden đã đến giờ mở
    */
   static async getRoomBookings(roomId, startDate, endDate, isAdmin = false) {
     try {
@@ -98,14 +98,6 @@ class BookingService {
         start_time: { [Op.lt]: endDate },
         end_time: { [Op.gt]: startDate }
       };
-
-      // Regular users cannot see bookings beyond the booking window
-      if (!isAdmin) {
-        const windowDays = await AdminSettingService.getBookingWindowDays();
-        const maxVisible = new Date();
-        maxVisible.setDate(maxVisible.getDate() + windowDays);
-        where.start_time = { [Op.lt]: endDate, [Op.lte]: maxVisible };
-      }
 
       const bookings = await Booking.findAll({
         where,
@@ -121,14 +113,71 @@ class BookingService {
         ],
         order: [['start_time', 'ASC']]
       });
-      return bookings;
+
+      if (isAdmin) return bookings;
+
+      // Regular users: show non-hidden bookings + admin-hidden ones now in visible range
+      const visibleRange = await this.getVisibleRange();
+      return bookings.filter(b => {
+        if (!b.is_admin_hidden) return true;
+        return this.isDateVisibleToUsers(new Date(b.start_time), visibleRange);
+      });
     } catch (error) {
       throw error;
     }
   }
 
   /**
+   * Computes the booking window currently visible to regular users.
+   */
+  static async getVisibleRange() {
+    const settings = await AdminSettingService.getAll();
+    const weeklyEnabled = settings.booking_freeze_weekly_enabled === 'true';
+
+    const vnNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+    const dow = vnNow.getDay();
+
+    const thisMonday = new Date(vnNow);
+    thisMonday.setDate(vnNow.getDate() + (dow === 0 ? -6 : 1 - dow));
+    thisMonday.setHours(0, 0, 0, 0);
+
+    const nextMonday = new Date(thisMonday);
+    nextMonday.setDate(thisMonday.getDate() + 7);
+
+    const nextSunday = new Date(nextMonday);
+    nextSunday.setDate(nextMonday.getDate() + 6);
+    nextSunday.setHours(23, 59, 59, 999);
+
+    let hasOpened = true;
+    if (weeklyEnabled) {
+      const openDay = parseInt(settings.booking_freeze_weekly_day ?? '4', 10);
+      const [openHour, openMinute] = (settings.booking_freeze_weekly_time ?? '14:00').split(':').map(Number);
+      const openOffset = openDay === 0 ? 6 : openDay - 1;
+      const openingThisWeek = new Date(thisMonday);
+      openingThisWeek.setDate(thisMonday.getDate() + openOffset);
+      openingThisWeek.setHours(openHour, openMinute, 0, 0);
+      hasOpened = vnNow >= openingThisWeek;
+    }
+
+    return { weeklyEnabled, thisMonday, nextMonday, nextSunday, hasOpened };
+  }
+
+  /**
+   * Returns true if the given date is within the range regular users can currently see/book.
+   */
+  static isDateVisibleToUsers(date, { weeklyEnabled, thisMonday, nextMonday, nextSunday, hasOpened }) {
+    if (!weeklyEnabled) return true;
+    if (date >= thisMonday && date < nextMonday) return true;
+    if (hasOpened && date >= nextMonday && date <= nextSunday) return true;
+    return false;
+  }
+
+  /**
    * Kiểm tra conflict booking
+   * @param {string} roomId
+   * @param {Date} startTime
+   * @param {Date} endTime
+   * @param {string|null} excludeBookingId - booking id to exclude from conflict check
    */
   static async checkTimeConflict(roomId, startTime, endTime, excludeBookingId = null) {
     try {
@@ -138,25 +187,9 @@ class BookingService {
           [Op.in]: ['pending', 'confirmed', 'active']
         },
         [Op.or]: [
-          // Booking bắt đầu trong range
-          {
-            start_time: {
-              [Op.gte]: startTime,
-              [Op.lt]: endTime
-            }
-          },
-          // Booking kết thúc trong range
-          {
-            end_time: {
-              [Op.gt]: startTime,
-              [Op.lte]: endTime
-            }
-          },
-          // Booking cover cả range
-          {
-            start_time: { [Op.lte]: startTime },
-            end_time: { [Op.gte]: endTime }
-          }
+          { start_time: { [Op.gte]: startTime, [Op.lt]: endTime } },
+          { end_time: { [Op.gt]: startTime, [Op.lte]: endTime } },
+          { start_time: { [Op.lte]: startTime }, end_time: { [Op.gte]: endTime } }
         ]
       };
 
@@ -221,27 +254,61 @@ class BookingService {
         throw new Error('This is a VIP room. Only admins and VIPs can book');
       }
 
-      // Validate booking duration (max 4 hours)
-      const maxDuration = parseInt(process.env.MAX_BOOKING_DURATION_HOURS || 4);
-      const durationHours = (endTime - startTime) / (1000 * 60 * 60);
-      if (durationHours > maxDuration) {
-        throw new Error(`Max booking duration is ${maxDuration} hours`);
-      }
 
-      // Validate booking window — admin bypasses this limit
+      // Only allow booking in current or next week based on weekly opening schedule
       if (user.role !== 'admin') {
-        const windowDays = await AdminSettingService.getBookingWindowDays();
-        const maxDate = new Date();
-        maxDate.setDate(maxDate.getDate() + windowDays);
-        if (startTime > maxDate) {
-          throw new Error(`Cannot book more than ${windowDays} days in advance`);
+        const settings = await AdminSettingService.getAll();
+        const weeklyEnabled = settings.booking_freeze_weekly_enabled === 'true';
+
+        if (weeklyEnabled) {
+          const vnNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+          const openDay = parseInt(settings.booking_freeze_weekly_day ?? '4', 10);
+          const [openHour, openMinute] = (settings.booking_freeze_weekly_time ?? '14:00').split(':').map(Number);
+
+          const dow = vnNow.getDay();
+          const thisMonday = new Date(vnNow);
+          thisMonday.setDate(vnNow.getDate() + (dow === 0 ? -6 : 1 - dow));
+          thisMonday.setHours(0, 0, 0, 0);
+
+          const nextMonday = new Date(thisMonday);
+          nextMonday.setDate(thisMonday.getDate() + 7);
+          const nextSunday = new Date(nextMonday);
+          nextSunday.setDate(nextMonday.getDate() + 6);
+          nextSunday.setHours(23, 59, 59, 999);
+
+          // Compute this week's opening datetime (Mon-anchored offset)
+          const openOffset = openDay === 0 ? 6 : openDay - 1;
+          const openingThisWeek = new Date(thisMonday);
+          openingThisWeek.setDate(thisMonday.getDate() + openOffset);
+          openingThisWeek.setHours(openHour, openMinute, 0, 0);
+
+          const hasOpened = vnNow >= openingThisWeek;
+
+          if (!hasOpened) {
+            // Before opening: only allow booking THIS week
+            if (!(startTime >= thisMonday && startTime < nextMonday)) {
+              throw new Error('Chưa mở booking cho tuần tiếp theo.');
+            }
+          } else {
+            // After opening: allow THIS week + NEXT week
+            if (!(startTime >= thisMonday && startTime <= nextSunday)) {
+              throw new Error('Chỉ được đặt phòng trong tuần này và tuần tiếp theo.');
+            }
+          }
         }
       }
 
-      // Check for time conflicts
-      const conflict = await this.checkTimeConflict(room_id, startTime, endTime);
+      // Check for time conflicts (checks against all bookings including admin-hidden)
+      const conflict = await this.checkTimeConflict(room_id, startTime, endTime, null);
       if (conflict) {
         throw new Error(`Room is already booked for this time slot`);
+      }
+
+      // Admin bookings for dates not yet visible to users are hidden until opening time
+      let isAdminHidden = false;
+      if (user.role === 'admin') {
+        const visibleRange = await this.getVisibleRange();
+        isAdminHidden = !this.isDateVisibleToUsers(startTime, visibleRange);
       }
 
       // Tạo booking
@@ -254,7 +321,8 @@ class BookingService {
         end_time: endTime,
         status: 'confirmed', // Tạo ngay với status confirmed (không cần pending)
         recurring: recurring || 'none',
-        notes
+        notes,
+        is_admin_hidden: isAdminHidden
       });
 
       return await this.getBookingById(booking.id);
@@ -284,13 +352,6 @@ class BookingService {
           throw new Error('Giờ kết thúc phải sau giờ bắt đầu');
         }
 
-        // Check max duration
-        const maxDuration = parseInt(process.env.MAX_BOOKING_DURATION_HOURS || 4);
-        const durationHours = (newEnd - newStart) / (1000 * 60 * 60);
-        if (durationHours > maxDuration) {
-          throw new Error(`Thời gian tối đa là ${maxDuration} giờ`);
-        }
-
         // Check conflict
         const conflict = await this.checkTimeConflict(booking.room_id, newStart, newEnd, bookingId);
         if (conflict) {
@@ -312,13 +373,6 @@ class BookingService {
 
         if (newEndTime <= currentEndTime) {
           throw new Error('new_end_time must be after current end_time');
-        }
-
-        // Check max duration
-        const maxDuration = parseInt(process.env.MAX_BOOKING_DURATION_HOURS || 4);
-        const durationHours = (newEndTime - new Date(booking.start_time)) / (1000 * 60 * 60);
-        if (durationHours > maxDuration) {
-          throw new Error(`Max booking duration is ${maxDuration} hours`);
         }
 
         // Check conflict với next booking
@@ -377,6 +431,90 @@ class BookingService {
       await booking.save();
 
       return booking;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Admin update booking time (reschedule)
+   * @param {string} bookingId
+   * @param {string} userId - admin user ID
+   * @param {Object} updateData - { start_time?, end_time? }
+   */
+  static async adminUpdateBooking(bookingId, userId, updateData) {
+    try {
+      // Verify user is admin
+      const user = await User.findByPk(userId);
+      if (!user || user.role !== 'admin') {
+        throw new Error('Only admins can update bookings');
+      }
+
+      const booking = await Booking.findByPk(bookingId);
+      if (!booking) {
+        throw new Error('Booking not found');
+      }
+
+      const { start_time, end_time } = updateData;
+      
+      // Update times if provided
+      if (start_time) {
+        booking.start_time = new Date(start_time);
+      }
+      if (end_time) {
+        booking.end_time = new Date(end_time);
+      }
+
+      // Validate times
+      if (booking.end_time <= booking.start_time) {
+        throw new Error('end_time must be after start_time');
+      }
+
+      const conflict = await this.checkTimeConflict(
+        booking.room_id,
+        booking.start_time,
+        booking.end_time,
+        bookingId
+      );
+      if (conflict) {
+        throw new Error(`Room is already booked for this new time slot`);
+      }
+
+      await booking.save();
+      return await this.getBookingById(bookingId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Lấy tất cả booking (admin only)
+   */
+  static async getAllBookings({ status, roomId, startDate, endDate, limit = 100, offset = 0 } = {}) {
+    try {
+      const where = {};
+
+      if (status && status !== 'all') {
+        where.status = status;
+      }
+
+      if (roomId) where.room_id = roomId;
+
+      if (startDate) where.start_time = { [Op.gte]: new Date(startDate) };
+      if (endDate) where.end_time = { ...(where.end_time || {}), [Op.lte]: new Date(endDate) };
+
+      const bookings = await Booking.findAll({
+        where,
+        include: [
+          { model: User, attributes: ['id', 'full_name', 'email', 'department'] },
+          { model: Room, attributes: ['id', 'name', 'code', 'location', 'floor'] }
+        ],
+        order: [['start_time', 'DESC']],
+        limit: parseInt(limit),
+        offset: parseInt(offset)
+      });
+
+      return bookings;
     } catch (error) {
       throw error;
     }

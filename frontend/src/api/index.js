@@ -24,6 +24,8 @@ export const roomsApi = {
 export const bookingsApi = {
   getMyBookings: (params) => api.get('/bookings', { params }),
 
+  getFreezeStatus: () => api.get('/bookings/freeze-status'),
+
   getRoomBookings: (roomId, startDate, endDate) =>
     api.get(`/bookings/room/${roomId}`, { params: { start_date: startDate, end_date: endDate } }),
 
@@ -33,7 +35,7 @@ export const bookingsApi = {
 
   update: (id, data) => api.put(`/bookings/${id}`, data),
 
-  cancel: (id) => api.delete(`/bookings/${id}`),
+  cancel: (id, message = null) => api.delete(`/bookings/${id}`, { data: { message } }),
 
   checkIn: (id) => api.post(`/bookings/${id}/checkin`),
 };
@@ -41,4 +43,14 @@ export const bookingsApi = {
 export const dashboardApi = {
   getMetrics: (params) => api.get('/dashboard/metrics', { params }),
   getReport:  (params) => api.get('/dashboard/report',  { params }),
+};
+
+export const adminApi = {
+  getSettings: () => api.get('/admin/settings'),
+
+  updateSettings: (data) => api.put('/admin/settings', data),
+
+  updateBooking: (id, data) => api.patch(`/admin/bookings/${id}`, data),
+
+  getBookings: (params) => api.get('/admin/bookings', { params }),
 };

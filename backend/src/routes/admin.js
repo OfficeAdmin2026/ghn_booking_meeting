@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const AdminSettingService = require('../services/AdminSettingService');
+const BookingController = require('../controllers/BookingController');
 
 // GET /api/admin/settings
 router.get('/settings', authMiddleware, adminMiddleware, async (req, res) => {
@@ -16,22 +17,23 @@ router.get('/settings', authMiddleware, adminMiddleware, async (req, res) => {
 // PUT /api/admin/settings
 router.put('/settings', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { booking_window_days, max_booking_duration_hours } = req.body;
+    const {
+      booking_freeze_weekly_enabled,
+      booking_freeze_weekly_day,
+      booking_freeze_weekly_time,
+    } = req.body;
     const data = {};
-    if (booking_window_days !== undefined) {
-      const v = parseInt(booking_window_days);
-      if (isNaN(v) || v < 1 || v > 365) {
-        return res.status(400).json({ error: { status: 400, message: 'booking_window_days phải từ 1–365' } });
-      }
-      data.booking_window_days = v;
+
+    if (booking_freeze_weekly_enabled !== undefined) {
+      data.booking_freeze_weekly_enabled = String(booking_freeze_weekly_enabled);
     }
-    if (max_booking_duration_hours !== undefined) {
-      const v = parseInt(max_booking_duration_hours);
-      if (isNaN(v) || v < 1 || v > 24) {
-        return res.status(400).json({ error: { status: 400, message: 'max_booking_duration_hours phải từ 1–24' } });
-      }
-      data.max_booking_duration_hours = v;
+    if (booking_freeze_weekly_day !== undefined) {
+      data.booking_freeze_weekly_day = String(booking_freeze_weekly_day);
     }
+    if (booking_freeze_weekly_time !== undefined) {
+      data.booking_freeze_weekly_time = String(booking_freeze_weekly_time);
+    }
+
     const settings = await AdminSettingService.updateSettings(data);
     res.json({ status: 'success', data: { settings } });
   } catch (err) {
@@ -39,10 +41,15 @@ router.put('/settings', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/admin/bookings - List all bookings
+router.get('/bookings', authMiddleware, adminMiddleware, BookingController.getAdminBookings);
+
+// PATCH /api/admin/bookings/:id - Reschedule booking
+router.patch('/bookings/:id', authMiddleware, adminMiddleware, BookingController.adminUpdateBooking);
+
 // GET /api/admin/users - List all users
 router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
   res.status(501).json({ error: { status: 501, message: 'Not implemented' } });
 });
 
 module.exports = router;
-
