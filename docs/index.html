@@ -111,11 +111,11 @@
   <div class="header-inner">
     <div class="header-badge">📋 Project Report</div>
     <h1>GHN Meeting Room Booking</h1>
-    <p>Hệ thống đặt phòng họp nội bộ GiaoHangNhanh — Tổng hợp tính năng, kiến trúc &amp; các điểm cần cải thiện</p>
+    <p>Hệ thống đặt phòng họp nội bộ GiaoHangNhanh — Giải pháp quản lý phòng họp thông minh cho toàn bộ nhân viên GHN</p>
     <div class="header-meta">
       <div class="header-meta-item"><div class="val">17</div><div class="lbl">Phòng họp</div></div>
       <div class="header-meta-item"><div class="val">3</div><div class="lbl">Vai trò</div></div>
-      <div class="header-meta-item"><div class="val">15</div><div class="lbl">API endpoints</div></div>
+      <div class="header-meta-item"><div class="val">15</div><div class="lbl">Phút check-in</div></div>
       <div class="header-meta-item"><div class="val">2</div><div class="lbl">Văn phòng</div></div>
     </div>
   </div>
@@ -179,14 +179,27 @@ document.addEventListener('keydown', (e) => {
 </script>
 
 <section>
-  <h2><span class="sn">2</span> Tính năng nổi bật</h2>
+  <h2><span class="sn">2</span> Lợi ích thực tế</h2>
+  <p class="sub">Những vấn đề được giải quyết khi áp dụng hệ thống</p>
+  <div class="g3">
+    <div class="card"><div class="fi">🚫</div><div class="ft">Không còn đặt trùng phòng</div><div class="fd">Hệ thống kiểm tra xung đột lịch theo thời gian thực. Cùng một phòng, cùng một khung giờ — chỉ một người được đặt thành công.</div></div>
+    <div class="card"><div class="fi">⏱️</div><div class="ft">Tiết kiệm thời gian tìm phòng</div><div class="fd">Không cần nhắn Slack hay gọi điện hỏi phòng còn trống không. Lọc theo văn phòng, tầng, sức chứa và khung giờ — tìm phòng phù hợp trong vài giây.</div></div>
+    <div class="card"><div class="fi">💻</div><div class="ft">Truy cập mọi lúc, mọi nơi</div><div class="fd">Chạy trực tiếp trên trình duyệt, không cần cài app. Đặt phòng, xem lịch, hủy booking từ máy tính hoặc điện thoại.</div></div>
+    <div class="card"><div class="fi">🔓</div><div class="ft">Phòng bỏ trống được giải phóng tự động</div><div class="fd">Nếu người đặt không check-in sau 15 phút, phòng tự động được giải phóng. Không còn tình trạng phòng bị giữ nhưng thực tế bỏ trống.</div></div>
+    <div class="card"><div class="fi">👁️</div><div class="ft">Admin kiểm soát toàn bộ lịch</div><div class="fd">Xem lịch đặt phòng của tất cả nhân viên, hủy booking khi cần với lý do cụ thể, điều chỉnh lịch họp mà không cần liên hệ từng người.</div></div>
+    <div class="card"><div class="fi">🗓️</div><div class="ft">Kiểm soát cửa sổ đặt phòng</div><div class="fd">Admin cấu hình ngày giờ mở lịch đặt phòng tuần tiếp theo, đảm bảo phân bổ phòng công bằng và có kế hoạch.</div></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="sn">3</span> Tính năng nổi bật</h2>
   <p class="sub">Các module chính của hệ thống</p>
   <div class="g3">
-    <div class="card"><div class="fi">🔐</div><div class="ft">Đăng nhập Email nội bộ</div><div class="fd">Chỉ chấp nhận email <code>@ghn.vn</code>. Không cần mật khẩu — họ tên nhập lần đầu, JWT 7 ngày. Demo quick-login hiện sẵn 4 tài khoản.</div></div>
+    <div class="card"><div class="fi">🔐</div><div class="ft">Đăng nhập Email nội bộ</div><div class="fd">Chỉ chấp nhận email <code>@ghn.vn</code> của nhân viên GHN. Không cần mật khẩu — đăng nhập nhanh, phiên làm việc được lưu trong 7 ngày.</div></div>
     <div class="card"><div class="fi">📅</div><div class="ft">Lịch đặt phòng dạng tuần</div><div class="fd">Week-view 7 ngày với timeline giờ. Kéo chuột để chọn khung giờ, xem lịch bận theo màu sắc (của tôi / người khác / hoàn thành / đã hủy).</div></div>
     <div class="card"><div class="fi">🔍</div><div class="ft">Tìm phòng trống</div><div class="fd">Lọc theo văn phòng, tầng, sức chứa và khoảng thời gian. Hiển thị danh sách phòng phù hợp để chọn nhanh.</div></div>
     <div class="card"><div class="fi">🔒</div><div class="ft">Cửa sổ mở booking hàng tuần</div><div class="fd">Admin cấu hình ngày + giờ mở. Trước giờ mở: chỉ book tuần hiện tại. Sau giờ mở: mở thêm tuần kế tiếp. Cảnh báo hiện ngay khi kéo chuột.</div></div>
-    <div class="card"><div class="fi">✅</div><div class="ft">Check-in &amp; Auto-cancel</div><div class="fd">Phải check-in trong vòng 15 phút sau giờ bắt đầu. Booking không check-in sẽ bị cron job tự động hủy để giải phóng phòng.</div></div>
+    <div class="card"><div class="fi">✅</div><div class="ft">Check-in &amp; Auto-cancel</div><div class="fd">Phải check-in trong vòng 15 phút sau giờ bắt đầu. Nếu không check-in, hệ thống tự động hủy và giải phóng phòng cho người khác sử dụng.</div></div>
     <div class="card"><div class="fi">🏢</div><div class="ft">Quản lý phòng (Admin)</div><div class="fd">17 phòng tại Rivera Park &amp; Mipec. Admin thêm/sửa/xóa, cấu hình sức chứa, tầng, tiện ích, phân loại VIP.</div></div>
     <div class="card"><div class="fi">📋</div><div class="ft">Quản lý lịch (Admin)</div><div class="fd">Admin xem toàn bộ lịch của tất cả user, lọc theo trạng thái (sắp tới / đã hủy / tất cả), hủy booking bất kỳ với lý do.</div></div>
     <div class="card"><div class="fi">📊</div><div class="ft">Dashboard Analytics (Admin)</div><div class="fd">Trang <code>/analytics</code> dành cho admin với metrics tổng hợp: tổng booking, tỉ lệ check-in, báo cáo theo khoảng thời gian.</div></div>
@@ -206,7 +219,7 @@ document.addEventListener('keydown', (e) => {
 </section>
 
 <section>
-  <h2><span class="sn">3</span> Phân quyền người dùng</h2>
+  <h2><span class="sn">4</span> Phân quyền người dùng</h2>
   <p class="sub">3 vai trò với quyền hạn khác nhau</p>
   <div class="g3" style="margin-bottom:20px;">
     <div class="card" style="border-top:3px solid #6B7280;">
@@ -234,7 +247,7 @@ document.addEventListener('keydown', (e) => {
         <tr><td>Xem lịch phòng</td><td class="chk">✓</td><td class="chk">✓</td><td class="chk">✓</td></tr>
         <tr><td>Đặt phòng thường</td><td class="chk">✓</td><td class="chk">✓</td><td class="chk">✓</td></tr>
         <tr><td>Đặt phòng VIP</td><td class="crs">✗</td><td class="chk">✓</td><td class="chk">✓</td></tr>
-        <tr><td>Bị giới hạn cửa sổ booking tuần</td><td class="chk">✓ (có)</td><td class="chk">✓ (có)</td><td class="crs">✗ (bypass)</td></tr>
+        <tr><td>Giới hạn trong khung giờ mở lịch tuần</td><td class="chk">✓ (có)</td><td class="chk">✓ (có)</td><td class="crs">✗ (không áp dụng)</td></tr>
         <tr><td>Hủy booking của mình</td><td class="chk">✓</td><td class="chk">✓</td><td class="chk">✓</td></tr>
         <tr><td>Hủy booking người khác</td><td class="crs">✗</td><td class="crs">✗</td><td class="chk">✓</td></tr>
         <tr><td>Xem navbar Analytics &amp; Admin</td><td class="crs">✗</td><td class="crs">✗</td><td class="chk">✓</td></tr>
@@ -248,78 +261,7 @@ document.addEventListener('keydown', (e) => {
 </section>
 
 <section>
-  <h2><span class="sn">4</span> Kiến trúc &amp; Tech stack</h2>
-  <p class="sub">Monorepo với backend Node.js và frontend React, chạy độc lập 2 port</p>
-  <div class="g2">
-    <div>
-      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">🖥️ Frontend (port 5173)</h3>
-      <div class="ti"><div><div class="tl">Framework</div><div class="tv">React 18 + Vite 8</div></div></div>
-      <div class="ti"><div><div class="tl">Styling</div><div class="tv">TailwindCSS 3</div></div></div>
-      <div class="ti"><div><div class="tl">Routing</div><div class="tv">React Router v6</div></div></div>
-      <div class="ti"><div><div class="tl">HTTP Client</div><div class="tv">Axios + interceptor tự động gắn JWT</div></div></div>
-      <div class="ti"><div><div class="tl">State</div><div class="tv">React useState/useEffect + AuthContext</div></div></div>
-      <div class="ti"><div><div class="tl">Calendar UI</div><div class="tv">Custom drag-to-select (mousedown → mousemove → mouseup)</div></div></div>
-    </div>
-    <div>
-      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">⚙️ Backend (port 5001)</h3>
-      <div class="ti"><div><div class="tl">Runtime</div><div class="tv">Node.js 26 + Express 4.18</div></div></div>
-      <div class="ti"><div><div class="tl">Database</div><div class="tv">PostgreSQL 14</div></div></div>
-      <div class="ti"><div><div class="tl">ORM</div><div class="tv">Sequelize 6.35</div></div></div>
-      <div class="ti"><div><div class="tl">Auth</div><div class="tv">JWT 7 ngày — không có refresh token</div></div></div>
-      <div class="ti"><div><div class="tl">Timezone</div><div class="tv">Asia/Ho_Chi_Minh toàn bộ business logic</div></div></div>
-      <div class="ti"><div><div class="tl">Cron</div><div class="tv">Auto-cancel no-show booking mỗi phút (15 phút timeout)</div></div></div>
-    </div>
-  </div>
-  <div style="margin-top:20px;">
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">📁 Cấu trúc thư mục</h3>
-    <div class="card" style="font-size:12px;font-family:monospace;line-height:2;background:#1F2937;color:#E5E7EB;border:none;">
-      booking_meeting/<br>
-      &nbsp;&nbsp;├── backend/src/<br>
-      &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── controllers/&nbsp;&nbsp;<span style="color:#6EE7B7"># BookingController, AuthController</span><br>
-      &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── services/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6EE7B7"># BookingService, AdminSettingService</span><br>
-      &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── models/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6EE7B7"># Booking, Room, User, CheckIn, AdminSetting</span><br>
-      &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── routes/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6EE7B7"># auth, rooms, bookings, checkins, admin, dashboard</span><br>
-      &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── middleware/&nbsp;&nbsp;&nbsp;<span style="color:#6EE7B7"># authMiddleware, adminMiddleware</span><br>
-      &nbsp;&nbsp;└── frontend/src/<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── pages/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6EE7B7"># CalendarPage (1500+ lines), AdminPage, LoginPage, AnalyticsPage</span><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── components/&nbsp;&nbsp;<span style="color:#6EE7B7"># Navbar, BookingModal</span><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── api/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6EE7B7"># axios.js + index.js (authApi, roomsApi, bookingsApi, adminApi)</span><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── contexts/&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6EE7B7"># AuthContext</span>
-    </div>
-  </div>
-</section>
-
-<section>
-  <h2><span class="sn">5</span> API Endpoints</h2>
-  <p class="sub">15 endpoints hoạt động + 1 chưa implement (501)</p>
-  <div class="card" style="overflow:auto;">
-    <table class="atable">
-      <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Mô tả</th></tr></thead>
-      <tbody>
-        <tr><td><span class="m mp">POST</span></td><td>/api/auth/login</td><td>—</td><td>Đăng nhập bằng email @ghn.vn</td></tr>
-        <tr><td><span class="m mg">GET</span></td><td>/api/auth/me</td><td><span class="lock">🔒</span></td><td>Lấy thông tin user hiện tại từ JWT</td></tr>
-        <tr><td><span class="m mp">POST</span></td><td>/api/auth/logout</td><td><span class="lock">🔒</span></td><td>Đăng xuất</td></tr>
-        <tr><td><span class="m mg">GET</span></td><td>/api/rooms</td><td><span class="lock">🔒</span></td><td>Danh sách tất cả phòng</td></tr>
-        <tr><td><span class="m mg">GET</span></td><td>/api/rooms/search</td><td><span class="lock">🔒</span></td><td>Tìm phòng trống theo thời gian, văn phòng, tầng, sức chứa</td></tr>
-        <tr><td><span class="m mg">GET</span></td><td>/api/bookings/freeze-status</td><td><span class="lock">🔒</span></td><td>Trạng thái mở/đóng booking + schedule config (cache ở frontend)</td></tr>
-        <tr><td><span class="m mg">GET</span></td><td>/api/bookings/room/:id</td><td><span class="lock">🔒</span></td><td>Lịch booking của phòng theo khoảng thời gian (calendar view)</td></tr>
-        <tr><td><span class="m mg">GET</span></td><td>/api/bookings</td><td><span class="lock">🔒</span></td><td>Danh sách booking của user hiện tại</td></tr>
-        <tr><td><span class="m mp">POST</span></td><td>/api/bookings</td><td><span class="lock">🔒</span></td><td>Tạo booking mới (kèm kiểm tra cửa sổ tuần)</td></tr>
-        <tr><td><span class="m mu">PUT</span></td><td>/api/bookings/:id</td><td><span class="lock">🔒</span></td><td>Sửa / extend / early finish booking</td></tr>
-        <tr><td><span class="m md">DELETE</span></td><td>/api/bookings/:id</td><td><span class="lock">🔒</span></td><td>Hủy booking (owner hoặc admin)</td></tr>
-        <tr><td><span class="m mp">POST</span></td><td>/api/bookings/:id/checkin</td><td><span class="lock">🔒</span></td><td>Check-in vào phòng</td></tr>
-        <tr><td><span class="m mg">GET</span></td><td>/api/admin/bookings</td><td><span class="lock">🔒 Admin</span></td><td>Xem toàn bộ lịch đặt phòng của tất cả user</td></tr>
-        <tr><td><span class="m mpa">PATCH</span></td><td>/api/admin/bookings/:id</td><td><span class="lock">🔒 Admin</span></td><td>Admin reschedule booking (đổi giờ)</td></tr>
-        <tr><td><span class="m mg">GET</span></td><td>/api/admin/settings</td><td><span class="lock">🔒 Admin</span></td><td>Đọc cài đặt hệ thống</td></tr>
-        <tr><td><span class="m mu">PUT</span></td><td>/api/admin/settings</td><td><span class="lock">🔒 Admin</span></td><td>Cập nhật cài đặt mở booking hàng tuần</td></tr>
-        <tr><td><span class="m mg">GET</span></td><td>/api/admin/users</td><td><span class="lock">🔒 Admin</span></td><td style="color:#EF4444;">⚠️ 501 Not Implemented — chưa xây dựng</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<section>
-  <h2><span class="sn">6</span> Danh sách phòng họp</h2>
+  <h2><span class="sn">5</span> Danh sách phòng họp</h2>
   <p class="sub">17 phòng tại 2 văn phòng — sức chứa từ 4 đến 50 người</p>
   <div class="g2">
     <div class="card">
@@ -355,168 +297,27 @@ document.addEventListener('keydown', (e) => {
 </section>
 
 <section>
-  <h2><span class="sn">7</span> Vấn đề bảo mật &amp; kỹ thuật</h2>
-  <p class="sub">Phân loại theo mức độ ưu tiên — đã fix một số trong quá trình review</p>
+  <h2><span class="sn">6</span> Kế hoạch phát triển</h2>
+  <p class="sub">Các tính năng dự kiến bổ sung trong thời gian tới</p>
 
-  <div style="padding:12px 16px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;margin-bottom:16px;font-size:13px;color:#166534;">
-    ✅ <strong>Đã fix trong session này:</strong> Critical bug <code>getBookingFreezeUntil()</code> không tồn tại gây crash khi admin đặt phòng. Booking window logic sai khi đã qua giờ mở. Debug console.log rò rỉ thông tin.
-  </div>
-
-  <div class="ii im"><div class="iico">🔓</div><div><div class="isev">Bảo mật — Trung bình</div><div class="ititle">CORS wildcard <code>app.use(cors())</code></div><div class="idesc">Backend chấp nhận request từ bất kỳ origin nào. Nên giới hạn về domain nội bộ GHN: <code>cors({ origin: 'https://booking.ghn.vn' })</code>.</div></div></div>
-
-  <div class="ii im"><div class="iico">🚫</div><div><div class="isev">Bảo mật — Trung bình</div><div class="ititle">Endpoint <code>POST /api/auth/admin</code> không có xác thực</div><div class="idesc">Bất kỳ ai cũng gọi được để tự nâng quyền admin. Hiện chỉ block bằng <code>NODE_ENV === 'production'</code> — nên xóa hẳn hoặc bảo vệ bằng secret key riêng.</div></div></div>
-
-  <div class="ii im"><div class="iico">🪪</div><div><div class="isev">Bảo mật — Trung bình</div><div class="ititle">Role trong JWT không re-verify từ DB</div><div class="idesc">Admin bị thu hồi quyền vẫn có thể thực hiện thao tác admin trong tối đa 7 ngày (JWT expiry). Cần check role từ DB mỗi request hoặc dùng refresh token ngắn hạn.</div></div></div>
-
-  <div class="ii il"><div class="iico">⚡</div><div><div class="isev">Hiệu năng — Thấp</div><div class="ititle">Không có rate limiting trên auth endpoints</div><div class="idesc">Endpoint <code>/api/auth/login</code> không bị giới hạn request rate. Dễ bị brute-force hoặc spam. Nên thêm <code>express-rate-limit</code> (VD: 10 req/phút per IP).</div></div></div>
-
-  <div class="ii il"><div class="iico">📧</div><div><div class="isev">Tính năng chưa hoàn thiện</div><div class="ititle">Email notification chưa hoạt động</div><div class="idesc"><code>nodemailer</code> đã cài nhưng <code>EMAIL_API_KEY</code> bỏ trống trong <code>.env</code>. Không có thông báo email khi booking được tạo, xác nhận, hay bị hủy.</div></div></div>
-
-  <div class="ii il"><div class="iico">👤</div><div><div class="isev">Tính năng chưa hoàn thiện</div><div class="ititle"><code>GET /api/admin/users</code> trả 501 Not Implemented</div><div class="idesc">Admin không có UI để xem/quản lý danh sách user hoặc thay đổi role. Phải thao tác trực tiếp qua DB — rủi ro và bất tiện khi onboard nhân viên mới.</div></div></div>
-</section>
-
-<section>
-  <h2><span class="sn">8</span> Roadmap cải thiện</h2>
-  <p class="sub">Gợi ý theo thứ tự ưu tiên — P1 nên làm trước khi go-live</p>
-
-  <div class="ri rp1"><div class="rtitle">Quản lý người dùng <span class="pt pt1">P1 — Cần làm</span></div><div class="rdesc">Implement API + UI admin để xem danh sách user, thay đổi role (user/vip/admin), kích hoạt/vô hiệu hóa tài khoản mà không cần vào DB trực tiếp.</div></div>
+  <div class="ri rp1"><div class="rtitle">Quản lý người dùng <span class="pt pt1">P1 — Cần làm</span></div><div class="rdesc">Xây dựng giao diện admin để xem danh sách nhân viên, phân quyền (user/vip/admin), kích hoạt hoặc vô hiệu hóa tài khoản — không cần can thiệp kỹ thuật.</div></div>
 
   <div class="ri rp1"><div class="rtitle">Thông báo Email <span class="pt pt1">P1 — Cần làm</span></div><div class="rdesc">Cấu hình Email API key và gửi: (1) xác nhận booking mới, (2) nhắc check-in 15 phút trước, (3) thông báo khi booking bị admin hủy kèm lý do. Infrastructure nodemailer đã có sẵn.</div></div>
 
-  <div class="ri rp2"><div class="rtitle">Dashboard Analytics đầy đủ <span class="pt pt2">P2 — Nên làm</span></div><div class="rdesc">Trang <code>/analytics</code> hiện load lại calendar. Cần implement: biểu đồ tỉ lệ sử dụng phòng theo tuần/tháng, top phòng được đặt nhiều nhất, tỉ lệ check-in vs no-show, booking theo phòng ban.</div></div>
-
-  <div class="ri rp2"><div class="rtitle">Bảo mật CORS + Rate Limiting <span class="pt pt2">P2 — Nên làm</span></div><div class="rdesc">Giới hạn CORS về domain GHN. Thêm <code>express-rate-limit</code> cho auth endpoints. Xóa endpoint <code>POST /api/auth/admin</code>. Cân nhắc verify role từ DB mỗi request nhạy cảm.</div></div>
+  <div class="ri rp2"><div class="rtitle">Dashboard Analytics đầy đủ <span class="pt pt2">P2 — Nên làm</span></div><div class="rdesc">Bổ sung biểu đồ thống kê: tỉ lệ sử dụng phòng theo tuần/tháng, top phòng được đặt nhiều nhất, tỉ lệ check-in thực tế và phân tích theo phòng ban.</div></div>
 
   <div class="ri rp2"><div class="rtitle">Responsive Mobile <span class="pt pt2">P2 — Nên làm</span></div><div class="rdesc">Calendar week-view chỉ tối ưu cho desktop (1440px). Cần layout riêng cho mobile: xem lịch theo ngày, tap-to-select thay drag-to-select, sidebar thu gọn cho màn hình nhỏ.</div></div>
 
-  <div class="ri rp3"><div class="rtitle">Recurring Booking <span class="pt pt3">P3 — Nice to have</span></div><div class="rdesc">Field <code>recurring</code> đã có trong DB nhưng luôn là <code>'none'</code>. Implement booking lặp hàng tuần (VD: họp team mỗi T2 9h–10h) để giảm thao tác thủ công.</div></div>
+  <div class="ri rp3"><div class="rtitle">Recurring Booking <span class="pt pt3">P3 — Nice to have</span></div><div class="rdesc">Cho phép đặt phòng lặp lại định kỳ (ví dụ: họp team mỗi thứ Hai 9h–10h) mà không cần đặt thủ công từng tuần.</div></div>
 
-  <div class="ri rp3"><div class="rtitle">Check-in UI rõ ràng hơn <span class="pt pt3">P3 — Nice to have</span></div><div class="rdesc">API check-in đã có nhưng UI chưa rõ ràng — user biết check-in từ đâu? Cần nút check-in nổi bật trong sidebar "Của tôi" khi booking đang active, hoặc QR code scan.</div></div>
-
-  <div class="ri rp3"><div class="rtitle">Native dialog → Modal custom <span class="pt pt3">P3 — Nice to have</span></div><div class="rdesc">AdminPage dùng <code>confirm()</code>/<code>alert()</code> của browser — trải nghiệm kém, không style được. Nên thay bằng modal confirmation component nhất quán với design system TailwindCSS.</div></div>
-</section>
-
-<section>
-  <h2><span class="sn">9</span> Production Deployment</h2>
-  <p class="sub">Hướng dẫn deploy toàn bộ hệ thống lên môi trường public — miễn phí hoàn toàn</p>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px;">
-    <div style="padding:16px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;color:#fff;text-align:center;">
-      <div style="font-size:22px;margin-bottom:6px;">🌐</div>
-      <div style="font-size:11px;opacity:.8;margin-bottom:4px;">FRONTEND</div>
-      <div style="font-weight:700;font-size:13px;">Vercel</div>
-      <div style="font-size:10px;margin-top:6px;opacity:.9;word-break:break-all;">ghn-booking-meeting.vercel.app</div>
-    </div>
-    <div style="padding:16px;background:linear-gradient(135deg,#f093fb,#f5576c);border-radius:12px;color:#fff;text-align:center;">
-      <div style="font-size:22px;margin-bottom:6px;">⚙️</div>
-      <div style="font-size:11px;opacity:.8;margin-bottom:4px;">BACKEND</div>
-      <div style="font-weight:700;font-size:13px;">Render</div>
-      <div style="font-size:10px;margin-top:6px;opacity:.9;word-break:break-all;">ghn-booking-meeting.onrender.com</div>
-    </div>
-    <div style="padding:16px;background:linear-gradient(135deg,#4facfe,#00f2fe);border-radius:12px;color:#fff;text-align:center;">
-      <div style="font-size:22px;margin-bottom:6px;">🗄️</div>
-      <div style="font-size:11px;opacity:.8;margin-bottom:4px;">DATABASE</div>
-      <div style="font-weight:700;font-size:13px;">Supabase</div>
-      <div style="font-size:10px;margin-top:6px;opacity:.9;">PostgreSQL 14 · Free tier</div>
-    </div>
-  </div>
-
-  <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:20px;margin-bottom:24px;font-size:12px;">
-    <div style="font-weight:700;font-size:13px;margin-bottom:12px;">🏗️ Kiến trúc Production</div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <div style="background:#EEF2FF;border:1px solid #818CF8;border-radius:8px;padding:8px 14px;text-align:center;">
-        <div style="font-weight:600;color:#4338CA;">Browser</div><div style="font-size:10px;color:#6366F1;">User / Admin</div>
-      </div>
-      <div style="color:#94A3B8;font-size:16px;">→ HTTPS →</div>
-      <div style="background:#F0FDF4;border:1px solid #4ADE80;border-radius:8px;padding:8px 14px;text-align:center;">
-        <div style="font-weight:600;color:#166534;">Vercel CDN</div><div style="font-size:10px;color:#16A34A;">React + Vite SPA</div>
-      </div>
-      <div style="color:#94A3B8;font-size:16px;">→ API calls →</div>
-      <div style="background:#FFF7ED;border:1px solid #FB923C;border-radius:8px;padding:8px 14px;text-align:center;">
-        <div style="font-weight:600;color:#9A3412;">Render</div><div style="font-size:10px;color:#EA580C;">Node.js + Express</div>
-      </div>
-      <div style="color:#94A3B8;font-size:16px;">→ Pooler →</div>
-      <div style="background:#F0F9FF;border:1px solid #38BDF8;border-radius:8px;padding:8px 14px;text-align:center;">
-        <div style="font-weight:600;color:#0C4A6E;">Supabase</div><div style="font-size:10px;color:#0284C7;">PostgreSQL 14</div>
-      </div>
-    </div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
-    <div class="card" style="border-top:3px solid #38BDF8;">
-      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#0284C7;">① Database — Supabase</div>
-      <ol style="font-size:12px;line-height:2;padding-left:16px;color:#374151;margin:0;">
-        <li>Tạo project tại <strong>supabase.com</strong></li>
-        <li>Region: <strong>Southeast Asia (Singapore)</strong></li>
-        <li>SQL Editor → chạy <code>SETUP_DATABASE.sql</code></li>
-        <li>Chọn <strong>"Run without RLS"</strong></li>
-        <li>Settings → Database → copy <strong>Session Pooler</strong> URL</li>
-      </ol>
-      <div style="margin-top:10px;padding:8px;background:#F0F9FF;border-radius:6px;font-size:11px;color:#0369A1;">⚠️ Dùng <strong>Session Pooler</strong> — Render free tier chỉ hỗ trợ IPv4, Direct connection dùng IPv6</div>
-    </div>
-    <div class="card" style="border-top:3px solid #FB923C;">
-      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#EA580C;">② Backend — Render</div>
-      <ol style="font-size:12px;line-height:2;padding-left:16px;color:#374151;margin:0;">
-        <li>New → <strong>Web Service</strong> → connect GitHub repo</li>
-        <li>Root Directory: <code>backend</code></li>
-        <li>Build Command: <code>npm install</code></li>
-        <li>Start Command: <code>npm start</code></li>
-        <li>Instance Type: <strong>Free</strong></li>
-      </ol>
-      <div style="margin-top:10px;padding:8px;background:#FFF7ED;border-radius:6px;font-size:11px;color:#9A3412;">Env vars: <code>DATABASE_URL</code> · <code>JWT_SECRET</code> · <code>NODE_ENV=production</code> · <code>ALLOWED_ORIGINS</code></div>
-    </div>
-    <div class="card" style="border-top:3px solid #818CF8;">
-      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:#4338CA;">③ Frontend — Vercel</div>
-      <ol style="font-size:12px;line-height:2;padding-left:16px;color:#374151;margin:0;">
-        <li>Add New → <strong>Project</strong> → import GitHub repo</li>
-        <li>Root Directory: <code>frontend</code></li>
-        <li>Framework: <strong>Vite</strong> (auto-detect)</li>
-        <li>Env var: <code>VITE_API_URL</code> = Render URL + <code>/api</code></li>
-        <li>Deploy → ~2 phút xong</li>
-      </ol>
-      <div style="margin-top:10px;padding:8px;background:#EEF2FF;border-radius:6px;font-size:11px;color:#3730A3;">File <code>vercel.json</code> đã có sẵn trong repo để handle React Router SPA redirects</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div style="font-weight:700;font-size:14px;margin-bottom:14px;">🐛 Issues gặp phải &amp; cách fix</div>
-    <table style="width:100%;font-size:12px;border-collapse:collapse;">
-      <tr style="background:#F9FAFB;">
-        <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E5E7EB;">Lỗi</th>
-        <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E5E7EB;">Nguyên nhân</th>
-        <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E5E7EB;">Fix</th>
-      </tr>
-      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;"><code>Unknown command: "intall"</code></td><td style="padding:8px 12px;">Typo Build Command trên Render</td><td style="padding:8px 12px;color:#059669;">Sửa thành <code>npm install</code></td></tr>
-      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;"><code>ENETUNREACH</code> (IPv6)</td><td style="padding:8px 12px;">Render free tier không hỗ trợ IPv6</td><td style="padding:8px 12px;color:#059669;">Dùng Supabase <strong>Session Pooler</strong> URL</td></tr>
-      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;"><code>password authentication failed</code></td><td style="padding:8px 12px;"><code>[YOUR-PASSWORD]</code> chưa được thay thế</td><td style="padding:8px 12px;color:#059669;">Reset DB password Supabase → cập nhật <code>DATABASE_URL</code></td></tr>
-      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;">404 Not Found trên Vercel</td><td style="padding:8px 12px;">React Router cần redirect về <code>index.html</code></td><td style="padding:8px 12px;color:#059669;">Thêm <code>vercel.json</code> với rewrite <code>/* → /index.html</code></td></tr>
-      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;">Login xoay hoài</td><td style="padding:8px 12px;"><code>VITE_API_URL</code> thiếu <code>/api</code></td><td style="padding:8px 12px;color:#059669;">Sửa thành <code>https://xxx.onrender.com/api</code> → Redeploy</td></tr>
-      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;">CORS blocked</td><td style="padding:8px 12px;"><code>ALLOWED_ORIGINS</code> chưa khớp domain Vercel</td><td style="padding:8px 12px;color:#059669;">Set đúng URL Vercel (không có dấu <code>/</code> cuối)</td></tr>
-      <tr style="border-bottom:1px solid #F3F4F6;"><td style="padding:8px 12px;"><code>column "cancellation_message" does not exist</code></td><td style="padding:8px 12px;">Schema SQL thiếu 2 column so với Sequelize model</td><td style="padding:8px 12px;color:#059669;"><code>ALTER TABLE bookings ADD COLUMN IF NOT EXISTS...</code> trên Supabase</td></tr>
-      <tr><td style="padding:8px 12px;">Admin tab trắng — React error #31</td><td style="padding:8px 12px;">Render object <code>{id, amenity}</code> thay vì string</td><td style="padding:8px 12px;color:#059669;">Fix <code>a.name</code> → <code>a.amenity || a.name || a</code></td></tr>
-    </table>
-  </div>
-
-  <div class="card" style="margin-top:16px;">
-    <div style="font-weight:700;font-size:14px;margin-bottom:14px;">👤 Demo Accounts</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-      <div style="padding:12px;background:#FEF3C7;border-radius:8px;text-align:center;"><div style="font-size:18px;margin-bottom:4px;">👑</div><div style="font-weight:700;font-size:12px;">Admin GHN</div><div style="font-size:11px;color:#92400E;margin-top:4px;">admin@ghn.vn</div></div>
-      <div style="padding:12px;background:#EDE9FE;border-radius:8px;text-align:center;"><div style="font-size:18px;margin-bottom:4px;">⭐</div><div style="font-weight:700;font-size:12px;">VIP Nguyễn</div><div style="font-size:11px;color:#5B21B6;margin-top:4px;">vip@ghn.vn</div></div>
-      <div style="padding:12px;background:#F0FDF4;border-radius:8px;text-align:center;"><div style="font-size:18px;margin-bottom:4px;">👤</div><div style="font-weight:700;font-size:12px;">John Trần</div><div style="font-size:11px;color:#166534;margin-top:4px;">john@ghn.vn</div></div>
-      <div style="padding:12px;background:#F0F9FF;border-radius:8px;text-align:center;"><div style="font-size:18px;margin-bottom:4px;">👤</div><div style="font-weight:700;font-size:12px;">Mary Nguyễn</div><div style="font-size:11px;color:#0C4A6E;margin-top:4px;">jane@ghn.vn</div></div>
-    </div>
-    <div style="margin-top:12px;padding:10px;background:#F1F5F9;border-radius:8px;font-size:11px;color:#475569;text-align:center;">
-      ⏳ Render free tier sleep sau 15 phút không có traffic — lần đầu đăng nhập có thể chờ ~30–60 giây để server wake up
-    </div>
-  </div>
+  <div class="ri rp3"><div class="rtitle">Check-in UI rõ ràng hơn <span class="pt pt3">P3 — Nice to have</span></div><div class="rdesc">Làm nổi bật nút check-in trong giao diện khi đến giờ họp, hoặc bổ sung tính năng quét mã QR tại cửa phòng.</div></div>
 </section>
 
 </div>
 
 <div class="footer">
   <strong>GHN Meeting Room Booking</strong> — Project Report • 1 tháng 6, 2026<br>
-  <span style="margin-top:4px;display:block;">React 18 + Vite · Node.js + Express 4.18 · PostgreSQL 14 · Sequelize 6 · JWT</span>
-  <span style="margin-top:4px;display:block;font-size:11px;opacity:.7;">Deploy: Vercel (Frontend) · Render (Backend) · Supabase (Database)</span>
+  <span style="margin-top:4px;display:block;font-size:11px;opacity:.7;">Dành cho nội bộ GHN — 17 phòng họp tại Rivera Park &amp; Mipec</span>
 </div>
 </body>
 </html>
