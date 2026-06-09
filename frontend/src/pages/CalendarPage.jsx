@@ -1145,19 +1145,6 @@ export default function CalendarPage() {
             </svg>
             Tuần trước
           </button>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-gray-700">
-              {weekDays[0].toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: 'numeric', month: 'short' })}
-              {' – '}
-              {weekDays[6].toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: 'numeric', month: 'long', year: 'numeric' })}
-            </span>
-            <button
-              onClick={() => pickDay(new Date())}
-              className="text-xs font-semibold text-ghn-orange border border-ghn-orange px-2.5 py-1 rounded-full hover:bg-orange-50 transition-colors"
-            >
-              Hôm nay
-            </button>
-          </div>
           <button
             onClick={nextWeek}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-ghn-orange px-3 py-1.5 rounded-lg hover:bg-orange-50 transition-colors font-medium"
