@@ -521,7 +521,7 @@ class BookingService {
    */
   static async autoCancelNoShowBookings() {
     try {
-      const timeoutMinutes = parseInt(process.env.AUTO_CHECKIN_TIMEOUT_MINUTES || 15);
+      const timeoutMinutes = parseInt(process.env.AUTO_CHECKIN_TIMEOUT_MINUTES || 10);
       const timeoutMs = timeoutMinutes * 60 * 1000;
       const now = new Date();
       const cutoffTime = new Date(now.getTime() - timeoutMs);

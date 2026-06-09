@@ -111,7 +111,7 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 text-left">
                 <p className="text-sm font-semibold text-amber-700 mb-1">⏰ Lưu ý check-in</p>
                 <p className="text-sm text-amber-600">
-                  Vui lòng có mặt tại phòng trong vòng <strong>15 phút</strong> kể từ giờ đặt (<strong>{fmtTime(actualStart)}</strong>).
+                  Vui lòng có mặt tại phòng trong vòng <strong>10 phút</strong> kể từ giờ đặt (<strong>{fmtTime(actualStart)}</strong>).
                   Sau thời gian này, phòng có thể được sử dụng cho các cuộc họp khác.
                 </p>
               </div>
