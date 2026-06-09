@@ -195,7 +195,7 @@ export default function CalendarPage() {
   const [sidebarTab, setSidebarTab] = useState('rooms');
   const [myBookingsFilter, setMyBookingsFilter] = useState('all');
   const [roomSection, setRoomSection] = useState('search'); // kept for compat
-  const [searchOpen, setSearchOpen] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [browseOpen, setBrowseOpen] = useState(true);
 
   // My bookings (sidebar)
