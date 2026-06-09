@@ -20,6 +20,9 @@ const PORT = process.env.PORT || 5000;
       ALTER TABLE bookings
         ADD COLUMN IF NOT EXISTS cancellation_message TEXT,
         ADD COLUMN IF NOT EXISTS is_admin_hidden BOOLEAN DEFAULT false;
+      ALTER TABLE bookings
+        ALTER COLUMN participants_count SET DEFAULT 1,
+        ALTER COLUMN participants_count DROP NOT NULL;
     `);
     console.log('✅ Booking columns migrated');
 

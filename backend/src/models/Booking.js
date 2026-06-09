@@ -30,11 +30,8 @@ const Booking = sequelize.define('bookings', {
   },
   participants_count: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 1,
-    validate: {
-      min: 1
-    }
+    allowNull: true,
+    defaultValue: 1
   },
   start_time: {
     type: DataTypes.DATE,
