@@ -1134,6 +1134,41 @@ export default function CalendarPage() {
 
       {/* ───────── Calendar Grid ───────── */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Week navigation bar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-white flex-shrink-0">
+          <button
+            onClick={prevWeek}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-ghn-orange px-3 py-1.5 rounded-lg hover:bg-orange-50 transition-colors font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Tuần trước
+          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-gray-700">
+              {weekDays[0].toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: 'numeric', month: 'short' })}
+              {' – '}
+              {weekDays[6].toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
+            <button
+              onClick={() => pickDay(new Date())}
+              className="text-xs font-semibold text-ghn-orange border border-ghn-orange px-2.5 py-1 rounded-full hover:bg-orange-50 transition-colors"
+            >
+              Hôm nay
+            </button>
+          </div>
+          <button
+            onClick={nextWeek}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-ghn-orange px-3 py-1.5 rounded-lg hover:bg-orange-50 transition-colors font-medium"
+          >
+            Tuần sau
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
         {/* Scrollable body — header is sticky inside so columns always align */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           {/* Header row — sticky so it stays visible while scrolling */}
