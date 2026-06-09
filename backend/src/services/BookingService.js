@@ -220,7 +220,7 @@ class BookingService {
       } = bookingData;
 
       // Validate required fields
-      if (!room_id || !title || !participants_count || !start_time || !end_time) {
+      if (!room_id || !title || !start_time || !end_time) {
         throw new Error('Missing required fields');
       }
 
@@ -242,11 +242,6 @@ class BookingService {
       const user = await User.findByPk(userId);
       if (!user || !user.is_active) {
         throw new Error('User not found or inactive');
-      }
-
-      // Validate capacity
-      if (participants_count > room.capacity) {
-        throw new Error(`Room capacity is ${room.capacity}, but ${participants_count} participants requested`);
       }
 
       // Validate VIP rooms (chỉ admin/vip được book)
@@ -316,7 +311,6 @@ class BookingService {
         room_id,
         user_id: userId,
         title,
-        participants_count: parseInt(participants_count),
         start_time: startTime,
         end_time: endTime,
         status: 'confirmed', // Tạo ngay với status confirmed (không cần pending)
