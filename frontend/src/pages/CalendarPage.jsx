@@ -235,7 +235,6 @@ export default function CalendarPage() {
   const [editNotes,     setEditNotes]       = useState('');
   const [editStart,     setEditStart]       = useState('');
   const [editEnd,       setEditEnd]         = useState('');
-  const [editParticipants, setEditParticipants] = useState('');
   const [editLoading,   setEditLoading]     = useState(false);
   const [editError,     setEditError]       = useState('');
 
@@ -511,7 +510,6 @@ export default function CalendarPage() {
         action: 'edit',
         title: editTitle,
         notes: editNotes,
-        participants_count: Number(editParticipants),
         start_time: vnToISO(dateStr, editStart),
         end_time:   vnToISO(dateStr, editEnd),
       });
@@ -1131,22 +1129,6 @@ export default function CalendarPage() {
           })()}
         </div>
 
-        {/* ── Legend (shared) ── */}
-        <div className="px-4 py-3 border-t border-gray-100 flex-shrink-0">
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Chú thích</p>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-            {[
-              { label: 'Của tôi',    cls: 'bg-blue-500'  },
-              { label: 'Người khác', cls: 'bg-ghn-orange' },
-              { label: 'Đã hủy',    cls: 'bg-red-300'   },
-            ].map(({ label, cls }) => (
-              <div key={label} className="flex items-center gap-1.5">
-                <span className={`w-2.5 h-2.5 rounded-sm flex-shrink-0 ${cls}`} />
-                <span className="text-xs text-gray-600">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
 
       </aside>
 
@@ -1405,11 +1387,6 @@ export default function CalendarPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Số người</label>
-                    <input type="number" value={editParticipants} onChange={(e) => setEditParticipants(e.target.value)} min={1}
-                      className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-ghn-orange" />
-                  </div>
-                  <div>
                     <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Ghi chú</label>
                     <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2}
                       className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-ghn-orange" />
@@ -1445,12 +1422,6 @@ export default function CalendarPage() {
                         <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Người đặt</p>
                         <p className="text-sm font-semibold text-gray-800">{cancelModal.user?.full_name || '—'}</p>
                       </div>
-                      {cancelModal.participants_count > 0 && (
-                        <div>
-                          <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Số người</p>
-                          <p className="text-sm font-semibold text-gray-800">{cancelModal.participants_count} người</p>
-                        </div>
-                      )}
                     </div>
                     {cancelModal.notes && (
                       <div className="border-t border-gray-100 pt-3">
@@ -1504,7 +1475,6 @@ export default function CalendarPage() {
                             setEditNotes(cancelModal.notes || '');
                             setEditStart(toVNTimeStr(new Date(cancelModal.start_time)));
                             setEditEnd(toVNTimeStr(new Date(cancelModal.end_time)));
-                            setEditParticipants(String(cancelModal.participants_count || ''));
                             setEditError('');
                             setEditMode(true);
                           }}
