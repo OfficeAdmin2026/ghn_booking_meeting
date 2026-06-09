@@ -95,8 +95,9 @@ class AdminSettingService {
   static async updateSettings(data) {
     const ALLOWED_KEYS = [
       'booking_freeze_weekly_enabled',
-      'booking_freeze_weekly_day', // 0=CN, 1=Thứ 2, ...
-      'booking_freeze_weekly_time', // HH:mm
+      'booking_freeze_weekly_day',
+      'booking_freeze_weekly_time',
+      'meeting_room_rules',
     ];
     for (const [key, value] of Object.entries(data)) {
       if (!ALLOWED_KEYS.includes(key)) continue;

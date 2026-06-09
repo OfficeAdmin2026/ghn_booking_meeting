@@ -41,6 +41,27 @@ router.put('/settings', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/admin/rules - All authenticated users can read
+router.get('/rules', authMiddleware, async (req, res) => {
+  try {
+    const settings = await AdminSettingService.getAll();
+    res.json({ status: 'success', data: { rules: settings.meeting_room_rules || '' } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// PUT /api/admin/rules - Admin only
+router.put('/rules', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { rules } = req.body;
+    await AdminSettingService.updateSettings({ meeting_room_rules: rules ?? '' });
+    res.json({ status: 'success', data: { rules: rules ?? '' } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
 // GET /api/admin/bookings - List all bookings
 router.get('/bookings', authMiddleware, adminMiddleware, BookingController.getAdminBookings);
 

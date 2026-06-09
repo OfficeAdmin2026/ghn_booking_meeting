@@ -1,8 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const navLinks = [];
-
 export default function Navbar() {
   const { user, logout, isAdmin } = useAuth();
   const location = useLocation();
@@ -13,55 +11,45 @@ export default function Navbar() {
     navigate('/login');
   };
 
+  const linkClass = (active) =>
+    `flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+      active
+        ? 'bg-ghn-orange-light text-ghn-orange'
+        : 'text-gray-600 hover:bg-gray-100'
+    }`;
+
+  const mobileLinkClass = (active) =>
+    `flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-200 ${
+      active ? 'bg-ghn-orange-light text-ghn-orange' : 'text-gray-600 hover:bg-gray-100'
+    }`;
+
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <img
-              src="/images/logo.png"
-              alt="GHN Logo"
-              className="h-9 object-contain"
-            />
+            <img src="/images/logo.png" alt="GHN Logo" className="h-9 object-contain" />
             <div className="hidden sm:block">
               <p className="text-xs text-gray-500 leading-tight">Hệ thống đặt phòng họp</p>
             </div>
           </Link>
 
-          {/* Admin nav links */}
+          {/* Nav links */}
           <div className="hidden md:flex items-center gap-1">
+            <Link to="/" className={linkClass(location.pathname === '/')}>
+              <span>🏠</span> Trang chủ
+            </Link>
+            <Link to="/rules" className={linkClass(location.pathname === '/rules')}>
+              <span>📋</span> Nội quy phòng họp
+            </Link>
             {isAdmin && (
               <>
-                <Link
-                  to="/"
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                    location.pathname === '/'
-                      ? 'bg-ghn-orange-light text-ghn-orange'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <span>📅</span> Lịch phòng
-                </Link>
-                <Link
-                  to="/analytics"
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                    location.pathname === '/analytics'
-                      ? 'bg-ghn-orange-light text-ghn-orange'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
+                <Link to="/analytics" className={linkClass(location.pathname === '/analytics')}>
                   <span>📊</span> Thống kê
                 </Link>
-                <Link
-                  to="/admin"
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                    location.pathname.startsWith('/admin')
-                      ? 'bg-ghn-orange-light text-ghn-orange'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <span>⚙️</span> Bảng điều khiển quản trị
+                <Link to="/admin" className={linkClass(location.pathname.startsWith('/admin'))}>
+                  <span>⚙️</span> Bảng điều khiển
                 </Link>
               </>
             )}
@@ -87,14 +75,17 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile admin nav */}
-        {isAdmin && (
-          <div className="md:hidden flex items-center gap-1 pb-2 overflow-x-auto px-0">
-            <Link to="/" className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-200 ${location.pathname === '/' ? 'bg-ghn-orange-light text-ghn-orange' : 'text-gray-600 hover:bg-gray-100'}`}>📅 Lịch phòng</Link>
-            <Link to="/analytics" className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-200 ${location.pathname === '/analytics' ? 'bg-ghn-orange-light text-ghn-orange' : 'text-gray-600 hover:bg-gray-100'}`}>📊 Thống kê</Link>
-            <Link to="/admin" className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-200 ${location.pathname.startsWith('/admin') ? 'bg-ghn-orange-light text-ghn-orange' : 'text-gray-600 hover:bg-gray-100'}`}>⚙️ Bảng điều khiển quản trị</Link>
-          </div>
-        )}
+        {/* Mobile nav */}
+        <div className="md:hidden flex items-center gap-1 pb-2 overflow-x-auto px-0">
+          <Link to="/" className={mobileLinkClass(location.pathname === '/')}>🏠 Trang chủ</Link>
+          <Link to="/rules" className={mobileLinkClass(location.pathname === '/rules')}>📋 Nội quy</Link>
+          {isAdmin && (
+            <>
+              <Link to="/analytics" className={mobileLinkClass(location.pathname === '/analytics')}>📊 Thống kê</Link>
+              <Link to="/admin" className={mobileLinkClass(location.pathname.startsWith('/admin'))}>⚙️ Bảng điều khiển</Link>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   );

@@ -7,6 +7,7 @@ import CalendarPage from './pages/CalendarPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import RulesPage from './pages/RulesPage';
 
 function Layout({ children, fullHeight }) {
   return (
@@ -41,6 +42,11 @@ export default function App() {
           <Route path="/analytics" element={
             <ProtectedRoute adminOnly>
               <Layout><AnalyticsPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/rules" element={
+            <ProtectedRoute>
+              <Layout><RulesPage /></Layout>
             </ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />

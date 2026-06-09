@@ -53,4 +53,8 @@ export const adminApi = {
   updateBooking: (id, data) => api.patch(`/admin/bookings/${id}`, data),
 
   getBookings: (params) => api.get('/admin/bookings', { params }),
+
+  getRules: () => api.get('/admin/rules'),
+
+  updateRules: (rules) => api.put('/admin/rules', { rules }),
 };
