@@ -116,9 +116,10 @@ export default function AnalyticsPage() {
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [searchQuery,  setSearchQuery]  = useState('');
   const [sortCol,      setSortCol]      = useState('start_time');
   const [sortDir,      setSortDir]      = useState('desc');
+  const [colFilters,   setColFilters]   = useState({ room: '', title: '', user: '', status: '', reason: '' });
+  const setCol = (key, val) => setColFilters(prev => ({ ...prev, [key]: val }));
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -141,6 +142,9 @@ export default function AnalyticsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Simplify status to 2 types for display
+  const simpleStatus = (s) => s === 'cancelled' ? 'cancelled' : 'confirmed';
+
   const handleSort = (col) => {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortCol(col); setSortDir('asc'); }
@@ -148,30 +152,24 @@ export default function AnalyticsPage() {
 
   const sortValue = (b, col) => {
     switch (col) {
-      case 'room':     return b.room?.name || '';
-      case 'title':    return b.title || '';
-      case 'user':     return b.user?.full_name || '';
+      case 'room':       return b.room?.name || '';
+      case 'title':      return b.title || '';
+      case 'user':       return b.user?.full_name || '';
       case 'start_time': return new Date(b.start_time).getTime();
-      case 'duration': return new Date(b.end_time) - new Date(b.start_time);
-      case 'status':   return b.status || '';
-      case 'reason':   return b.cancellation_message || '';
+      case 'duration':   return new Date(b.end_time) - new Date(b.start_time);
+      case 'status':     return simpleStatus(b.status);
+      case 'reason':     return b.cancellation_message || '';
       default: return '';
     }
   };
 
   const filteredReport = (() => {
-    const q = searchQuery.toLowerCase();
-    let list = q
-      ? report.filter(b =>
-          b.title?.toLowerCase().includes(q) ||
-          b.room?.name?.toLowerCase().includes(q) ||
-          b.room?.location?.toLowerCase().includes(q) ||
-          b.user?.full_name?.toLowerCase().includes(q) ||
-          b.user?.email?.toLowerCase().includes(q) ||
-          statusLabel(b.status).toLowerCase().includes(q) ||
-          b.cancellation_message?.toLowerCase().includes(q)
-        )
-      : [...report];
+    let list = [...report];
+    if (colFilters.room)   list = list.filter(b => b.room?.name?.toLowerCase().includes(colFilters.room.toLowerCase()) || b.room?.location?.toLowerCase().includes(colFilters.room.toLowerCase()));
+    if (colFilters.title)  list = list.filter(b => b.title?.toLowerCase().includes(colFilters.title.toLowerCase()));
+    if (colFilters.user)   list = list.filter(b => b.user?.full_name?.toLowerCase().includes(colFilters.user.toLowerCase()) || b.user?.email?.toLowerCase().includes(colFilters.user.toLowerCase()));
+    if (colFilters.status) list = list.filter(b => simpleStatus(b.status) === colFilters.status);
+    if (colFilters.reason) list = list.filter(b => b.cancellation_message?.toLowerCase().includes(colFilters.reason.toLowerCase()));
     list.sort((a, b) => {
       const av = sortValue(a, sortCol);
       const bv = sortValue(b, sortCol);
@@ -396,31 +394,6 @@ export default function AnalyticsPage() {
             )}
           </h3>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex gap-1.5">
-              {[
-                { value: '',          label: 'Tất cả' },
-                { value: 'cancelled', label: 'Đã hủy' },
-              ].map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => setStatusFilter(value)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    statusFilter === value
-                      ? 'bg-ghn-orange text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <input
-              type="text"
-              placeholder="Tìm theo phòng, tiêu đề, người đặt, trạng thái, lý do hủy..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="input-field text-sm py-1.5 w-56"
-            />
             <button
               onClick={() => exportCSV(filteredReport)}
               disabled={filteredReport.length === 0}
@@ -434,8 +407,9 @@ export default function AnalyticsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-gray-100">
-                <th className="pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide text-left">#</th>
+              {/* Sort headers */}
+              <tr className="border-b border-gray-100">
+                <th className="pb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide text-left">#</th>
                 {[
                   { col: 'room',       label: 'Phòng',      align: 'left'  },
                   { col: 'title',      label: 'Tiêu đề',    align: 'left'  },
@@ -448,22 +422,45 @@ export default function AnalyticsPage() {
                   <th
                     key={col}
                     onClick={() => handleSort(col)}
-                    className={`pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:text-gray-600 transition-colors text-${align}`}
+                    className={`pb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:text-gray-600 transition-colors text-${align}`}
                   >
                     <span className="inline-flex items-center gap-1">
                       {label}
-                      <span className="text-[10px]">
-                        {sortCol === col ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
-                      </span>
+                      <span className="text-[10px]">{sortCol === col ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}</span>
                     </span>
                   </th>
                 ))}
+              </tr>
+              {/* Per-column filter row */}
+              <tr className="border-b-2 border-gray-100">
+                <td className="pb-2 px-2" />
+                <td className="pb-2 px-2">
+                  <input value={colFilters.room} onChange={e => setCol('room', e.target.value)} placeholder="Lọc phòng..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
+                </td>
+                <td className="pb-2 px-2">
+                  <input value={colFilters.title} onChange={e => setCol('title', e.target.value)} placeholder="Lọc tiêu đề..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
+                </td>
+                <td className="pb-2 px-2">
+                  <input value={colFilters.user} onChange={e => setCol('user', e.target.value)} placeholder="Lọc người đặt..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
+                </td>
+                <td className="pb-2 px-2" />
+                <td className="pb-2 px-2" />
+                <td className="pb-2 px-2">
+                  <select value={colFilters.status} onChange={e => setCol('status', e.target.value)} className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange bg-white">
+                    <option value="">Tất cả</option>
+                    <option value="confirmed">Đã xác nhận</option>
+                    <option value="cancelled">Đã hủy</option>
+                  </select>
+                </td>
+                <td className="pb-2 px-2">
+                  <input value={colFilters.reason} onChange={e => setCol('reason', e.target.value)} placeholder="Lọc lý do..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
+                </td>
               </tr>
             </thead>
             <tbody>
               {filteredReport.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center text-gray-400 py-10">
+                  <td colSpan={8} className="text-center text-gray-400 py-8">
                     {loading ? 'Đang tải...' : 'Không có dữ liệu trong kỳ này'}
                   </td>
                 </tr>
@@ -489,8 +486,8 @@ export default function AnalyticsPage() {
                     </td>
                     <td className="py-3 px-2 text-right font-medium text-gray-700">{fmtDuration(dur)}</td>
                     <td className="py-3 px-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor(b.status)}`}>
-                        {statusLabel(b.status)}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor(simpleStatus(b.status))}`}>
+                        {statusLabel(simpleStatus(b.status))}
                       </span>
                     </td>
                     <td className="py-3 px-2 max-w-[200px]">
