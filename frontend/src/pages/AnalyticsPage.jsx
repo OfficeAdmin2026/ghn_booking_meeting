@@ -361,18 +361,24 @@ export default function AnalyticsPage() {
             )}
           </h3>
           <div className="flex items-center gap-2 flex-wrap">
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="input-field text-sm py-1.5 pr-8"
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="pending">Chờ xác nhận</option>
-              <option value="confirmed">Đã xác nhận</option>
-              <option value="active">Đang họp</option>
-              <option value="completed">Hoàn thành</option>
-              <option value="cancelled">Đã hủy</option>
-            </select>
+            <div className="flex gap-1.5">
+              {[
+                { value: '',          label: 'Tất cả' },
+                { value: 'cancelled', label: 'Đã hủy' },
+              ].map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setStatusFilter(value)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    statusFilter === value
+                      ? 'bg-ghn-orange text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <input
               type="text"
               placeholder="Tìm phòng, tiêu đề, người đặt..."
