@@ -17,18 +17,15 @@ function toVNTimeStr(d) {
 function toLocalISO(d) {
   return new Date(d).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 }
-function statusLabel(s) {
-  return { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', active: 'Đang họp', completed: 'Hoàn thành', cancelled: 'Đã hủy' }[s] || s;
-}
-function statusColor(s) {
-  return {
-    pending:   'text-yellow-700 bg-yellow-50 border border-yellow-200',
-    confirmed: 'text-green-700  bg-green-50  border border-green-200',
-    active:    'text-red-700    bg-red-50    border border-red-200',
-    completed: 'text-gray-600   bg-gray-50   border border-gray-200',
-    cancelled: 'text-gray-400   bg-gray-50   border border-gray-100',
-  }[s] || 'text-gray-600';
-}
+const STATUS_MAP = {
+  pending:   { label: 'Chờ xác nhận', cls: 'bg-yellow-100 text-yellow-700' },
+  confirmed: { label: 'Đã xác nhận',  cls: 'bg-blue-100   text-blue-700'   },
+  active:    { label: 'Đang họp',     cls: 'bg-green-100  text-green-700'  },
+  completed: { label: 'Hoàn thành',   cls: 'bg-gray-100   text-gray-600'   },
+  cancelled: { label: 'Đã hủy',       cls: 'bg-red-100    text-red-600'    },
+};
+function statusLabel(s) { return STATUS_MAP[s]?.label || s; }
+function statusColor(s)  { return STATUS_MAP[s]?.cls  || 'bg-gray-100 text-gray-600'; }
 function fmtDuration(minutes) {
   if (!minutes) return '-';
   const h = Math.floor(minutes / 60);
@@ -37,7 +34,7 @@ function fmtDuration(minutes) {
 }
 
 function exportCSV(bookings) {
-  const headers = ['STT', 'Phòng', 'Vị trí', 'Tiêu đề', 'Người đặt', 'Email', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái'];
+  const headers = ['STT', 'Phòng', 'Vị trí', 'Tiêu đề', 'Người đặt', 'Email', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy'];
   const rows = bookings.map((b, i) => [
     i + 1,
     b.room?.name || '',
@@ -50,6 +47,7 @@ function exportCSV(bookings) {
     toVNTimeStr(b.end_time),
     Math.round((new Date(b.end_time) - new Date(b.start_time)) / 60000),
     statusLabel(b.status),
+    b.status === 'cancelled' ? (b.cancellation_message || '') : '',
   ]);
   const csv = [headers, ...rows]
     .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
@@ -249,16 +247,19 @@ export default function AnalyticsPage() {
           {/* ── Status breakdown ── */}
           <div className="grid grid-cols-4 gap-3">
             {[
-              { label: 'Chờ xác nhận', val: s.pending,   cls: 'text-yellow-700 bg-yellow-50 border-yellow-200' },
-              { label: 'Đã xác nhận',  val: s.confirmed, cls: 'text-green-700  bg-green-50  border-green-200'  },
-              { label: 'Đang họp',     val: s.active,    cls: 'text-red-700    bg-red-50    border-red-200'    },
-              { label: 'Hoàn thành',   val: s.completed, cls: 'text-gray-600   bg-gray-50   border-gray-200'   },
-            ].map(({ label, val, cls }) => (
-              <div key={label} className={`card p-3 text-center border ${cls}`}>
-                <div className="text-xl font-bold">{val}</div>
-                <div className="text-xs mt-0.5">{label}</div>
-              </div>
-            ))}
+              { key: 'pending',   val: s.pending   },
+              { key: 'confirmed', val: s.confirmed },
+              { key: 'active',    val: s.active    },
+              { key: 'completed', val: s.completed },
+            ].map(({ key, val }) => {
+              const s2 = STATUS_MAP[key];
+              return (
+                <div key={key} className={`card p-3 text-center border border-transparent ${s2.cls}`}>
+                  <div className="text-xl font-bold">{val}</div>
+                  <div className="text-xs mt-0.5">{s2.label}</div>
+                </div>
+              );
+            })}
           </div>
 
           {/* ── Charts row ── */}
@@ -431,9 +432,14 @@ export default function AnalyticsPage() {
                     </td>
                     <td className="py-3 px-2 text-right font-medium text-gray-700">{fmtDuration(dur)}</td>
                     <td className="py-3 px-2">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(b.status)}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor(b.status)}`}>
                         {statusLabel(b.status)}
                       </span>
+                      {b.status === 'cancelled' && b.cancellation_message && (
+                        <p className="mt-1 text-[11px] text-red-500 max-w-[160px] leading-snug" title={b.cancellation_message}>
+                          "{b.cancellation_message}"
+                        </p>
+                      )}
                     </td>
                   </tr>
                 );
