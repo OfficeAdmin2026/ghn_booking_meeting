@@ -160,11 +160,16 @@ export default function AnalyticsPage() {
   };
 
   const filteredReport = (() => {
-    let list = searchQuery
+    const q = searchQuery.toLowerCase();
+    let list = q
       ? report.filter(b =>
-          b.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          b.room?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          b.user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+          b.title?.toLowerCase().includes(q) ||
+          b.room?.name?.toLowerCase().includes(q) ||
+          b.room?.location?.toLowerCase().includes(q) ||
+          b.user?.full_name?.toLowerCase().includes(q) ||
+          b.user?.email?.toLowerCase().includes(q) ||
+          statusLabel(b.status).toLowerCase().includes(q) ||
+          b.cancellation_message?.toLowerCase().includes(q)
         )
       : [...report];
     list.sort((a, b) => {
@@ -411,7 +416,7 @@ export default function AnalyticsPage() {
             </div>
             <input
               type="text"
-              placeholder="Tìm phòng, tiêu đề, người đặt..."
+              placeholder="Tìm theo phòng, tiêu đề, người đặt, trạng thái, lý do hủy..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="input-field text-sm py-1.5 w-56"
