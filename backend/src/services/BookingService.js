@@ -311,6 +311,7 @@ class BookingService {
         room_id,
         user_id: userId,
         title,
+        participants_count: 1,
         start_time: startTime,
         end_time: endTime,
         status: 'confirmed', // Tạo ngay với status confirmed (không cần pending)
