@@ -56,8 +56,10 @@ router.put('/rules', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { rules } = req.body;
     await AdminSettingService.updateSettings({ meeting_room_rules: rules ?? '' });
+    console.log('[admin/rules] saved, length:', (rules ?? '').length);
     res.json({ status: 'success', data: { rules: rules ?? '' } });
   } catch (err) {
+    console.error('[admin/rules] save error:', err);
     res.status(500).json({ error: { status: 500, message: err.message } });
   }
 });

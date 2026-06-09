@@ -91,7 +91,7 @@ class AdminSettingService {
   }
 
 
-  /** Upsert one or more settings. `data` is { key: value, ... } */
+  /** Save one or more settings. `data` is { key: value, ... } */
   static async updateSettings(data) {
     const ALLOWED_KEYS = [
       'booking_freeze_weekly_enabled',
@@ -101,7 +101,12 @@ class AdminSettingService {
     ];
     for (const [key, value] of Object.entries(data)) {
       if (!ALLOWED_KEYS.includes(key)) continue;
-      await AdminSetting.upsert({ key, value: String(value), updated_at: new Date() });
+      const existing = await AdminSetting.findOne({ where: { key } });
+      if (existing) {
+        await existing.update({ value: String(value), updated_at: new Date() });
+      } else {
+        await AdminSetting.create({ key, value: String(value) });
+      }
     }
     return this.getAll();
   }
