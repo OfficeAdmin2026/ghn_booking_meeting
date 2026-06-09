@@ -145,12 +145,8 @@ function SectionToggle({ label, open, onToggle }) {
 }
 
 const MY_BOOKING_STATUSES = [
-  { value: 'all',       label: 'Tất cả'        },
-  { value: 'confirmed', label: 'Đã xác nhận'   },
-  { value: 'active',    label: 'Đang họp'       },
-  { value: 'pending',   label: 'Chờ xác nhận'  },
-  { value: 'completed', label: 'Hoàn thành'    },
-  { value: 'cancelled', label: 'Đã hủy'        },
+  { value: 'all',       label: 'Tất cả'  },
+  { value: 'cancelled', label: 'Đã hủy' },
 ];
 
 /* ─────────────────────────── component ─────────────────────────── */
@@ -1140,11 +1136,9 @@ export default function CalendarPage() {
           <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Chú thích</p>
           <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
             {[
-              { label: 'Của tôi',         cls: 'bg-blue-500'   },
-              { label: 'Người khác',       cls: 'bg-ghn-orange'  },
-              { label: 'Chờ xác nhận',     cls: 'bg-yellow-400' },
-              { label: 'Hoàn thành',       cls: 'bg-gray-400'   },
-              { label: 'Đã hủy',           cls: 'bg-red-300'    },
+              { label: 'Của tôi',    cls: 'bg-blue-500'  },
+              { label: 'Người khác', cls: 'bg-ghn-orange' },
+              { label: 'Đã hủy',    cls: 'bg-red-300'   },
             ].map(({ label, cls }) => (
               <div key={label} className="flex items-center gap-1.5">
                 <span className={`w-2.5 h-2.5 rounded-sm flex-shrink-0 ${cls}`} />
