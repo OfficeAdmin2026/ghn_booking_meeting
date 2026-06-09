@@ -46,9 +46,7 @@ export default function AdminPage() {
   const [usersLoading, setUsersLoading] = useState(false);
   const [promoteEmail, setPromoteEmail] = useState('');
   const [promoteRole, setPromoteRole] = useState('admin');
-  const [foundUser, setFoundUser] = useState(null);
-  const [searchingUser, setSearchingUser] = useState(false);
-  const [searchUserError, setSearchUserError] = useState('');
+  const [promoteLoading, setPromoteLoading] = useState(false);
   const [roleActionLoading, setRoleActionLoading] = useState(null); // userId being changed
   const [roleActionError, setRoleActionError] = useState('');
   const [roleActionSuccess, setRoleActionSuccess] = useState('');
@@ -117,23 +115,24 @@ export default function AdminPage() {
     }
   }, []);
 
-  const handleSearchUser = async () => {
+  const handlePromote = async () => {
     const email = promoteEmail.trim().toLowerCase();
     if (!email) return;
-    if (!email.endsWith('@ghn.vn')) {
-      setSearchUserError('Email phải có đuôi @ghn.vn');
-      return;
-    }
-    setSearchingUser(true);
-    setSearchUserError('');
-    setFoundUser(null);
+    setPromoteLoading(true);
+    setRoleActionError('');
+    setRoleActionSuccess('');
     try {
-      const res = await adminApi.findUserByEmail(email);
-      setFoundUser(res.data.data.user);
+      const res = await adminApi.promote(email, promoteRole);
+      const u = res.data.data.user;
+      await loadElevatedUsers();
+      setPromoteEmail('');
+      setRoleActionSuccess(`Đã cấp quyền ${promoteRole === 'admin' ? 'Admin' : 'VIP'} cho ${u.full_name || email}`);
+      setTimeout(() => setRoleActionSuccess(''), 4000);
     } catch (err) {
-      setSearchUserError(err.response?.data?.error?.message || 'Không tìm thấy người dùng');
+      setRoleActionError(err.response?.data?.error?.message || 'Thất bại');
+      setTimeout(() => setRoleActionError(''), 5000);
     } finally {
-      setSearchingUser(false);
+      setPromoteLoading(false);
     }
   };
 
@@ -143,10 +142,6 @@ export default function AdminPage() {
     try {
       await adminApi.setUserRole(userId, role);
       await loadElevatedUsers();
-      if (foundUser?.id === userId) {
-        setFoundUser(null);
-        setPromoteEmail('');
-      }
       setRoleActionSuccess('Cập nhật quyền thành công');
       setTimeout(() => setRoleActionSuccess(''), 3000);
     } catch (err) {
@@ -776,72 +771,34 @@ export default function AdminPage() {
 
           {/* Promote form */}
           <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">➕ Thêm Admin / VIP theo email</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-1">➕ Cấp quyền theo email</h3>
+            <p className="text-xs text-gray-400 mb-4">Chỉ email đuôi @ghn.vn. Người dùng cần đăng nhập ít nhất 1 lần.</p>
             <div className="flex gap-3 flex-wrap">
               <input
                 type="email"
                 value={promoteEmail}
-                onChange={e => { setPromoteEmail(e.target.value); setFoundUser(null); setSearchUserError(''); }}
-                onKeyDown={e => e.key === 'Enter' && handleSearchUser()}
+                onChange={e => { setPromoteEmail(e.target.value); setRoleActionError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handlePromote()}
                 placeholder="ten.nhanvien@ghn.vn"
                 className="input-field flex-1 min-w-[220px]"
               />
               <select
                 value={promoteRole}
                 onChange={e => setPromoteRole(e.target.value)}
-                className="input-field w-32"
+                className="input-field w-36"
               >
                 <option value="admin">Admin</option>
                 <option value="vip">VIP (BOD)</option>
+                <option value="user">User (gỡ quyền)</option>
               </select>
               <button
-                onClick={handleSearchUser}
-                disabled={searchingUser || !promoteEmail.trim()}
-                className="btn-primary px-5 disabled:opacity-50"
+                onClick={handlePromote}
+                disabled={promoteLoading || !promoteEmail.trim()}
+                className="btn-primary px-6 disabled:opacity-50"
               >
-                {searchingUser ? 'Đang tìm...' : 'Tìm kiếm'}
+                {promoteLoading ? 'Đang xử lý...' : 'Cấp quyền'}
               </button>
             </div>
-
-            {searchUserError && (
-              <p className="mt-2 text-sm text-red-600">{searchUserError}</p>
-            )}
-
-            {/* Found user preview */}
-            {foundUser && (
-              <div className="mt-4 flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-ghn-orange flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                    {foundUser.full_name?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-800">{foundUser.full_name}</p>
-                    <p className="text-xs text-gray-500">{foundUser.email}{foundUser.department ? ` · ${foundUser.department}` : ''}</p>
-                  </div>
-                  <RoleBadge role={foundUser.role} />
-                </div>
-                <div className="flex gap-2">
-                  {foundUser.role !== promoteRole && (
-                    <button
-                      onClick={() => handleSetRole(foundUser.id, promoteRole)}
-                      disabled={roleActionLoading === foundUser.id}
-                      className="text-sm font-medium px-4 py-1.5 rounded-lg bg-ghn-orange text-white hover:bg-orange-600 transition-colors disabled:opacity-50"
-                    >
-                      {roleActionLoading === foundUser.id ? '...' : `Gán ${promoteRole === 'admin' ? 'Admin' : 'VIP'}`}
-                    </button>
-                  )}
-                  {foundUser.role !== 'user' && (
-                    <button
-                      onClick={() => handleSetRole(foundUser.id, 'user')}
-                      disabled={roleActionLoading === foundUser.id}
-                      className="text-sm font-medium px-4 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
-                    >
-                      Hạ xuống User
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
 
             {roleActionSuccess && (
               <div className="mt-3 px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">

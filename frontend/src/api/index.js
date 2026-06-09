@@ -63,4 +63,6 @@ export const adminApi = {
   findUserByEmail: (email) => api.post('/admin/users/by-email', { email }),
 
   setUserRole: (id, role) => api.patch(`/admin/users/${id}/role`, { role }),
+
+  promote: (email, role) => api.post('/admin/promote', { email, role }),
 };
