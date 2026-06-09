@@ -3,6 +3,7 @@ const router = express.Router();
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const AdminSettingService = require('../services/AdminSettingService');
 const BookingController = require('../controllers/BookingController');
+const { User } = require('../models');
 
 // GET /api/admin/settings
 router.get('/settings', authMiddleware, adminMiddleware, async (req, res) => {
@@ -70,9 +71,61 @@ router.get('/bookings', authMiddleware, adminMiddleware, BookingController.getAd
 // PATCH /api/admin/bookings/:id - Reschedule booking
 router.patch('/bookings/:id', authMiddleware, adminMiddleware, BookingController.adminUpdateBooking);
 
-// GET /api/admin/users - List all users
+// GET /api/admin/users - List users (optional ?role= filter)
 router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
-  res.status(501).json({ error: { status: 501, message: 'Not implemented' } });
+  try {
+    const where = {};
+    if (req.query.role) where.role = req.query.role;
+    const users = await User.findAll({
+      where,
+      attributes: ['id', 'email', 'full_name', 'department', 'role', 'is_active', 'last_login', 'created_at'],
+      order: [['role', 'ASC'], ['full_name', 'ASC']],
+    });
+    res.json({ status: 'success', data: { users } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// POST /api/admin/users/by-email - Find user by email
+router.post('/users/by-email', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const email = (req.body.email || '').trim().toLowerCase();
+    if (!email) return res.status(400).json({ error: { status: 400, message: 'Email không được để trống' } });
+    const user = await User.findOne({
+      where: { email },
+      attributes: ['id', 'email', 'full_name', 'department', 'role', 'is_active'],
+    });
+    if (!user) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng với email này' } });
+    res.json({ status: 'success', data: { user } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// PATCH /api/admin/users/:id/role - Promote / demote user role
+router.patch('/users/:id/role', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!['user', 'vip', 'admin'].includes(role)) {
+      return res.status(400).json({ error: { status: 400, message: 'Role không hợp lệ (user / vip / admin)' } });
+    }
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ error: { status: 400, message: 'Không thể thay đổi quyền của chính mình' } });
+    }
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng' } });
+    if (!user.email.endsWith('@ghn.vn') && role !== 'user') {
+      return res.status(400).json({ error: { status: 400, message: 'Chỉ email @ghn.vn mới được cấp quyền admin / VIP' } });
+    }
+    await user.update({ role, updated_at: new Date() });
+    res.json({
+      status: 'success',
+      data: { user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role } },
+    });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
 });
 
 module.exports = router;

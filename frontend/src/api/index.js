@@ -57,4 +57,10 @@ export const adminApi = {
   getRules: () => api.get('/admin/rules'),
 
   updateRules: (rules) => api.put('/admin/rules', { rules }),
+
+  getUsers: (params) => api.get('/admin/users', { params }),
+
+  findUserByEmail: (email) => api.post('/admin/users/by-email', { email }),
+
+  setUserRole: (id, role) => api.patch(`/admin/users/${id}/role`, { role }),
 };

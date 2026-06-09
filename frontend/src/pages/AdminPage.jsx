@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { roomsApi, adminApi, bookingsApi } from '../api';
 import RoomCard from '../components/RoomCard';
 
+function RoleBadge({ role }) {
+  if (role === 'admin') return <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">Admin</span>;
+  if (role === 'vip')   return <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">⭐ VIP</span>;
+  return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">User</span>;
+}
+
 const EMPTY_FORM = {
   name: '', code: '', location: '', floor: '',
   capacity: '', is_vip: false, amenities: '',
@@ -34,6 +40,18 @@ export default function AdminPage() {
   });
   const [settingsError, setSettingsError] = useState('');
   const [settingsSuccess, setSettingsSuccess] = useState('');
+
+  // Role management
+  const [elevatedUsers, setElevatedUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [promoteEmail, setPromoteEmail] = useState('');
+  const [promoteRole, setPromoteRole] = useState('admin');
+  const [foundUser, setFoundUser] = useState(null);
+  const [searchingUser, setSearchingUser] = useState(false);
+  const [searchUserError, setSearchUserError] = useState('');
+  const [roleActionLoading, setRoleActionLoading] = useState(null); // userId being changed
+  const [roleActionError, setRoleActionError] = useState('');
+  const [roleActionSuccess, setRoleActionSuccess] = useState('');
 
   // Bookings management
   const [adminBookings, setAdminBookings] = useState([]);
@@ -86,6 +104,59 @@ export default function AdminPage() {
     }
   }, []);
 
+  const loadElevatedUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const res = await adminApi.getUsers();
+      const users = res.data.data.users || [];
+      setElevatedUsers(users.filter(u => u.role !== 'user'));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  const handleSearchUser = async () => {
+    const email = promoteEmail.trim().toLowerCase();
+    if (!email) return;
+    if (!email.endsWith('@ghn.vn')) {
+      setSearchUserError('Email phải có đuôi @ghn.vn');
+      return;
+    }
+    setSearchingUser(true);
+    setSearchUserError('');
+    setFoundUser(null);
+    try {
+      const res = await adminApi.findUserByEmail(email);
+      setFoundUser(res.data.data.user);
+    } catch (err) {
+      setSearchUserError(err.response?.data?.error?.message || 'Không tìm thấy người dùng');
+    } finally {
+      setSearchingUser(false);
+    }
+  };
+
+  const handleSetRole = async (userId, role) => {
+    setRoleActionLoading(userId);
+    setRoleActionError('');
+    try {
+      await adminApi.setUserRole(userId, role);
+      await loadElevatedUsers();
+      if (foundUser?.id === userId) {
+        setFoundUser(null);
+        setPromoteEmail('');
+      }
+      setRoleActionSuccess('Cập nhật quyền thành công');
+      setTimeout(() => setRoleActionSuccess(''), 3000);
+    } catch (err) {
+      setRoleActionError(err.response?.data?.error?.message || 'Cập nhật thất bại');
+      setTimeout(() => setRoleActionError(''), 3000);
+    } finally {
+      setRoleActionLoading(null);
+    }
+  };
+
   const loadAdminBookings = useCallback(async () => {
     setBookingsLoading(true);
     try {
@@ -115,7 +186,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (activeTab === 'bookings') loadAdminBookings();
-  }, [activeTab, loadAdminBookings]);
+    if (activeTab === 'roles') loadElevatedUsers();
+  }, [activeTab, loadAdminBookings, loadElevatedUsers]);
 
   const openCreate = () => {
     setEditRoom(null);
@@ -267,6 +339,16 @@ export default function AdminPage() {
             }`}
           >
             📅 Quản lý lịch
+          </button>
+          <button
+            onClick={() => setActiveTab('roles')}
+            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+              activeTab === 'roles'
+                ? 'border-ghn-orange text-ghn-orange'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            👥 Quản lý quyền
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -681,6 +763,175 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Roles Tab */}
+      {activeTab === 'roles' && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Quản lý quyền người dùng</h2>
+            <p className="text-gray-500 mt-1">Cấp / thu hồi quyền Admin và VIP (chỉ áp dụng với email @ghn.vn)</p>
+          </div>
+
+          {/* Promote form */}
+          <div className="card p-5">
+            <h3 className="text-sm font-semibold text-gray-700 mb-4">➕ Thêm Admin / VIP theo email</h3>
+            <div className="flex gap-3 flex-wrap">
+              <input
+                type="email"
+                value={promoteEmail}
+                onChange={e => { setPromoteEmail(e.target.value); setFoundUser(null); setSearchUserError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleSearchUser()}
+                placeholder="ten.nhanvien@ghn.vn"
+                className="input-field flex-1 min-w-[220px]"
+              />
+              <select
+                value={promoteRole}
+                onChange={e => setPromoteRole(e.target.value)}
+                className="input-field w-32"
+              >
+                <option value="admin">Admin</option>
+                <option value="vip">VIP (BOD)</option>
+              </select>
+              <button
+                onClick={handleSearchUser}
+                disabled={searchingUser || !promoteEmail.trim()}
+                className="btn-primary px-5 disabled:opacity-50"
+              >
+                {searchingUser ? 'Đang tìm...' : 'Tìm kiếm'}
+              </button>
+            </div>
+
+            {searchUserError && (
+              <p className="mt-2 text-sm text-red-600">{searchUserError}</p>
+            )}
+
+            {/* Found user preview */}
+            {foundUser && (
+              <div className="mt-4 flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-ghn-orange flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    {foundUser.full_name?.charAt(0)?.toUpperCase() || '?'}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-800">{foundUser.full_name}</p>
+                    <p className="text-xs text-gray-500">{foundUser.email}{foundUser.department ? ` · ${foundUser.department}` : ''}</p>
+                  </div>
+                  <RoleBadge role={foundUser.role} />
+                </div>
+                <div className="flex gap-2">
+                  {foundUser.role !== promoteRole && (
+                    <button
+                      onClick={() => handleSetRole(foundUser.id, promoteRole)}
+                      disabled={roleActionLoading === foundUser.id}
+                      className="text-sm font-medium px-4 py-1.5 rounded-lg bg-ghn-orange text-white hover:bg-orange-600 transition-colors disabled:opacity-50"
+                    >
+                      {roleActionLoading === foundUser.id ? '...' : `Gán ${promoteRole === 'admin' ? 'Admin' : 'VIP'}`}
+                    </button>
+                  )}
+                  {foundUser.role !== 'user' && (
+                    <button
+                      onClick={() => handleSetRole(foundUser.id, 'user')}
+                      disabled={roleActionLoading === foundUser.id}
+                      className="text-sm font-medium px-4 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    >
+                      Hạ xuống User
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {roleActionSuccess && (
+              <div className="mt-3 px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
+                ✅ {roleActionSuccess}
+              </div>
+            )}
+            {roleActionError && (
+              <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                {roleActionError}
+              </div>
+            )}
+          </div>
+
+          {/* Current elevated users list */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-700">
+                Danh sách Admin & VIP hiện tại
+                {elevatedUsers.length > 0 && <span className="ml-2 text-xs font-normal text-gray-400">({elevatedUsers.length})</span>}
+              </h3>
+              <button
+                onClick={loadElevatedUsers}
+                className="text-xs text-gray-500 hover:text-ghn-orange border border-gray-200 px-3 py-1.5 rounded-lg hover:border-ghn-orange transition-colors"
+              >
+                ↻ Làm mới
+              </button>
+            </div>
+
+            {usersLoading ? (
+              <div className="text-center py-8 text-gray-400">Đang tải...</div>
+            ) : elevatedUsers.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">Chưa có Admin hoặc VIP nào ngoài bạn</div>
+            ) : (
+              <div className="space-y-2">
+                {['admin', 'vip'].map(roleGroup => {
+                  const group = elevatedUsers.filter(u => u.role === roleGroup);
+                  if (group.length === 0) return null;
+                  return (
+                    <div key={roleGroup}>
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 mt-3">
+                        {roleGroup === 'admin' ? '🔑 Admin' : '⭐ VIP (BOD)'}
+                      </p>
+                      <div className="space-y-1.5">
+                        {group.map(u => (
+                          <div key={u.id} className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${roleGroup === 'admin' ? 'bg-ghn-orange' : 'bg-amber-400'}`}>
+                                {u.full_name?.charAt(0)?.toUpperCase() || '?'}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-800">{u.full_name}</p>
+                                <p className="text-xs text-gray-500">{u.email}{u.department ? ` · ${u.department}` : ''}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {roleGroup === 'admin' && (
+                                <button
+                                  onClick={() => handleSetRole(u.id, 'vip')}
+                                  disabled={roleActionLoading === u.id}
+                                  className="text-xs px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-50"
+                                >
+                                  → VIP
+                                </button>
+                              )}
+                              {roleGroup === 'vip' && (
+                                <button
+                                  onClick={() => handleSetRole(u.id, 'admin')}
+                                  disabled={roleActionLoading === u.id}
+                                  className="text-xs px-3 py-1.5 rounded-lg border border-orange-200 text-orange-700 hover:bg-orange-50 transition-colors disabled:opacity-50"
+                                >
+                                  → Admin
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleSetRole(u.id, 'user')}
+                                disabled={roleActionLoading === u.id}
+                                className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                              >
+                                {roleActionLoading === u.id ? '...' : 'Gỡ quyền'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
