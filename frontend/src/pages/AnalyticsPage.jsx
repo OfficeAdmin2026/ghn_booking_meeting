@@ -407,12 +407,13 @@ export default function AnalyticsPage() {
                 <th className="text-left pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Thời gian</th>
                 <th className="text-right pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">TL</th>
                 <th className="text-left pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Trạng thái</th>
+                <th className="text-left pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Lý do hủy</th>
               </tr>
             </thead>
             <tbody>
               {filteredReport.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center text-gray-400 py-10">
+                  <td colSpan={8} className="text-center text-gray-400 py-10">
                     {loading ? 'Đang tải...' : 'Không có dữ liệu trong kỳ này'}
                   </td>
                 </tr>
@@ -441,11 +442,12 @@ export default function AnalyticsPage() {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor(b.status)}`}>
                         {statusLabel(b.status)}
                       </span>
-                      {b.status === 'cancelled' && b.cancellation_message && (
-                        <p className="mt-1 text-[11px] text-red-500 max-w-[160px] leading-snug" title={b.cancellation_message}>
-                          "{b.cancellation_message}"
-                        </p>
-                      )}
+                    </td>
+                    <td className="py-3 px-2 max-w-[200px]">
+                      {b.cancellation_message
+                        ? <span className="text-xs text-red-500 leading-snug">"{b.cancellation_message}"</span>
+                        : <span className="text-gray-300">—</span>
+                      }
                     </td>
                   </tr>
                 );
