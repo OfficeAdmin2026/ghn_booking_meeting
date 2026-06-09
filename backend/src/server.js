@@ -15,6 +15,14 @@ const PORT = process.env.PORT || 5000;
     await sequelize.sync({ alter: false });
     console.log('✅ Database models synced');
 
+    // Run safe column migrations
+    await sequelize.query(`
+      ALTER TABLE bookings
+        ADD COLUMN IF NOT EXISTS cancellation_message TEXT,
+        ADD COLUMN IF NOT EXISTS is_admin_hidden BOOLEAN DEFAULT false;
+    `);
+    console.log('✅ Booking columns migrated');
+
     // Start server
     app.listen(PORT, () => {
       console.log(`✅ Server is running on port ${PORT}`);
