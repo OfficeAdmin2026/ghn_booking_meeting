@@ -81,13 +81,20 @@ function MetricCard({ icon, label, value, sub, color = 'bg-ghn-orange-light text
   );
 }
 
-function HBar({ label, value, maxValue, sub, colorClass = 'bg-ghn-orange' }) {
+function HBar({ label, value, maxValue, sub, badge, colorClass = 'bg-ghn-orange' }) {
   const pct = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
   return (
     <div className="space-y-0.5">
       <div className="flex items-center justify-between text-xs">
         <span className="text-gray-700 font-medium truncate max-w-[170px]">{label}</span>
-        <span className="text-gray-600 font-semibold ml-2 flex-shrink-0">{value} lượt</span>
+        <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+          {badge != null && (
+            <span className="text-[11px] text-blue-600 bg-blue-50 border border-blue-100 rounded px-1.5 py-0.5 font-semibold">
+              {badge}%
+            </span>
+          )}
+          <span className="text-gray-600 font-semibold">{value} lượt</span>
+        </div>
       </div>
       <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${pct}%` }} />
@@ -218,9 +225,9 @@ export default function AnalyticsPage() {
             />
             <MetricCard
               icon="📈"
-              label="Tỷ lệ sử dụng"
-              value={`${s.occupancy_rate}%`}
-              sub={`${s.total_rooms} phòng • 7h–22h`}
+              label="Tỷ lệ sử dụng giờ làm việc"
+              value={`${s.working_hours_utilization ?? s.occupancy_rate}%`}
+              sub={`${s.total_rooms} phòng • ${s.working_days ?? 0} ngày T2–T6 • 8h30–18h (trừ 12–13h)`}
               color="bg-blue-50 text-blue-600"
             />
             <MetricCard
@@ -259,7 +266,10 @@ export default function AnalyticsPage() {
 
             {/* Top rooms */}
             <div className="card p-5">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">🏆 Top phòng được đặt nhiều nhất</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-700">🏆 Top phòng được đặt nhiều nhất</h3>
+                <span className="text-[11px] text-gray-400">badge = % sử dụng T2–T6</span>
+              </div>
               {metrics.top_rooms.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-6">Không có dữ liệu trong kỳ này</p>
               ) : (
@@ -270,6 +280,7 @@ export default function AnalyticsPage() {
                       label={`${i + 1}. ${r.name}`}
                       value={r.booking_count}
                       maxValue={maxRoomCount}
+                      badge={r.utilization}
                       sub={`${r.location} • Tầng ${r.floor} • TB ${fmtDuration(r.avg_minutes)}/lần`}
                       colorClass={i === 0 ? 'bg-ghn-orange' : i === 1 ? 'bg-blue-400' : i === 2 ? 'bg-blue-300' : 'bg-gray-300'}
                     />
@@ -409,7 +420,6 @@ export default function AnalyticsPage() {
                     </td>
                     <td className="py-3 px-2 max-w-[200px]">
                       <div className="truncate font-medium text-gray-700">{b.title}</div>
-                      <div className="text-xs text-gray-400">{b.participants_count} người</div>
                     </td>
                     <td className="py-3 px-2">
                       <div className="text-gray-700">{b.user?.full_name || '—'}</div>
