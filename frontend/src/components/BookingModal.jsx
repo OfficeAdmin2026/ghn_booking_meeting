@@ -32,7 +32,6 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
   const [startInput, setStartInput] = useState(() => toVNTimeStr(startTime));
   const [endInput,   setEndInput]   = useState(() => toVNTimeStr(endTime));
   const [title, setTitle] = useState('');
-  const [participants, setParticipants] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,7 +64,6 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
       await bookingsApi.create({
         room_id: room.id,
         title,
-        participants_count: Number(participants),
         start_time: actualStart,
         end_time: actualEnd,
         notes,
@@ -204,22 +202,6 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
                     required
                     maxLength={200}
                     autoFocus
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Số người tham gia <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={participants}
-                    onChange={(e) => setParticipants(e.target.value)}
-                    className="input-field"
-                    placeholder={`Tối đa ${room.capacity} người`}
-                    required
-                    min={1}
-                    max={room.capacity}
                   />
                 </div>
 
