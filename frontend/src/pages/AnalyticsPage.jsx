@@ -117,6 +117,8 @@ export default function AnalyticsPage() {
   const [error,        setError]        = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [searchQuery,  setSearchQuery]  = useState('');
+  const [sortCol,      setSortCol]      = useState('start_time');
+  const [sortDir,      setSortDir]      = useState('desc');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -139,13 +141,41 @@ export default function AnalyticsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const filteredReport = searchQuery
-    ? report.filter(b =>
-        b.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        b.room?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        b.user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : report;
+  const handleSort = (col) => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('asc'); }
+  };
+
+  const sortValue = (b, col) => {
+    switch (col) {
+      case 'room':     return b.room?.name || '';
+      case 'title':    return b.title || '';
+      case 'user':     return b.user?.full_name || '';
+      case 'start_time': return new Date(b.start_time).getTime();
+      case 'duration': return new Date(b.end_time) - new Date(b.start_time);
+      case 'status':   return b.status || '';
+      case 'reason':   return b.cancellation_message || '';
+      default: return '';
+    }
+  };
+
+  const filteredReport = (() => {
+    let list = searchQuery
+      ? report.filter(b =>
+          b.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.room?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : [...report];
+    list.sort((a, b) => {
+      const av = sortValue(a, sortCol);
+      const bv = sortValue(b, sortCol);
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return list;
+  })();
 
   // Build full 7–21 peak hour array
   const peakHoursAll = Array.from({ length: 15 }, (_, i) => {
@@ -400,14 +430,29 @@ export default function AnalyticsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-gray-100">
-                <th className="text-left pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">#</th>
-                <th className="text-left pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Phòng</th>
-                <th className="text-left pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Tiêu đề</th>
-                <th className="text-left pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Người đặt</th>
-                <th className="text-left pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Thời gian</th>
-                <th className="text-right pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">TL</th>
-                <th className="text-left pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Trạng thái</th>
-                <th className="text-left pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Lý do hủy</th>
+                <th className="pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide text-left">#</th>
+                {[
+                  { col: 'room',       label: 'Phòng',      align: 'left'  },
+                  { col: 'title',      label: 'Tiêu đề',    align: 'left'  },
+                  { col: 'user',       label: 'Người đặt',  align: 'left'  },
+                  { col: 'start_time', label: 'Thời gian',  align: 'left'  },
+                  { col: 'duration',   label: 'TL',         align: 'right' },
+                  { col: 'status',     label: 'Trạng thái', align: 'left'  },
+                  { col: 'reason',     label: 'Lý do hủy',  align: 'left'  },
+                ].map(({ col, label, align }) => (
+                  <th
+                    key={col}
+                    onClick={() => handleSort(col)}
+                    className={`pb-2.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:text-gray-600 transition-colors text-${align}`}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {label}
+                      <span className="text-[10px]">
+                        {sortCol === col ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                      </span>
+                    </span>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
