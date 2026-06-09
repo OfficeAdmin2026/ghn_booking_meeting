@@ -4,6 +4,7 @@ const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const AdminSettingService = require('../services/AdminSettingService');
 const BookingController = require('../controllers/BookingController');
 const { User } = require('../models');
+const { Op } = require('sequelize');
 
 // GET /api/admin/settings
 router.get('/settings', authMiddleware, adminMiddleware, async (req, res) => {
@@ -81,7 +82,7 @@ router.post('/promote', authMiddleware, adminMiddleware, async (req, res) => {
       return res.status(400).json({ error: { status: 400, message: 'Role không hợp lệ' } });
     if (!email.endsWith('@ghn.vn') && role !== 'user')
       return res.status(400).json({ error: { status: 400, message: 'Chỉ email @ghn.vn mới được cấp quyền admin / VIP' } });
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: { [Op.iLike]: email } } });
     if (!user)
       return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng. Họ cần đăng nhập ít nhất 1 lần trước.' } });
     if (user.id === req.user.id)
@@ -115,7 +116,7 @@ router.post('/users/by-email', authMiddleware, adminMiddleware, async (req, res)
     const email = (req.body.email || '').trim().toLowerCase();
     if (!email) return res.status(400).json({ error: { status: 400, message: 'Email không được để trống' } });
     const user = await User.findOne({
-      where: { email },
+      where: { email: { [Op.iLike]: email } },
       attributes: ['id', 'email', 'full_name', 'department', 'role', 'is_active'],
     });
     if (!user) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng với email này' } });
