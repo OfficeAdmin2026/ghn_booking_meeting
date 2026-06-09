@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { roomsApi, adminApi, bookingsApi } from '../api';
+import { roomsApi, adminApi } from '../api';
 import RoomCard from '../components/RoomCard';
 
 function RoleBadge({ role }) {
@@ -50,17 +50,6 @@ export default function AdminPage() {
   const [roleActionLoading, setRoleActionLoading] = useState(null); // userId being changed
   const [roleActionError, setRoleActionError] = useState('');
   const [roleActionSuccess, setRoleActionSuccess] = useState('');
-
-  // Bookings management
-  const [adminBookings, setAdminBookings] = useState([]);
-  const [bookingsLoading, setBookingsLoading] = useState(false);
-  const [bookingsStatusFilter, setBookingsStatusFilter] = useState('upcoming');
-  const [bookingsRefresh, setBookingsRefresh] = useState(0);
-  // Cancel modal
-  const [cancelTarget, setCancelTarget] = useState(null);
-  const [cancelMsg, setCancelMsg] = useState('');
-  const [cancelLoading, setCancelLoading] = useState(false);
-  const [cancelError, setCancelError] = useState('');
 
   const loadRooms = useCallback(async () => {
     setLoading(true);
@@ -152,37 +141,14 @@ export default function AdminPage() {
     }
   };
 
-  const loadAdminBookings = useCallback(async () => {
-    setBookingsLoading(true);
-    try {
-      const params = {};
-      if (bookingsStatusFilter === 'upcoming') {
-        // No status filter — we'll filter client-side to include pending/confirmed/active
-      } else if (bookingsStatusFilter !== 'all') {
-        params.status = bookingsStatusFilter;
-      }
-      const res = await adminApi.getBookings(params);
-      let data = res.data.data?.bookings || [];
-      if (bookingsStatusFilter === 'upcoming') {
-        data = data.filter((b) => ['pending', 'confirmed', 'active'].includes(b.status));
-      }
-      setAdminBookings(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setBookingsLoading(false);
-    }
-  }, [bookingsStatusFilter, bookingsRefresh]);
-
   useEffect(() => {
     loadRooms();
     loadSettings();
   }, [loadRooms, loadSettings]);
 
   useEffect(() => {
-    if (activeTab === 'bookings') loadAdminBookings();
     if (activeTab === 'roles') loadElevatedUsers();
-  }, [activeTab, loadAdminBookings, loadElevatedUsers]);
+  }, [activeTab, loadElevatedUsers]);
 
   const openCreate = () => {
     setEditRoom(null);
@@ -239,22 +205,6 @@ export default function AdminPage() {
       setRooms((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
       alert(err.response?.data?.error?.message || 'Không thể xóa');
-    }
-  };
-
-  const handleAdminCancel = async () => {
-    if (!cancelTarget) return;
-    setCancelLoading(true);
-    setCancelError('');
-    try {
-      await bookingsApi.cancel(cancelTarget.id, cancelMsg || null);
-      setCancelTarget(null);
-      setCancelMsg('');
-      setBookingsRefresh((v) => v + 1);
-    } catch (err) {
-      setCancelError(err.response?.data?.error?.message || 'Hủy thất bại');
-    } finally {
-      setCancelLoading(false);
     }
   };
 
@@ -323,17 +273,7 @@ export default function AdminPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            📋 Quản lý phòng
-          </button>
-          <button
-            onClick={() => setActiveTab('bookings')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
-              activeTab === 'bookings'
-                ? 'border-ghn-orange text-ghn-orange'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            📅 Quản lý lịch
+            1. Quản lý phòng
           </button>
           <button
             onClick={() => setActiveTab('roles')}
@@ -343,7 +283,7 @@ export default function AdminPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            👥 Quản lý quyền
+            2. Phân quyền
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -353,7 +293,7 @@ export default function AdminPage() {
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            ⚙️ Cài đặt
+            3. Đóng băng đặt phòng
           </button>
         </div>
       </div>
@@ -585,179 +525,6 @@ export default function AdminPage() {
           </div>
         </div>
       )}
-        </div>
-      )}
-
-      {/* Bookings Tab */}
-      {activeTab === 'bookings' && (
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Quản lý lịch đặt phòng</h2>
-              <p className="text-gray-500 mt-1">Xem và hủy lịch đặt phòng của tất cả người dùng</p>
-            </div>
-            <button
-              onClick={() => setBookingsRefresh((v) => v + 1)}
-              className="text-sm text-gray-500 hover:text-ghn-orange border border-gray-200 px-4 py-2 rounded-lg hover:border-ghn-orange transition-colors"
-            >
-              ↻ Làm mới
-            </button>
-          </div>
-
-          {/* Status filter pills */}
-          <div className="flex gap-2 mb-5">
-            {[
-              { value: 'upcoming', label: '📅 Sắp tới' },
-              { value: 'all',      label: 'Tất cả'     },
-              { value: 'cancelled', label: 'Đã hủy'   },
-            ].map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => setBookingsStatusFilter(value)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  bookingsStatusFilter === value
-                    ? 'bg-ghn-orange text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {bookingsLoading ? (
-            <div className="text-center py-12 text-gray-400">Đang tải...</div>
-          ) : adminBookings.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">Không có lịch đặt nào</div>
-          ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200 text-left">
-                    <th className="px-4 py-3 font-semibold text-gray-600">Thời gian</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600">Phòng</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600">Người đặt</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600">Tiêu đề</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600 text-center">Trạng thái</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600 text-center">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {adminBookings.map((b) => {
-                    const start = new Date(b.start_time);
-                    const end   = new Date(b.end_time);
-                    const fmtDate = start.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short', day: 'numeric', month: 'numeric' });
-                    const fmtStart = start.toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hour12: false });
-                    const fmtEnd   = end.toLocaleTimeString('vi-VN',   { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hour12: false });
-                    const statusMap = {
-                      pending:   { label: 'Chờ xác nhận', cls: 'bg-yellow-100 text-yellow-700' },
-                      confirmed: { label: 'Đã xác nhận',  cls: 'bg-blue-100 text-blue-700'   },
-                      active:    { label: 'Đang họp',     cls: 'bg-green-100 text-green-700'  },
-                      completed: { label: 'Hoàn thành',   cls: 'bg-gray-100 text-gray-600'   },
-                      cancelled: { label: 'Đã hủy',       cls: 'bg-red-100 text-red-600'     },
-                    };
-                    const st = statusMap[b.status] || { label: b.status, cls: 'bg-gray-100 text-gray-600' };
-                    const canCancel = ['pending', 'confirmed', 'active'].includes(b.status);
-                    return (
-                      <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">{fmtDate}</div>
-                          <div className="text-xs text-gray-500">{fmtStart} – {fmtEnd}</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-gray-800">{b.room?.name || '—'}</div>
-                          {b.room?.location && (
-                            <div className="text-xs text-gray-400">{b.room.location}{b.room.floor ? ` • ${b.room.floor}` : ''}</div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-gray-800">{b.user?.full_name || '—'}</div>
-                          <div className="text-xs text-gray-400">{b.user?.email || ''}</div>
-                        </td>
-                        <td className="px-4 py-3 text-gray-700 max-w-xs truncate">{b.title}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${st.cls}`}>{st.label}</span>
-                          {b.cancellation_message && (
-                            <div className="text-xs text-red-500 mt-1 max-w-[120px] truncate" title={b.cancellation_message}>
-                              "{b.cancellation_message}"
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {canCancel ? (
-                            <button
-                              onClick={() => { setCancelTarget(b); setCancelMsg(''); setCancelError(''); }}
-                              className="text-xs text-red-500 hover:text-white hover:bg-red-500 border border-red-200 px-3 py-1.5 rounded-lg transition-all"
-                            >
-                              Hủy lịch
-                            </button>
-                          ) : (
-                            <span className="text-xs text-gray-300">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Cancel modal */}
-          {cancelTarget && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-              onClick={(e) => { if (e.target === e.currentTarget) { setCancelTarget(null); setCancelMsg(''); setCancelError(''); } }}
-            >
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-                <div className="bg-red-500 px-5 pt-5 pb-4">
-                  <h3 className="font-bold text-white text-lg">Hủy lịch đặt phòng</h3>
-                  <p className="text-red-100 text-sm mt-1">{cancelTarget.title}</p>
-                  <p className="text-red-200 text-xs mt-0.5">
-                    {cancelTarget.room?.name} · {new Date(cancelTarget.start_time).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-                <div className="px-5 py-4 space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-1">Người đặt</label>
-                    <p className="text-sm text-gray-600">{cancelTarget.user?.full_name} ({cancelTarget.user?.email})</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-1">
-                      Lời nhắn cho người dùng <span className="text-gray-400 font-normal">(không bắt buộc)</span>
-                    </label>
-                    <textarea
-                      value={cancelMsg}
-                      onChange={(e) => setCancelMsg(e.target.value)}
-                      placeholder="VD: Phòng cần bảo trì, vui lòng đặt phòng khác..."
-                      rows={3}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-red-400"
-                    />
-                  </div>
-                  {cancelError && (
-                    <div className="px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{cancelError}</div>
-                  )}
-                  <div className="flex gap-3 pt-1">
-                    <button
-                      onClick={handleAdminCancel}
-                      disabled={cancelLoading}
-                      className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition-colors disabled:opacity-50"
-                    >
-                      {cancelLoading ? 'Đang hủy...' : 'Xác nhận hủy'}
-                    </button>
-                    <button
-                      onClick={() => { setCancelTarget(null); setCancelMsg(''); setCancelError(''); }}
-                      disabled={cancelLoading}
-                      className="flex-1 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold text-sm transition-colors"
-                    >
-                      Giữ lại
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
