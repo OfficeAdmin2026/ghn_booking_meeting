@@ -156,6 +156,7 @@ export default function CalendarPage() {
   const navStateHandled = useRef(false);
   const selRoomRestoredRef = useRef(false); // true after room restoration attempt completes
   const calendarScrollRef = useRef(null);
+  const scrolledForRoomRef = useRef(null); // tracks which room we last scrolled for
 
   // Calendar anchor
   const [anchorDate, setAnchorDate] = useState(new Date());
@@ -362,15 +363,17 @@ export default function CalendarPage() {
   /* ── keep week in sync with anchor ── */
   useEffect(() => { setWeekDays(getWeekRange(anchorDate)); }, [anchorDate]);
 
-  /* ── scroll to 08:00 when a room is selected (rAF ensures grid is painted first) ── */
+  /* ── scroll to 08:00 once per room selection (after bookings load) ── */
   useEffect(() => {
-    if (!selRoom) return;
+    if (!selRoom || loadingBookings) return;
+    if (scrolledForRoomRef.current === selRoom.id) return; // already scrolled for this room
+    scrolledForRoomRef.current = selRoom.id;
     const scrollTo = (8 - START_HOUR) * HOUR_HEIGHT;
-    const raf = requestAnimationFrame(() => {
+    const t = setTimeout(() => {
       if (calendarScrollRef.current) calendarScrollRef.current.scrollTop = scrollTo;
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [selRoom]);
+    }, 50);
+    return () => clearTimeout(t);
+  }, [selRoom, loadingBookings]);
 
   /* ── fetch bookings when room or week changes ── */
   const fetchBookings = useCallback(async () => {
