@@ -420,7 +420,7 @@ export default function CalendarPage() {
   async function tryOpenModal(startTime, endTime) {
     // Block past times regardless of role
     if (new Date(startTime) <= new Date()) {
-      setSlotWarning('Không thể đặt phòng trong quá khứ');
+      setSlotWarning('Bạn không thể đặt phòng trong quá khứ');
       setTimeout(() => setSlotWarning(''), 5000);
       return;
     }
@@ -570,7 +570,7 @@ export default function CalendarPage() {
     const todayStr = toVNDateStr(new Date());
     const dayStr   = toVNDateStr(dayDate);
     if (dayStr < todayStr) {
-      setSlotWarning('Không thể đặt phòng trong quá khứ');
+      setSlotWarning('Bạn không thể đặt phòng trong quá khứ');
       setTimeout(() => setSlotWarning(''), 5000);
       dragInfo.current = null;
       return;
@@ -629,7 +629,7 @@ export default function CalendarPage() {
 
       // Block if start time is in the past (handles today's past slots)
       if (start <= new Date()) {
-        setSlotWarning('Không thể đặt phòng trong quá khứ');
+        setSlotWarning('Bạn không thể đặt phòng trong quá khứ');
         setTimeout(() => setSlotWarning(''), 5000);
         return;
       }
@@ -1279,17 +1279,24 @@ export default function CalendarPage() {
               {weekDays.map((d) => {
                 const ds = toVNDateStr(d);
                 const isToday = ds === today;
+                const isPastDay = ds < today;
                 const dayBookings = bookingsByDay[ds] || [];
 
                 return (
                   <div
                     key={ds}
                     className={`flex-1 min-w-0 relative border-r border-gray-100 last:border-r-0 ${
-                      isToday ? 'bg-orange-50/30' : ''
-                    } ${selRoom ? 'cursor-crosshair' : ''}`}
+                      isToday ? 'bg-orange-50/30' : isPastDay ? 'bg-gray-50/60' : ''
+                    } ${selRoom ? (isPastDay ? 'cursor-not-allowed' : 'cursor-crosshair') : ''}`}
                     style={{ minHeight: HOUR_HEIGHT * timeSlots.length }}
                     onMouseDown={(e) => handleDayMouseDown(e, d)}
                   >
+                    {/* Past day overlay */}
+                    {isPastDay && (
+                      <div className="absolute inset-0 z-10 pointer-events-none"
+                        style={{ background: 'repeating-linear-gradient(135deg, transparent, transparent 8px, rgba(156,163,175,0.08) 8px, rgba(156,163,175,0.08) 9px)' }}
+                      />
+                    )}
                     {/* Hour grid lines */}
                     {timeSlots.map((h) => (
                       <div
