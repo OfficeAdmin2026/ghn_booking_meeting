@@ -26,7 +26,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [sortCol, setSortCol] = useState('name');
+  const [sortCol, setSortCol] = useState('location');
   const [sortDir, setSortDir] = useState('asc');
 
   // Settings
@@ -239,6 +239,11 @@ export default function AdminPage() {
     }
   };
 
+  const LOCATION_ORDER = { 'Rivera Park': 0, 'Mipec': 1 };
+  const FLOOR_ORDER    = { 'G': 0, '1F': 1, '3F': 2, '8F': 3 };
+  const locrank  = (r) => LOCATION_ORDER[r.location] ?? 99;
+  const floorrank = (r) => FLOOR_ORDER[r.floor]    ?? 99;
+
   const filtered = rooms
     .filter(
       (r) =>
@@ -247,14 +252,21 @@ export default function AdminPage() {
         r.code?.toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) => {
-      let av = a[sortCol];
-      let bv = b[sortCol];
-      if (sortCol === 'capacity') { av = Number(av); bv = Number(bv); }
-      else if (sortCol === 'is_vip') { av = av ? 1 : 0; bv = bv ? 1 : 0; }
-      else { av = String(av ?? '').toLowerCase(); bv = String(bv ?? '').toLowerCase(); }
-      if (av < bv) return sortDir === 'asc' ? -1 : 1;
-      if (av > bv) return sortDir === 'asc' ? 1 : -1;
-      return 0;
+      // Primary: user-chosen column
+      let av, bv;
+      if (sortCol === 'capacity') { av = Number(a.capacity); bv = Number(b.capacity); }
+      else if (sortCol === 'is_vip') { av = a.is_vip ? 1 : 0; bv = b.is_vip ? 1 : 0; }
+      else if (sortCol === 'location') { av = locrank(a);  bv = locrank(b); }
+      else if (sortCol === 'floor')    { av = floorrank(a); bv = floorrank(b); }
+      else { av = String(a[sortCol] ?? '').toLowerCase(); bv = String(b[sortCol] ?? '').toLowerCase(); }
+      if (av !== bv) return sortDir === 'asc' ? (av < bv ? -1 : 1) : (av < bv ? 1 : -1);
+
+      // Tiebreaker: location → floor → name
+      const locDiff = locrank(a) - locrank(b);
+      if (locDiff !== 0) return locDiff;
+      const floorDiff = floorrank(a) - floorrank(b);
+      if (floorDiff !== 0) return floorDiff;
+      return a.name.localeCompare(b.name, 'vi');
     });
 
   return (
