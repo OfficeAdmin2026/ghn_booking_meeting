@@ -1243,7 +1243,7 @@ export default function CalendarPage() {
         {/* Scrollable body — header is sticky inside so columns always align */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           {/* Header row — sticky so it stays visible while scrolling */}
-          <div className="flex border-b border-gray-200 bg-white sticky top-0 z-30">
+          <div className="flex border-b border-gray-200 bg-white sticky top-0 z-40">
             {/* time axis spacer */}
             <div className="w-14 flex-shrink-0 border-r border-gray-100" />
             {weekDays.map((d) => {
