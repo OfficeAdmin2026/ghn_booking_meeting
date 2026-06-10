@@ -362,11 +362,14 @@ export default function CalendarPage() {
   /* ── keep week in sync with anchor ── */
   useEffect(() => { setWeekDays(getWeekRange(anchorDate)); }, [anchorDate]);
 
-  /* ── scroll to 08:00 when a room is selected ── */
+  /* ── scroll to 08:00 when a room is selected (rAF ensures grid is painted first) ── */
   useEffect(() => {
-    if (!selRoom || !calendarScrollRef.current) return;
+    if (!selRoom) return;
     const scrollTo = (8 - START_HOUR) * HOUR_HEIGHT;
-    calendarScrollRef.current.scrollTop = scrollTo;
+    const raf = requestAnimationFrame(() => {
+      if (calendarScrollRef.current) calendarScrollRef.current.scrollTop = scrollTo;
+    });
+    return () => cancelAnimationFrame(raf);
   }, [selRoom]);
 
   /* ── fetch bookings when room or week changes ── */
