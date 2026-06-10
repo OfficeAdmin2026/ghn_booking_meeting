@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { roomsApi, bookingsApi, authApi } from '../api';
 import BookingModal from '../components/BookingModal';
@@ -156,7 +156,7 @@ export default function CalendarPage() {
   const navStateHandled = useRef(false);
   const selRoomRestoredRef = useRef(false); // true after room restoration attempt completes
   const calendarScrollRef = useRef(null);
-  const needsScrollRef = useRef(false); // true khi đổi phòng, cleared sau khi scroll
+  const pendingScrollRef = useRef(false); // true khi cần scroll về 08:00
 
   // Calendar anchor
   const [anchorDate, setAnchorDate] = useState(new Date());
@@ -365,19 +365,15 @@ export default function CalendarPage() {
 
   /* ── đánh dấu cần scroll khi đổi phòng ── */
   useEffect(() => {
-    if (selRoom) needsScrollRef.current = true;
+    if (selRoom) pendingScrollRef.current = true;
   }, [selRoom]);
 
-  /* ── scroll đến 08:00 ngay sau khi bookings load xong (grid đã render) ── */
-  useEffect(() => {
-    if (loadingBookings || !selRoom || !needsScrollRef.current) return;
-    needsScrollRef.current = false;
-    const scrollTo = (8 - START_HOUR) * HOUR_HEIGHT;
-    const t = setTimeout(() => {
-      if (calendarScrollRef.current) calendarScrollRef.current.scrollTop = scrollTo;
-    }, 50);
-    return () => clearTimeout(t);
-  }, [loadingBookings, selRoom]);
+  /* ── scroll về 08:00 trước khi browser paint (chạy sau mỗi render) ── */
+  useLayoutEffect(() => {
+    if (!pendingScrollRef.current || !calendarScrollRef.current || loadingBookings) return;
+    pendingScrollRef.current = false;
+    calendarScrollRef.current.scrollTop = (8 - START_HOUR) * HOUR_HEIGHT;
+  });
 
   /* ── fetch bookings when room or week changes ── */
   const fetchBookings = useCallback(async () => {
