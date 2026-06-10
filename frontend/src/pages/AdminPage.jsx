@@ -343,6 +343,7 @@ export default function AdminPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-3 py-3 font-semibold text-gray-600 text-center w-10">STT</th>
                     {[
                       { key: 'name', label: 'Tên phòng', align: 'left' },
                       { key: 'code', label: 'Mã phòng', align: 'left' },
@@ -373,11 +374,12 @@ export default function AdminPage() {
                 <tbody className="divide-y divide-gray-100">
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-12 text-gray-400">Không có phòng nào</td>
+                      <td colSpan={9} className="text-center py-12 text-gray-400">Không có phòng nào</td>
                     </tr>
                   ) : (
-                    filtered.map((room) => (
+                    filtered.map((room, idx) => (
                       <tr key={room.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-3 py-3 text-center text-gray-400 text-xs">{idx + 1}</td>
                         <td className="px-4 py-3 font-medium text-gray-900">{room.name}</td>
                         <td className="px-4 py-3 text-gray-500 font-mono text-xs">{room.code}</td>
                         <td className="px-4 py-3 text-gray-600">{room.location}</td>
