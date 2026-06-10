@@ -120,7 +120,7 @@ function minToTimeStr(min) {
 }
 function yToMin(y) {
   const raw = START_HOUR * 60 + (y / HOUR_HEIGHT) * 60;
-  return Math.max(START_HOUR * 60, Math.min(END_HOUR * 60, Math.round(raw / 30) * 30));
+  return Math.max(START_HOUR * 60, Math.min(END_HOUR * 60, Math.round(raw / 15) * 15));
 }
 
 
@@ -1323,11 +1323,12 @@ export default function CalendarPage() {
                         style={{ top: (h - START_HOUR) * HOUR_HEIGHT, height: HOUR_HEIGHT }}
                         className="absolute inset-x-0 border-b border-gray-100 group"
                       >
+                        {/* 15-min dotted line */}
+                        <div className="absolute inset-x-0 border-b border-dotted border-gray-100/60" style={{ top: HOUR_HEIGHT * 0.25 }} />
                         {/* 30-min dashed line */}
-                        <div
-                          className="absolute inset-x-0 border-b border-dashed border-gray-100"
-                          style={{ top: HOUR_HEIGHT / 2 }}
-                        />
+                        <div className="absolute inset-x-0 border-b border-dashed border-gray-100" style={{ top: HOUR_HEIGHT * 0.5 }} />
+                        {/* 45-min dotted line */}
+                        <div className="absolute inset-x-0 border-b border-dotted border-gray-100/60" style={{ top: HOUR_HEIGHT * 0.75 }} />
                         {/* hover label */}
                         <span className="absolute right-1 top-1 text-[10px] text-ghn-orange opacity-0 group-hover:opacity-100 transition-opacity">
                           {h}:00
