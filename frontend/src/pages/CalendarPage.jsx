@@ -418,6 +418,12 @@ export default function CalendarPage() {
 
   /* ── room availability search ── */
   async function tryOpenModal(startTime, endTime) {
+    // Block past times regardless of role
+    if (new Date(startTime) <= new Date()) {
+      setSlotWarning('Không thể đặt phòng trong quá khứ');
+      setTimeout(() => setSlotWarning(''), 5000);
+      return;
+    }
     if (currentUser?.role === 'admin') {
       setModalSlot({ startTime, endTime });
       return;
@@ -506,11 +512,22 @@ export default function CalendarPage() {
     setEditError('');
     try {
       const dateStr = toVNDateStr(new Date(cancelModal.start_time));
+      const newStart = vnToISO(dateStr, editStart);
+      if (new Date(cancelModal.start_time) < new Date()) {
+        setEditError('Không thể chỉnh sửa lịch đặt đã qua');
+        setEditLoading(false);
+        return;
+      }
+      if (new Date(newStart) < new Date()) {
+        setEditError('Không thể đặt lịch với thời gian trong quá khứ');
+        setEditLoading(false);
+        return;
+      }
       await bookingsApi.update(cancelModal.id, {
         action: 'edit',
         title: editTitle,
         notes: editNotes,
-        start_time: vnToISO(dateStr, editStart),
+        start_time: newStart,
         end_time:   vnToISO(dateStr, editEnd),
       });
       setEditMode(false);
@@ -548,6 +565,16 @@ export default function CalendarPage() {
   function handleDayMouseDown(e, dayDate) {
     if (e.button !== 0) return;
     if (!selRoom) return;
+
+    // Block past dates outright
+    const todayStr = toVNDateStr(new Date());
+    const dayStr   = toVNDateStr(dayDate);
+    if (dayStr < todayStr) {
+      setSlotWarning('Không thể đặt phòng trong quá khứ');
+      setTimeout(() => setSlotWarning(''), 5000);
+      dragInfo.current = null;
+      return;
+    }
 
     // Immediate synchronous check — no API call needed
     const check = checkDateBookable(dayDate);
@@ -599,6 +626,14 @@ export default function CalendarPage() {
       start.setHours(Math.floor(startMin / 60), startMin % 60, 0, 0);
       const end = new Date(dayDate);
       end.setHours(Math.floor(endMin / 60), endMin % 60, 0, 0);
+
+      // Block if start time is in the past (handles today's past slots)
+      if (start <= new Date()) {
+        setSlotWarning('Không thể đặt phòng trong quá khứ');
+        setTimeout(() => setSlotWarning(''), 5000);
+        return;
+      }
+
       setModalSlot({ startTime: start.toISOString(), endTime: end.toISOString() });
     }
     window.addEventListener('mousemove', onMove);
@@ -1465,8 +1500,10 @@ export default function CalendarPage() {
                   </div>
 
                   {/* Actions — own booking */}
-                  {isOwn && (
-                    confirmingCancel ? (
+                  {isOwn && (() => {
+                    const isPastBooking = new Date(cancelModal.start_time) < new Date();
+                    const canEdit = !isPastBooking && (cancelModal.status === 'confirmed' || cancelModal.status === 'pending');
+                    return confirmingCancel ? (
                       <div className="px-5 pb-5">
                         <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-3">
                           <p className="text-sm font-semibold text-red-700 mb-0.5">Xác nhận hủy đặt phòng?</p>
@@ -1491,25 +1528,29 @@ export default function CalendarPage() {
                       </div>
                     ) : (
                       <div className="px-5 pb-5 flex gap-3">
-                        <button
-                          onClick={() => {
-                            setEditTitle(cancelModal.title || '');
-                            setEditNotes(cancelModal.notes || '');
-                            setEditStart(toVNTimeStr(new Date(cancelModal.start_time)));
-                            setEditEnd(toVNTimeStr(new Date(cancelModal.end_time)));
-                            setEditError('');
-                            setEditMode(true);
-                          }}
-                          className="flex-1 py-2.5 rounded-xl border border-blue-200 hover:bg-blue-50 text-blue-600 font-semibold text-sm transition-colors">
-                          Chỉnh sửa
-                        </button>
-                        <button onClick={() => setConfirmingCancel(true)}
-                          className="flex-1 py-2.5 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 font-semibold text-sm transition-colors">
-                          Hủy đặt phòng
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => {
+                              setEditTitle(cancelModal.title || '');
+                              setEditNotes(cancelModal.notes || '');
+                              setEditStart(toVNTimeStr(new Date(cancelModal.start_time)));
+                              setEditEnd(toVNTimeStr(new Date(cancelModal.end_time)));
+                              setEditError('');
+                              setEditMode(true);
+                            }}
+                            className="flex-1 py-2.5 rounded-xl border border-blue-200 hover:bg-blue-50 text-blue-600 font-semibold text-sm transition-colors">
+                            Chỉnh sửa
+                          </button>
+                        )}
+                        {(cancelModal.status === 'confirmed' || cancelModal.status === 'pending') && (
+                          <button onClick={() => setConfirmingCancel(true)}
+                            className="flex-1 py-2.5 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 font-semibold text-sm transition-colors">
+                            Hủy đặt phòng
+                          </button>
+                        )}
                       </div>
-                    )
-                  )}
+                    );
+                  })()}
 
                   {/* Admin cancel for other users' bookings */}
                   {currentUser?.role === 'admin' && !isOwn && cancelModal.status !== 'cancelled' && (

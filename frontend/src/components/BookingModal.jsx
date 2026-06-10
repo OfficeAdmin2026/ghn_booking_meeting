@@ -41,6 +41,7 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
   const actualEnd   = vnToISO(dateStr, endInput);
   const duration    = Math.round((new Date(actualEnd) - new Date(actualStart)) / 60000);
   const timeValid   = duration > 0;
+  const isPastStart = new Date(actualStart) <= new Date();
 
   // Close on Escape key
   useEffect(() => {
@@ -61,6 +62,7 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
     setLoading(true);
     try {
       if (!timeValid) { setError('Giờ kết thúc phải sau giờ bắt đầu'); setLoading(false); return; }
+      if (isPastStart) { setError('Không thể đặt phòng trong quá khứ'); setLoading(false); return; }
       await bookingsApi.create({
         room_id: room.id,
         title,
@@ -170,7 +172,9 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
                       />
                     </div>
                   </div>
-                  {timeValid ? (
+                  {isPastStart ? (
+                    <p className="mt-2 text-xs text-red-500 font-semibold">⚠ Không thể đặt phòng trong quá khứ</p>
+                  ) : timeValid ? (
                     <p className="mt-2 text-xs text-ghn-orange font-semibold">
                       ⏱ Thời lượng: {Math.floor(duration / 60)}h{duration % 60 > 0 ? ` ${duration % 60}m` : ''}
                     </p>
@@ -219,7 +223,7 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
                 <div className="flex gap-3 pt-1">
                   <button
                     type="submit"
-                    disabled={loading || !timeValid}
+                    disabled={loading || !timeValid || isPastStart}
                     className="btn-primary flex-1"
                   >
                     {loading ? (

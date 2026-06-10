@@ -232,6 +232,11 @@ class BookingService {
         throw new Error('end_time must be after start_time');
       }
 
+      // Prevent booking in the past
+      if (startTime <= new Date()) {
+        throw new Error('Không thể đặt phòng trong quá khứ');
+      }
+
       // Get room để check capacity & constraints
       const room = await Room.findByPk(room_id);
       if (!room || !room.is_active) {
@@ -345,6 +350,14 @@ class BookingService {
 
         if (newEnd <= newStart) {
           throw new Error('Giờ kết thúc phải sau giờ bắt đầu');
+        }
+
+        const now = new Date();
+        if (new Date(booking.start_time) < now) {
+          throw new Error('Không thể chỉnh sửa lịch đặt đã qua');
+        }
+        if (newStart < now) {
+          throw new Error('Không thể đặt lịch với thời gian trong quá khứ');
         }
 
         // Check conflict
