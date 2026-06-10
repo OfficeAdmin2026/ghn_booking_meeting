@@ -155,6 +155,7 @@ export default function CalendarPage() {
   const location = useLocation();
   const navStateHandled = useRef(false);
   const selRoomRestoredRef = useRef(false); // true after room restoration attempt completes
+  const calendarScrollRef = useRef(null);
 
   // Calendar anchor
   const [anchorDate, setAnchorDate] = useState(new Date());
@@ -360,6 +361,13 @@ export default function CalendarPage() {
 
   /* ── keep week in sync with anchor ── */
   useEffect(() => { setWeekDays(getWeekRange(anchorDate)); }, [anchorDate]);
+
+  /* ── scroll to 08:00 when a room is selected ── */
+  useEffect(() => {
+    if (!selRoom || !calendarScrollRef.current) return;
+    const scrollTo = (8 - START_HOUR) * HOUR_HEIGHT;
+    calendarScrollRef.current.scrollTop = scrollTo;
+  }, [selRoom]);
 
   /* ── fetch bookings when room or week changes ── */
   const fetchBookings = useCallback(async () => {
@@ -1241,7 +1249,7 @@ export default function CalendarPage() {
         </div>
 
         {/* Scrollable body — header is sticky inside so columns always align */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div ref={calendarScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">
           {/* Header row — sticky so it stays visible while scrolling */}
           <div className="flex border-b border-gray-200 bg-white sticky top-0 z-40">
             {/* time axis spacer */}
