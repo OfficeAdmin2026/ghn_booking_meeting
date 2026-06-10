@@ -156,7 +156,7 @@ export default function CalendarPage() {
   const navStateHandled = useRef(false);
   const selRoomRestoredRef = useRef(false); // true after room restoration attempt completes
   const calendarScrollRef = useRef(null);
-  const scrolledForRoomRef = useRef(null); // tracks which room we last scrolled for
+  const needsScrollRef = useRef(false); // true khi đổi phòng, cleared sau khi scroll
 
   // Calendar anchor
   const [anchorDate, setAnchorDate] = useState(new Date());
@@ -363,17 +363,21 @@ export default function CalendarPage() {
   /* ── keep week in sync with anchor ── */
   useEffect(() => { setWeekDays(getWeekRange(anchorDate)); }, [anchorDate]);
 
-  /* ── scroll to 08:00 once per room selection (after bookings load) ── */
+  /* ── đánh dấu cần scroll khi đổi phòng ── */
   useEffect(() => {
-    if (!selRoom || loadingBookings) return;
-    if (scrolledForRoomRef.current === selRoom.id) return; // already scrolled for this room
-    scrolledForRoomRef.current = selRoom.id;
+    if (selRoom) needsScrollRef.current = true;
+  }, [selRoom]);
+
+  /* ── scroll đến 08:00 ngay sau khi bookings load xong (grid đã render) ── */
+  useEffect(() => {
+    if (loadingBookings || !selRoom || !needsScrollRef.current) return;
+    needsScrollRef.current = false;
     const scrollTo = (8 - START_HOUR) * HOUR_HEIGHT;
     const t = setTimeout(() => {
       if (calendarScrollRef.current) calendarScrollRef.current.scrollTop = scrollTo;
     }, 50);
     return () => clearTimeout(t);
-  }, [selRoom, loadingBookings]);
+  }, [loadingBookings, selRoom]);
 
   /* ── fetch bookings when room or week changes ── */
   const fetchBookings = useCallback(async () => {
