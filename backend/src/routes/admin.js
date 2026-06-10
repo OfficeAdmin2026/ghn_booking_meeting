@@ -82,12 +82,15 @@ router.post('/promote', authMiddleware, adminMiddleware, async (req, res) => {
       return res.status(400).json({ error: { status: 400, message: 'Role không hợp lệ' } });
     if (!email.endsWith('@ghn.vn') && role !== 'user')
       return res.status(400).json({ error: { status: 400, message: 'Chỉ email @ghn.vn mới được cấp quyền admin / VIP' } });
-    const user = await User.findOne({ where: { email: { [Op.iLike]: email } } });
-    if (!user)
-      return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng. Họ cần đăng nhập ít nhất 1 lần trước.' } });
-    if (user.id === req.user.id)
-      return res.status(400).json({ error: { status: 400, message: 'Không thể thay đổi quyền của chính mình' } });
-    await user.update({ role, updated_at: new Date() });
+    let user = await User.findOne({ where: { email: { [Op.iLike]: email } } });
+    if (!user) {
+      const defaultName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      user = await User.create({ email, full_name: defaultName, role, is_active: true });
+    } else {
+      if (user.id === req.user.id)
+        return res.status(400).json({ error: { status: 400, message: 'Không thể thay đổi quyền của chính mình' } });
+      await user.update({ role, updated_at: new Date() });
+    }
     res.json({ status: 'success', data: { user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role } } });
   } catch (err) {
     res.status(500).json({ error: { status: 500, message: err.message } });

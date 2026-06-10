@@ -539,7 +539,7 @@ export default function AdminPage() {
           {/* Promote form */}
           <div className="card p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-1">➕ Cấp quyền theo email</h3>
-            <p className="text-xs text-gray-400 mb-4">Chỉ email đuôi @ghn.vn. Người dùng cần đăng nhập ít nhất 1 lần.</p>
+            <p className="text-xs text-gray-400 mb-4">Chỉ email đuôi @ghn.vn.</p>
             <div className="flex gap-3 flex-wrap">
               <input
                 type="email"
