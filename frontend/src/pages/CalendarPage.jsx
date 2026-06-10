@@ -221,6 +221,7 @@ export default function CalendarPage() {
   // Drag-to-select
   const dragInfo = useRef(null);
   const [dragSel, setDragSel] = useState(null);
+  const checkDragConflictRef = useRef(() => false);
   // Cancel booking modal
   const [cancelModal, setCancelModal]       = useState(null);
   const [cancelLoading, setCancelLoading]   = useState(false);
@@ -605,7 +606,9 @@ export default function CalendarPage() {
       const y = e.clientY - rect.top;
       const raw = yToMin(y);
       const endMin = Math.min(END_HOUR * 60, Math.max(dragInfo.current.startMin + 30, raw));
-      setDragSel((prev) => (prev ? { ...prev, endMin } : null));
+      const dayDateStr = toVNDateStr(dragInfo.current.dayDate);
+      const hasConflict = checkDragConflictRef.current(dayDateStr, dragInfo.current.startMin, endMin);
+      setDragSel((prev) => (prev ? { ...prev, endMin, hasConflict } : null));
     }
     function onUp(e) {
       if (!dragInfo.current) return;
@@ -634,6 +637,14 @@ export default function CalendarPage() {
         return;
       }
 
+      // Block if overlaps an existing booking
+      const dayDateStr = toVNDateStr(dayDate);
+      if (checkDragConflictRef.current(dayDateStr, startMin, endMin)) {
+        setSlotWarning('Khung giờ này đã có lịch đặt. Vui lòng chọn giờ khác.');
+        setTimeout(() => setSlotWarning(''), 5000);
+        return;
+      }
+
       setModalSlot({ startTime: start.toISOString(), endTime: end.toISOString() });
     }
     window.addEventListener('mousemove', onMove);
@@ -652,6 +663,14 @@ export default function CalendarPage() {
     if (!bookingsByDay[ds]) bookingsByDay[ds] = [];
     bookingsByDay[ds].push(b);
   }
+  // Keep ref in sync so drag handlers (defined in useEffect[]) can access latest bookings
+  checkDragConflictRef.current = (dayDateStr, startMin, endMin) => {
+    return (bookingsByDay[dayDateStr] || []).some(b => {
+      const bStart = toVNMinutes(new Date(b.start_time));
+      const bEnd   = toVNMinutes(new Date(b.end_time));
+      return startMin < bEnd && endMin > bStart;
+    });
+  };
 
   /* ── month grid ── */
   const monthGrid = getMonthGrid(calYear, calMonth);
@@ -1323,11 +1342,16 @@ export default function CalendarPage() {
                           height: Math.max((dragSel.endMin - dragSel.startMin) * (HOUR_HEIGHT / 60), 20),
                           left: 2, right: 2,
                         }}
-                        className="absolute z-30 rounded bg-ghn-orange/20 border border-dashed border-ghn-orange pointer-events-none"
+                        className={`absolute z-30 rounded border border-dashed pointer-events-none ${
+                          dragSel.hasConflict
+                            ? 'bg-red-500/20 border-red-500'
+                            : 'bg-ghn-orange/20 border-ghn-orange'
+                        }`}
                       >
                         <div className="px-1.5 pt-0.5">
-                          <span className="text-[10px] font-bold text-ghn-orange">
+                          <span className={`text-[10px] font-bold ${dragSel.hasConflict ? 'text-red-600' : 'text-ghn-orange'}`}>
                             {minToTimeStr(dragSel.startMin)} – {minToTimeStr(dragSel.endMin)}
+                            {dragSel.hasConflict && ' ✕'}
                           </span>
                         </div>
                       </div>
