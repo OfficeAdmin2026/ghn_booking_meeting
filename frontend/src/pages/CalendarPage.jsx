@@ -1318,7 +1318,7 @@ export default function CalendarPage() {
                     className="border-b border-gray-100 flex items-start justify-end pr-2 pt-1"
                   >
                     <span className="text-[11px] text-gray-400">
-                      {h < 12 ? `${h} SA` : h === 12 ? '12 CH' : `${h - 12} CH`}
+                      {`${String(h).padStart(2, '0')}:00`}
                     </span>
                   </div>
                 ))}
