@@ -1,5 +1,6 @@
 const { Booking, Room, User, CheckIn } = require('../models');
-const { Op } = require('sequelize');
+const { Op, Transaction } = require('sequelize');
+const { sequelize } = require('../config/database');
 const AdminSettingService = require('./AdminSettingService');
 require('dotenv').config();
 
@@ -179,7 +180,7 @@ class BookingService {
    * @param {Date} endTime
    * @param {string|null} excludeBookingId - booking id to exclude from conflict check
    */
-  static async checkTimeConflict(roomId, startTime, endTime, excludeBookingId = null) {
+  static async checkTimeConflict(roomId, startTime, endTime, excludeBookingId = null, transaction = null) {
     try {
       const where = {
         room_id: roomId,
@@ -197,7 +198,7 @@ class BookingService {
         where.id = { [Op.ne]: excludeBookingId };
       }
 
-      const conflict = await Booking.findOne({ where });
+      const conflict = await Booking.findOne({ where, ...(transaction ? { transaction, lock: transaction.LOCK.UPDATE } : {}) });
       return conflict;
     } catch (error) {
       throw error;
@@ -298,12 +299,6 @@ class BookingService {
         }
       }
 
-      // Check for time conflicts (checks against all bookings including admin-hidden)
-      const conflict = await this.checkTimeConflict(room_id, startTime, endTime, null);
-      if (conflict) {
-        throw new Error(`Room is already booked for this time slot`);
-      }
-
       // Admin bookings for dates not yet visible to users are hidden until opening time
       let isAdminHidden = false;
       if (user.role === 'admin') {
@@ -311,19 +306,28 @@ class BookingService {
         isAdminHidden = !this.isDateVisibleToUsers(startTime, visibleRange);
       }
 
-      // Tạo booking
-      const booking = await Booking.create({
-        room_id,
-        user_id: userId,
-        title,
-        participants_count: 1,
-        start_time: startTime,
-        end_time: endTime,
-        status: 'confirmed', // Tạo ngay với status confirmed (không cần pending)
-        recurring: recurring || 'none',
-        notes,
-        is_admin_hidden: isAdminHidden
-      });
+      // Dùng transaction SERIALIZABLE + SELECT FOR UPDATE để tránh race condition đặt trùng
+      const booking = await sequelize.transaction(
+        { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE },
+        async (t) => {
+          const conflict = await this.checkTimeConflict(room_id, startTime, endTime, null, t);
+          if (conflict) {
+            throw new Error(`Room is already booked for this time slot`);
+          }
+          return Booking.create({
+            room_id,
+            user_id: userId,
+            title,
+            participants_count: 1,
+            start_time: startTime,
+            end_time: endTime,
+            status: 'confirmed',
+            recurring: recurring || 'none',
+            notes,
+            is_admin_hidden: isAdminHidden
+          }, { transaction: t });
+        }
+      );
 
       return await this.getBookingById(booking.id);
     } catch (error) {
