@@ -18,6 +18,11 @@ class RoomController {
         is_vip: req.query.is_vip
       };
 
+      // User thường không được thấy phòng VIP
+      if (req.user.role === 'user') {
+        filters.is_vip = false;
+      }
+
       const rooms = await RoomService.getAllRooms(filters);
 
       res.json({
@@ -57,6 +62,11 @@ class RoomController {
         location: req.query.location,
         floor: req.query.floor
       };
+
+      // User thường không được thấy phòng VIP trong kết quả tìm kiếm
+      if (req.user.role === 'user') {
+        filters.is_vip = false;
+      }
 
       const rooms = await RoomService.searchAvailableRooms(filters);
 

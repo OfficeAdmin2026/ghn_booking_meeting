@@ -64,7 +64,8 @@ class RoomService {
         capacity,
         amenities,
         location,
-        floor
+        floor,
+        is_vip
       } = filters;
 
       // Validate required fields
@@ -94,6 +95,10 @@ class RoomService {
 
       if (floor) {
         whereRoom.floor = floor;
+      }
+
+      if (is_vip !== undefined) {
+        whereRoom.is_vip = is_vip === 'true' || is_vip === true;
       }
 
       // Tìm phòng không có booking conflict
