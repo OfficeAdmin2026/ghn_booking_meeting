@@ -154,6 +154,7 @@ export default function CalendarPage() {
   const today = toVNDateStr(new Date());
   const location = useLocation();
   const navStateHandled = useRef(false);
+  const selRoomRestoredRef = useRef(false); // true after room restoration attempt completes
 
   // Calendar anchor
   const [anchorDate, setAnchorDate] = useState(new Date());
@@ -303,9 +304,38 @@ export default function CalendarPage() {
     return () => clearInterval(id);
   }, []);
 
+  /* ── persist selected room to sessionStorage ── */
+  useEffect(() => {
+    // Guard: don't run until restoration attempt is done (avoids wiping sessionStorage on initial null)
+    if (!selRoomRestoredRef.current) return;
+    if (selRoom) {
+      sessionStorage.setItem('cal_selRoomId', selRoom.id);
+      sessionStorage.setItem('cal_selOffice', selOffice);
+      sessionStorage.setItem('cal_selFloor',  selFloor);
+    } else {
+      sessionStorage.removeItem('cal_selRoomId');
+    }
+  }, [selRoom, selOffice, selFloor]);
+
   /* ── load rooms once ── */
   useEffect(() => {
-    roomsApi.getAll().then((res) => setRooms(res.data.data?.rooms || []));
+    roomsApi.getAll().then((res) => {
+      const loaded = res.data.data?.rooms || [];
+      setRooms(loaded);
+      // restore room from sessionStorage (only if not navigated via location.state)
+      if (!location.state?.room) {
+        const savedId = sessionStorage.getItem('cal_selRoomId');
+        if (savedId) {
+          const restored = loaded.find((r) => r.id === savedId);
+          if (restored) {
+            setSelRoom(restored);
+            setSelOffice(sessionStorage.getItem('cal_selOffice') || restored.location || '');
+            setSelFloor(sessionStorage.getItem('cal_selFloor')  || restored.floor   || '');
+          }
+        }
+      }
+      selRoomRestoredRef.current = true;
+    });
   }, []);
 
   /* ── pre-select room when navigated from RoomsPage ── */
