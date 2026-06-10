@@ -26,13 +26,6 @@ export default function LoginPage() {
     }
   };
 
-  const quickLogins = [
-    { email: 'admin@ghn.vn', name: 'Admin GHN', role: 'admin' },
-    { email: 'vip.nguyen@ghn.vn', name: 'VIP Nguyễn', role: 'vip' },
-    { email: 'mary@ghn.vn', name: 'Mary Nguyễn', role: 'user' },
-    { email: 'john.tran@ghn.vn', name: 'John Trần', role: 'user' },
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-ghn-blue-light via-white to-ghn-orange-light flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -97,22 +90,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick demo logins */}
-          <div className="mt-6 pt-5 border-t border-gray-100">
-            <p className="text-xs text-gray-400 text-center mb-3 font-medium uppercase tracking-wide">Demo nhanh</p>
-            <div className="grid grid-cols-2 gap-2">
-              {quickLogins.map((u) => (
-                <button
-                  key={u.email}
-                  onClick={() => { setEmail(u.email); setFullName(u.name); }}
-                  className="text-left text-xs px-3 py-2 border border-gray-200 rounded-lg hover:border-ghn-orange hover:bg-ghn-orange-light transition-all duration-150"
-                >
-                  <p className="font-medium text-gray-700 truncate">{u.name}</p>
-                  <p className="text-gray-400 truncate capitalize">{u.role}</p>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
