@@ -18,7 +18,7 @@ Internal meeting room booking system for GHN (Giao Hàng Nhanh).
 | Service    | URL |
 |------------|-----|
 | GitHub     | https://github.com/tilo2402/ghn_booking_meeting |
-| Frontend   | https://ghn-booking-meeting.vercel.app |
+| Frontend   | https://ghn-booking-meeting-seven.vercel.app |
 | Backend    | https://ghn-booking-meeting.onrender.com |
 | Database   | Supabase (PostgreSQL 15, project: `ghn-booking-meeting`) |
 | Report     | https://tilo2402.github.io/ghn_booking_meeting/ (GitHub Pages, `docs/index.html`) |
@@ -59,7 +59,7 @@ DATABASE_URL=postgresql://postgres.[project-ref]:[password]@aws-0-ap-southeast-1
 NODE_ENV=production
 PORT=10000
 JWT_SECRET=<secret>
-ALLOWED_ORIGINS=https://ghn-booking-meeting.vercel.app
+ALLOWED_ORIGINS=https://ghn-booking-meeting-seven.vercel.app
 ```
 > Use Session Pooler URL (pooler.supabase.com), NOT direct connection.
 
