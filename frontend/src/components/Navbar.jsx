@@ -55,7 +55,7 @@ export default function Navbar() {
                   <ChartBarIcon className="w-4 h-4" /> Thống kê
                 </Link>
                 <Link to="/admin" className={linkClass(location.pathname.startsWith('/admin'))}>
-                  <Cog6ToothIcon className="w-4 h-4" /> Bảng điều khiển
+                  <Cog6ToothIcon className="w-4 h-4" /> Quản trị
                 </Link>
               </>
             )}
@@ -95,7 +95,7 @@ export default function Navbar() {
                 <ChartBarIcon className="w-3.5 h-3.5" /> Thống kê
               </Link>
               <Link to="/admin" className={mobileLinkClass(location.pathname.startsWith('/admin'))}>
-                <Cog6ToothIcon className="w-3.5 h-3.5" /> Bảng điều khiển
+                <Cog6ToothIcon className="w-3.5 h-3.5" /> Quản trị
               </Link>
             </>
           )}
