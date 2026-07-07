@@ -2,6 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { bookingsApi } from '../api';
 import BookingStatusBadge from '../components/BookingStatusBadge';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PlusIcon,
+  InboxIcon,
+  XMarkIcon,
+  BuildingOfficeIcon,
+  ClockIcon,
+  UsersIcon,
+} from '@heroicons/react/24/outline';
 
 /* ─────────────────────────── helpers ─────────────────────────── */
 const DAY_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -204,15 +214,11 @@ export default function BookingsPage() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <button onClick={prevMonth} className="p-1 rounded hover:bg-gray-100 text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
+                <ChevronLeftIcon className="w-4 h-4" />
               </button>
               <span className="text-sm font-bold text-gray-800">{MON_LABELS[calMonth]} {calYear}</span>
               <button onClick={nextMonth} className="p-1 rounded hover:bg-gray-100 text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <ChevronRightIcon className="w-4 h-4" />
               </button>
             </div>
 
@@ -254,9 +260,7 @@ export default function BookingsPage() {
 
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
               <button onClick={prevWeek} className="flex items-center gap-1 text-xs text-gray-500 hover:text-ghn-orange px-2 py-1 rounded hover:bg-orange-50">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
+                <ChevronLeftIcon className="w-3.5 h-3.5" />
                 Tuần trước
               </button>
               <button onClick={() => pickDay(new Date())} className="text-xs text-ghn-orange font-semibold px-2 py-1 rounded hover:bg-orange-50">
@@ -264,9 +268,7 @@ export default function BookingsPage() {
               </button>
               <button onClick={nextWeek} className="flex items-center gap-1 text-xs text-gray-500 hover:text-ghn-orange px-2 py-1 rounded hover:bg-orange-50">
                 Tuần sau
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <ChevronRightIcon className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -318,8 +320,8 @@ export default function BookingsPage() {
           </div>
 
           {/* ── New booking button ── */}
-          <button onClick={() => navigate('/calendar')} className="w-full btn-primary text-sm">
-            + Đặt phòng mới
+          <button onClick={() => navigate('/calendar')} className="w-full btn-primary text-sm inline-flex items-center justify-center gap-1.5">
+            <PlusIcon className="w-4 h-4" /> Đặt phòng mới
           </button>
 
         </div>
@@ -442,7 +444,7 @@ export default function BookingsPage() {
               {/* Empty state */}
               {weekBookings.length === 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <p className="text-4xl mb-3">📭</p>
+                  <InboxIcon className="w-12 h-12 text-gray-300 mb-3" />
                   <p className="text-gray-400 font-medium">Không có lịch đặt trong tuần này</p>
                   <p className="text-gray-300 text-sm mt-1">
                     {statusFilter !== 'all' ? 'Thử đổi bộ lọc trạng thái' : 'Nhấn "Đặt phòng mới" để tạo lịch'}
@@ -468,9 +470,7 @@ export default function BookingsPage() {
                 onClick={() => setSelectedBooking(null)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
 
@@ -484,7 +484,7 @@ export default function BookingsPage() {
               {/* Room + time card */}
               <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-2 text-sm">
                 <div className="flex items-center gap-2 font-semibold text-gray-800">
-                  <span>🏢</span>
+                  <BuildingOfficeIcon className="w-4 h-4 flex-shrink-0" />
                   <span>{selectedBooking.room?.name}</span>
                   {selectedBooking.room?.location && (
                     <span className="text-gray-400 font-normal">
@@ -493,11 +493,11 @@ export default function BookingsPage() {
                     </span>
                   )}
                 </div>
-                <div className="text-gray-500">🕐 {fmtDateTime(selectedBooking.start_time)}</div>
-                <div className="text-gray-500">🕑 {fmtDateTime(selectedBooking.end_time)}</div>
+                <div className="flex items-center gap-1.5 text-gray-500"><ClockIcon className="w-4 h-4" /> {fmtDateTime(selectedBooking.start_time)}</div>
+                <div className="flex items-center gap-1.5 text-gray-500"><ClockIcon className="w-4 h-4" /> {fmtDateTime(selectedBooking.end_time)}</div>
                 <div className="flex gap-4 text-gray-500">
-                  <span>⏱ {fmtDuration(selectedBooking.start_time, selectedBooking.end_time)}</span>
-                  <span>👥 {selectedBooking.participants_count} người</span>
+                  <span className="flex items-center gap-1"><ClockIcon className="w-4 h-4" /> {fmtDuration(selectedBooking.start_time, selectedBooking.end_time)}</span>
+                  <span className="flex items-center gap-1"><UsersIcon className="w-4 h-4" /> {selectedBooking.participants_count} người</span>
                 </div>
                 {selectedBooking.notes && (
                   <p className="text-xs text-gray-400 italic border-t border-gray-200 pt-2 mt-1">

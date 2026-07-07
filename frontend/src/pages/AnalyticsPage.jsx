@@ -1,5 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { dashboardApi } from '../api';
+import {
+  ChartBarIcon,
+  ClipboardDocumentListIcon,
+  ArrowTrendingUpIcon,
+  XCircleIcon,
+  ClockIcon,
+  TrophyIcon,
+  UserIcon,
+  ArrowDownTrayIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  ChevronUpDownIcon,
+} from '@heroicons/react/24/outline';
 
 /* ── helpers ── */
 function toVNDateStr(d) {
@@ -209,7 +222,9 @@ export default function AnalyticsPage() {
 
       {/* ── Header ── */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">📊 Thống kê & Báo cáo</h1>
+        <h1 className="text-2xl font-bold text-gray-900 inline-flex items-center gap-2">
+          <ChartBarIcon className="w-6 h-6 text-ghn-orange" /> Thống kê & Báo cáo
+        </h1>
         <p className="text-gray-500 text-sm mt-0.5">Phân tích hiệu suất sử dụng phòng họp</p>
       </div>
 
@@ -249,27 +264,27 @@ export default function AnalyticsPage() {
           {/* ── Summary metric cards ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
-              icon="📋"
+              icon={<ClipboardDocumentListIcon className="w-6 h-6" />}
               label="Tổng đặt phòng"
               value={s.total_bookings}
               sub={`${s.cancelled} đã hủy`}
             />
             <MetricCard
-              icon="📈"
+              icon={<ArrowTrendingUpIcon className="w-6 h-6" />}
               label="Tỷ lệ sử dụng giờ làm việc"
               value={`${s.working_hours_utilization ?? s.occupancy_rate}%`}
               sub={`${s.total_rooms} phòng • ${s.working_days ?? 0} ngày T2–T6 • 8h30–18h (trừ 12–13h)`}
               color="bg-blue-50 text-blue-600"
             />
             <MetricCard
-              icon="❌"
+              icon={<XCircleIcon className="w-6 h-6" />}
               label="Tỷ lệ hủy"
               value={`${s.cancellation_rate}%`}
               sub={`${s.cancelled} lượt hủy`}
               color="bg-red-50 text-red-500"
             />
             <MetricCard
-              icon="⏱️"
+              icon={<ClockIcon className="w-6 h-6" />}
               label="Thời lượng TB"
               value={fmtDuration(s.avg_duration_minutes)}
               sub="mỗi cuộc họp"
@@ -301,7 +316,9 @@ export default function AnalyticsPage() {
             {/* Top rooms */}
             <div className="card p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-gray-700">🏆 Top phòng được đặt nhiều nhất</h3>
+                <h3 className="text-sm font-semibold text-gray-700 inline-flex items-center gap-1.5">
+                  <TrophyIcon className="w-4 h-4 text-ghn-orange" /> Top phòng được đặt nhiều nhất
+                </h3>
                 <span className="text-[11px] text-gray-400">badge = % sử dụng T2–T6</span>
               </div>
               {metrics.top_rooms.length === 0 ? (
@@ -325,7 +342,9 @@ export default function AnalyticsPage() {
 
             {/* Peak hours */}
             <div className="card p-5">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">⏰ Giờ cao điểm</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-4 inline-flex items-center gap-1.5">
+                <ClockIcon className="w-4 h-4 text-ghn-orange" /> Giờ cao điểm
+              </h3>
               <div className="space-y-1.5">
                 {peakHoursAll.map(({ hour, count }) => (
                   <div key={hour} className="flex items-center gap-2">
@@ -350,7 +369,9 @@ export default function AnalyticsPage() {
           {/* ── Top users ── */}
           {metrics.top_users.length > 0 && (
             <div className="card p-5">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">👤 Top người đặt phòng</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-4 inline-flex items-center gap-1.5">
+                <UserIcon className="w-4 h-4 text-ghn-orange" /> Top người đặt phòng
+              </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -387,8 +408,8 @@ export default function AnalyticsPage() {
       {/* ── Detailed report table ── */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-          <h3 className="text-sm font-semibold text-gray-700">
-            📋 Chi tiết đặt phòng
+          <h3 className="text-sm font-semibold text-gray-700 inline-flex items-center gap-1.5">
+            <ClipboardDocumentListIcon className="w-4 h-4 text-ghn-orange" /> Chi tiết đặt phòng
             {filteredReport.length > 0 && (
               <span className="ml-2 text-xs font-normal text-gray-400">({filteredReport.length} bản ghi)</span>
             )}
@@ -399,7 +420,7 @@ export default function AnalyticsPage() {
               disabled={filteredReport.length === 0}
               className="flex items-center gap-1.5 px-4 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-40"
             >
-              ⬇️ Xuất CSV
+              <ArrowDownTrayIcon className="w-4 h-4" /> Xuất CSV
             </button>
           </div>
         </div>
@@ -426,7 +447,9 @@ export default function AnalyticsPage() {
                   >
                     <span className="inline-flex items-center gap-1">
                       {label}
-                      <span className="text-[10px]">{sortCol === col ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                      {sortCol === col
+                        ? (sortDir === 'asc' ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />)
+                        : <ChevronUpDownIcon className="w-3 h-3 text-gray-300" />}
                     </span>
                   </th>
                 ))}

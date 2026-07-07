@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { bookingsApi } from '../api';
+import { XMarkIcon, ClockIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 // VN timezone helpers
 function toVNTimeStr(isoStr) {
@@ -92,9 +94,7 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
@@ -102,14 +102,18 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
           {/* Success state */}
           {success ? (
             <div className="text-center py-6">
-              <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">✅</div>
+              <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center text-green-600 mx-auto mb-3">
+                <CheckCircleIcon className="w-8 h-8" />
+              </div>
               <h3 className="text-lg font-bold text-gray-800 mb-1">Đặt phòng thành công!</h3>
               <p className="text-sm text-gray-500 mb-4">
                 Phòng <strong>{room.name}</strong> đã được đặt từ{' '}
                 <strong>{fmtTime(actualStart)}</strong> đến <strong>{fmtTime(actualEnd)}</strong>.
               </p>
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 text-left">
-                <p className="text-sm font-semibold text-amber-700 mb-1">⏰ Lưu ý check-in</p>
+                <p className="text-sm font-semibold text-amber-700 mb-1 flex items-center gap-1">
+                  <ClockIcon className="w-4 h-4" /> Lưu ý check-in
+                </p>
                 <p className="text-sm text-amber-600">
                   Vui lòng có mặt tại phòng trong vòng <strong>10 phút</strong> kể từ giờ đặt (<strong>{fmtTime(actualStart)}</strong>).
                   Sau thời gian này, phòng có thể được sử dụng cho các cuộc họp khác.
@@ -150,7 +154,7 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
                   <p className="text-xs text-gray-500 mb-2 font-medium">{fmtDate(startTime)}</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] text-gray-400 mb-1">🕐 Bắt đầu</label>
+                      <label className="flex items-center gap-1 text-[10px] text-gray-400 mb-1"><ClockIcon className="w-3 h-3" /> Bắt đầu</label>
                       <input
                         type="time"
                         value={startInput}
@@ -159,7 +163,7 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-gray-400 mb-1">🕑 Kết thúc</label>
+                      <label className="flex items-center gap-1 text-[10px] text-gray-400 mb-1"><ClockIcon className="w-3 h-3" /> Kết thúc</label>
                       <input
                         type="time"
                         value={endInput}
@@ -171,11 +175,13 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
                     </div>
                   </div>
                   {timeValid ? (
-                    <p className="mt-2 text-xs text-ghn-orange font-semibold">
-                      ⏱ Thời lượng: {Math.floor(duration / 60)}h{duration % 60 > 0 ? ` ${duration % 60}m` : ''}
+                    <p className="mt-2 text-xs text-ghn-orange font-semibold flex items-center gap-1">
+                      <ClockIcon className="w-3.5 h-3.5" /> Thời lượng: {Math.floor(duration / 60)}h{duration % 60 > 0 ? ` ${duration % 60}m` : ''}
                     </p>
                   ) : (
-                    <p className="mt-2 text-xs text-red-500 font-semibold">⚠ Giờ kết thúc phải sau giờ bắt đầu</p>
+                    <p className="mt-2 text-xs text-red-500 font-semibold flex items-center gap-1">
+                      <ExclamationTriangleIcon className="w-3.5 h-3.5" /> Giờ kết thúc phải sau giờ bắt đầu
+                    </p>
                   )}
                 </div>
               </div>
@@ -228,7 +234,9 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
                         Đang đặt...
                       </span>
                     ) : (
-                      '✅ Xác nhận đặt phòng'
+                      <span className="flex items-center justify-center gap-1.5">
+                        <CheckCircleIcon className="w-5 h-5" /> Xác nhận đặt phòng
+                      </span>
                     )}
                   </button>
                   <button

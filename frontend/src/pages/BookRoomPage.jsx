@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { bookingsApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import { ArrowLeftIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 function formatDateTimeReadable(dt) {
   return new Date(dt).toLocaleString('vi-VN', {
@@ -69,8 +71,8 @@ export default function BookRoomPage() {
     return (
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
         <div className="card p-10">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
-            ✅
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mx-auto mb-4">
+            <CheckCircleIcon className="w-9 h-9" />
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">Đặt phòng thành công!</h2>
           <p className="text-gray-500 text-sm mb-6">
@@ -96,7 +98,7 @@ export default function BookRoomPage() {
           onClick={() => navigate(-1)}
           className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-3"
         >
-          ← Quay lại
+          <ArrowLeftIcon className="w-4 h-4" /> Quay lại
         </button>
         <h1 className="text-2xl font-bold text-gray-900">Đặt phòng họp</h1>
       </div>
@@ -120,16 +122,16 @@ export default function BookRoomPage() {
         </div>
         <div className="mt-3 pt-3 border-t border-gray-100 grid sm:grid-cols-2 gap-2 text-sm text-gray-600">
           <div>
-            <span className="text-gray-400">🕐 Bắt đầu:</span>{' '}
+            <span className="text-gray-400 inline-flex items-center gap-1"><ClockIcon className="w-4 h-4" /> Bắt đầu:</span>{' '}
             <span className="font-medium">{formatDateTimeReadable(startTime)}</span>
           </div>
           <div>
-            <span className="text-gray-400">🕑 Kết thúc:</span>{' '}
+            <span className="text-gray-400 inline-flex items-center gap-1"><ClockIcon className="w-4 h-4" /> Kết thúc:</span>{' '}
             <span className="font-medium">{formatDateTimeReadable(endTime)}</span>
           </div>
         </div>
-        <p className="mt-2 text-sm text-ghn-orange font-medium">
-          ⏱ Thời lượng: {Math.floor(duration / 60)}h{duration % 60 > 0 ? ` ${duration % 60}m` : ''}
+        <p className="mt-2 text-sm text-ghn-orange font-medium inline-flex items-center gap-1">
+          <ClockIcon className="w-4 h-4" /> Thời lượng: {Math.floor(duration / 60)}h{duration % 60 > 0 ? ` ${duration % 60}m` : ''}
         </p>
       </div>
 
@@ -203,8 +205,8 @@ export default function BookRoomPage() {
           )}
 
           <div className="flex gap-3 pt-2">
-            <button type="submit" disabled={loading} className="btn-primary flex-1 py-3">
-              {loading ? 'Đang đặt...' : '✅ Xác nhận đặt phòng'}
+            <button type="submit" disabled={loading} className="btn-primary flex-1 py-3 inline-flex items-center justify-center gap-1.5">
+              {loading ? 'Đang đặt...' : (<><CheckCircleIcon className="w-5 h-5" /> Xác nhận đặt phòng</>)}
             </button>
             <button
               type="button"

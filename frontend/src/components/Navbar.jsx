@@ -1,5 +1,11 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  HomeIcon,
+  ClipboardDocumentListIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
 
 export default function Navbar() {
   const { user, logout, isAdmin } = useAuth();
@@ -38,18 +44,18 @@ export default function Navbar() {
           {/* Nav links */}
           <div className="hidden md:flex items-center gap-1">
             <Link to="/" className={linkClass(location.pathname === '/')}>
-              <span>🏠</span> Trang chủ
+              <HomeIcon className="w-4 h-4" /> Trang chủ
             </Link>
             <Link to="/rules" className={linkClass(location.pathname === '/rules')}>
-              <span>📋</span> Nội quy phòng họp
+              <ClipboardDocumentListIcon className="w-4 h-4" /> Nội quy phòng họp
             </Link>
             {isAdmin && (
               <>
                 <Link to="/analytics" className={linkClass(location.pathname === '/analytics')}>
-                  <span>📊</span> Thống kê
+                  <ChartBarIcon className="w-4 h-4" /> Thống kê
                 </Link>
                 <Link to="/admin" className={linkClass(location.pathname.startsWith('/admin'))}>
-                  <span>⚙️</span> Bảng điều khiển
+                  <Cog6ToothIcon className="w-4 h-4" /> Bảng điều khiển
                 </Link>
               </>
             )}
@@ -77,12 +83,20 @@ export default function Navbar() {
 
         {/* Mobile nav */}
         <div className="md:hidden flex items-center gap-1 pb-2 overflow-x-auto px-0">
-          <Link to="/" className={mobileLinkClass(location.pathname === '/')}>🏠 Trang chủ</Link>
-          <Link to="/rules" className={mobileLinkClass(location.pathname === '/rules')}>📋 Nội quy</Link>
+          <Link to="/" className={mobileLinkClass(location.pathname === '/')}>
+            <HomeIcon className="w-3.5 h-3.5" /> Trang chủ
+          </Link>
+          <Link to="/rules" className={mobileLinkClass(location.pathname === '/rules')}>
+            <ClipboardDocumentListIcon className="w-3.5 h-3.5" /> Nội quy
+          </Link>
           {isAdmin && (
             <>
-              <Link to="/analytics" className={mobileLinkClass(location.pathname === '/analytics')}>📊 Thống kê</Link>
-              <Link to="/admin" className={mobileLinkClass(location.pathname.startsWith('/admin'))}>⚙️ Bảng điều khiển</Link>
+              <Link to="/analytics" className={mobileLinkClass(location.pathname === '/analytics')}>
+                <ChartBarIcon className="w-3.5 h-3.5" /> Thống kê
+              </Link>
+              <Link to="/admin" className={mobileLinkClass(location.pathname.startsWith('/admin'))}>
+                <Cog6ToothIcon className="w-3.5 h-3.5" /> Bảng điều khiển
+              </Link>
             </>
           )}
         </div>

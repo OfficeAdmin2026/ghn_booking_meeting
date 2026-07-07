@@ -3,6 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingsApi, roomsApi } from '../api';
 import BookingStatusBadge from '../components/BookingStatusBadge';
+import {
+  BuildingOfficeIcon,
+  CalendarDaysIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  PlusCircleIcon,
+  ClipboardDocumentListIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
 
 function formatDateTime(dt) {
   return new Date(dt).toLocaleString('vi-VN', {
@@ -73,17 +83,17 @@ export default function DashboardPage() {
       {/* Welcome */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">
-          Xin chào, {user?.full_name?.split(' ').pop()} 👋
+          Xin chào, {user?.full_name?.split(' ').pop()}
         </h1>
         <p className="text-gray-500 mt-1">Hôm nay là {formatDate(new Date())}</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard icon="🏢" label="Tổng phòng" value={totalRooms} color="bg-ghn-blue-light" />
-        <StatCard icon="📅" label="Lịch đặt của tôi" value={bookings.length} color="bg-ghn-orange-light" />
-        <StatCard icon="✅" label="Đã xác nhận" value={confirmed} color="bg-green-50" />
-        <StatCard icon="⏰" label="Sắp diễn ra" value={upcoming.length} color="bg-purple-50" />
+        <StatCard icon={<BuildingOfficeIcon className="w-6 h-6" />} label="Tổng phòng" value={totalRooms} color="bg-ghn-blue-light" />
+        <StatCard icon={<CalendarDaysIcon className="w-6 h-6" />} label="Lịch đặt của tôi" value={bookings.length} color="bg-ghn-orange-light" />
+        <StatCard icon={<CheckCircleIcon className="w-6 h-6" />} label="Đã xác nhận" value={confirmed} color="bg-green-50" />
+        <StatCard icon={<ClockIcon className="w-6 h-6" />} label="Sắp diễn ra" value={upcoming.length} color="bg-purple-50" />
       </div>
 
       {/* Quick actions */}
@@ -92,8 +102,8 @@ export default function DashboardPage() {
           onClick={() => navigate('/calendar')}
           className="card p-5 text-left hover:shadow-md transition-all duration-200 border-2 border-transparent hover:border-ghn-orange group"
         >
-          <div className="w-12 h-12 bg-ghn-orange-light rounded-xl flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform">
-            📆
+          <div className="w-12 h-12 bg-ghn-orange-light rounded-xl flex items-center justify-center text-ghn-orange mb-3 group-hover:scale-110 transition-transform">
+            <PlusCircleIcon className="w-7 h-7" />
           </div>
           <h3 className="font-semibold text-gray-800">Đặt phòng mới</h3>
           <p className="text-sm text-gray-500 mt-1">Chọn phòng và đặt lịch họp nhanh chóng</p>
@@ -103,8 +113,8 @@ export default function DashboardPage() {
           to="/bookings"
           className="card p-5 hover:shadow-md transition-all duration-200 border-2 border-transparent hover:border-ghn-blue"
         >
-          <div className="w-12 h-12 bg-ghn-blue-light rounded-xl flex items-center justify-center text-2xl mb-3">
-            📋
+          <div className="w-12 h-12 bg-ghn-blue-light rounded-xl flex items-center justify-center text-ghn-blue mb-3">
+            <ClipboardDocumentListIcon className="w-7 h-7" />
           </div>
           <h3 className="font-semibold text-gray-800">Lịch đặt của tôi</h3>
           <p className="text-sm text-gray-500 mt-1">Xem và quản lý các lịch đặt phòng</p>
@@ -116,8 +126,8 @@ export default function DashboardPage() {
               to="/analytics"
               className="card p-5 hover:shadow-md transition-all duration-200 border-2 border-transparent hover:border-ghn-blue"
             >
-              <div className="w-12 h-12 bg-ghn-blue-light rounded-xl flex items-center justify-center text-2xl mb-3">
-                📊
+              <div className="w-12 h-12 bg-ghn-blue-light rounded-xl flex items-center justify-center text-ghn-blue mb-3">
+                <ChartBarIcon className="w-7 h-7" />
               </div>
               <h3 className="font-semibold text-gray-800">Thống kê &amp; Báo cáo</h3>
               <p className="text-sm text-gray-500 mt-1">Xem tỷ lệ sử dụng, giờ cao điểm, xuất CSV</p>
@@ -126,8 +136,8 @@ export default function DashboardPage() {
               to="/admin"
               className="card p-5 hover:shadow-md transition-all duration-200 border-2 border-transparent hover:border-gray-300"
             >
-              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-2xl mb-3">
-                ⚙️
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 mb-3">
+                <Cog6ToothIcon className="w-7 h-7" />
               </div>
               <h3 className="font-semibold text-gray-800">Quản lý phòng</h3>
               <p className="text-sm text-gray-500 mt-1">Thêm, sửa, xóa phòng họp</p>
@@ -158,8 +168,8 @@ export default function DashboardPage() {
           <div className="divide-y divide-gray-50">
             {bookings.map((b) => (
               <div key={b.id} className="px-5 py-3.5 flex items-center gap-4 hover:bg-gray-50">
-                <div className="w-10 h-10 rounded-lg bg-ghn-orange-light flex items-center justify-center text-lg shrink-0">
-                  🏢
+                <div className="w-10 h-10 rounded-lg bg-ghn-orange-light flex items-center justify-center text-ghn-orange shrink-0">
+                  <BuildingOfficeIcon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-800 text-sm truncate">{b.title}</p>

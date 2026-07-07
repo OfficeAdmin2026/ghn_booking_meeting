@@ -1,15 +1,32 @@
+import {
+  TvIcon,
+  FilmIcon,
+  RectangleGroupIcon,
+  VideoCameraIcon,
+  MicrophoneIcon,
+  BeakerIcon,
+  CloudIcon,
+  WifiIcon,
+  PhoneIcon,
+  CheckIcon,
+  MapPinIcon,
+  BuildingOfficeIcon,
+} from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/20/solid';
+
 export default function RoomCard({ room, onBook, compact = false }) {
   const amenities = room.amenities || [];
 
   const amenityIcons = {
-    'TV': '📺',
-    'Projector': '📽️',
-    'Whiteboard': '🗒️',
-    'Video Conference': '💻',
-    'Coffee Machine': '☕',
-    'Air Conditioning': '❄️',
-    'WiFi': '📶',
-    'Phone': '📞',
+    'TV': TvIcon,
+    'Projector': FilmIcon,
+    'Whiteboard': RectangleGroupIcon,
+    'Video Conference': VideoCameraIcon,
+    'Audio Conference': MicrophoneIcon,
+    'Coffee Machine': BeakerIcon,
+    'Air Conditioning': CloudIcon,
+    'WiFi': WifiIcon,
+    'Phone': PhoneIcon,
   };
 
   if (compact) {
@@ -51,7 +68,9 @@ export default function RoomCard({ room, onBook, compact = false }) {
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-bold text-gray-900 text-base">{room.name}</h3>
               {room.is_vip && (
-                <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-0.5 rounded-full">⭐ VIP</span>
+                <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-0.5 rounded-full">
+                  <StarIcon className="w-3 h-3" /> VIP
+                </span>
               )}
             </div>
             <p className="text-xs text-gray-400 font-mono mt-0.5">{room.code}</p>
@@ -65,24 +84,27 @@ export default function RoomCard({ room, onBook, compact = false }) {
         {/* Info */}
         <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
           <span className="flex items-center gap-1">
-            <span>📍</span> {room.location}
+            <MapPinIcon className="w-4 h-4" /> {room.location}
           </span>
           <span className="flex items-center gap-1">
-            <span>🏢</span> Tầng {room.floor}
+            <BuildingOfficeIcon className="w-4 h-4" /> Tầng {room.floor}
           </span>
         </div>
 
         {/* Amenities */}
         {amenities.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
-            {amenities.slice(0, 5).map((a, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"
-              >
-                {amenityIcons[a.name] || '✓'} {a.name}
-              </span>
-            ))}
+            {amenities.slice(0, 5).map((a, i) => {
+              const AmenityIcon = amenityIcons[a.amenity] || CheckIcon;
+              return (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"
+                >
+                  <AmenityIcon className="w-3.5 h-3.5" /> {a.amenity}
+                </span>
+              );
+            })}
             {amenities.length > 5 && (
               <span className="text-xs text-gray-400 px-2 py-0.5">+{amenities.length - 5}</span>
             )}

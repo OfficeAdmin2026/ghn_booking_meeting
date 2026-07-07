@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react';
 import { adminApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  GlobeAltIcon,
+  PencilIcon,
+  PencilSquareIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  TrashIcon,
+  PlusIcon,
+  ArrowUturnLeftIcon,
+  BookmarkIcon,
+} from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 /* ─── Color palette ─── */
 const COLORS = {
@@ -200,7 +212,7 @@ function EditForm({ initial, onSave, onCancel, saving }) {
     <div className="space-y-3">
 
       {/* ── Overview ── */}
-      <Card title="🌐 Tổng quan" open={!!openCards.overview} onToggle={() => toggleCard('overview')}>
+      <Card title={<span className="flex items-center gap-1.5"><GlobeAltIcon className="w-4 h-4" /> Tổng quan</span>} open={!!openCards.overview} onToggle={() => toggleCard('overview')}>
         <div>
           <FieldLabel>Nhãn badge</FieldLabel>
           <input value={d.badge} onChange={(e) => setField('badge', e.target.value)} className={inputCls} placeholder="Quy định nội bộ" />
@@ -228,9 +240,9 @@ function EditForm({ initial, onSave, onCancel, saving }) {
             onToggle={() => toggleCard(cardId)}
             actions={
               <>
-                <IconBtn onClick={() => moveSectionUp(idx)}   disabled={idx === 0}                       title="Di lên">↑</IconBtn>
-                <IconBtn onClick={() => moveSectionDown(idx)} disabled={idx === d.sections.length - 1}   title="Di xuống">↓</IconBtn>
-                <IconBtn onClick={() => delSection(s.id)} danger title="Xóa mục">✕</IconBtn>
+                <IconBtn onClick={() => moveSectionUp(idx)}   disabled={idx === 0}                       title="Di lên"><ArrowUpIcon className="w-3.5 h-3.5" /></IconBtn>
+                <IconBtn onClick={() => moveSectionDown(idx)} disabled={idx === d.sections.length - 1}   title="Di xuống"><ArrowDownIcon className="w-3.5 h-3.5" /></IconBtn>
+                <IconBtn onClick={() => delSection(s.id)} danger title="Xóa mục"><TrashIcon className="w-3.5 h-3.5" /></IconBtn>
               </>
             }
           >
@@ -284,16 +296,16 @@ function EditForm({ initial, onSave, onCancel, saving }) {
                       className={`flex-1 ${inputCls} resize-none`}
                     />
                     <div className="flex flex-col gap-0.5 flex-shrink-0 mt-1">
-                      <IconBtn onClick={() => moveItemUp(s.id, ii)}   disabled={ii === 0}                    title="Di lên">↑</IconBtn>
-                      <IconBtn onClick={() => moveItemDown(s.id, ii)} disabled={ii === s.items.length - 1}   title="Di xuống">↓</IconBtn>
-                      <IconBtn onClick={() => delItem(s.id, ii)} danger title="Xóa điều khoản">✕</IconBtn>
+                      <IconBtn onClick={() => moveItemUp(s.id, ii)}   disabled={ii === 0}                    title="Di lên"><ArrowUpIcon className="w-3.5 h-3.5" /></IconBtn>
+                      <IconBtn onClick={() => moveItemDown(s.id, ii)} disabled={ii === s.items.length - 1}   title="Di xuống"><ArrowDownIcon className="w-3.5 h-3.5" /></IconBtn>
+                      <IconBtn onClick={() => delItem(s.id, ii)} danger title="Xóa điều khoản"><TrashIcon className="w-3.5 h-3.5" /></IconBtn>
                     </div>
                   </div>
                 ))}
               </div>
               <button onClick={() => addItem(s.id)}
                 className="mt-2 text-xs text-ghn-orange hover:text-ghn-orange-dark font-semibold flex items-center gap-1 transition-colors">
-                + Thêm điều khoản
+                <PlusIcon className="w-3.5 h-3.5" /> Thêm điều khoản
               </button>
             </div>
           </Card>
@@ -302,12 +314,12 @@ function EditForm({ initial, onSave, onCancel, saving }) {
 
       {/* Add section */}
       <button onClick={addSection}
-        className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-ghn-orange hover:text-ghn-orange transition-colors font-medium">
-        + Thêm mục mới
+        className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-ghn-orange hover:text-ghn-orange transition-colors font-medium inline-flex items-center justify-center gap-1">
+        <PlusIcon className="w-4 h-4" /> Thêm mục mới
       </button>
 
       {/* ── Closing ── */}
-      <Card title="✍️ Phần kết" open={!!openCards.closing} onToggle={() => toggleCard('closing')}>
+      <Card title={<span className="flex items-center gap-1.5"><PencilIcon className="w-4 h-4" /> Phần kết</span>} open={!!openCards.closing} onToggle={() => toggleCard('closing')}>
         <div>
           <FieldLabel>Đoạn văn kết</FieldLabel>
           <div className="space-y-2">
@@ -315,13 +327,13 @@ function EditForm({ initial, onSave, onCancel, saving }) {
               <div key={i} className="flex gap-1.5">
                 <textarea value={p} onChange={(e) => setClosingPara(i, e.target.value)}
                   rows={2} className={`flex-1 ${inputCls} resize-none`} />
-                <IconBtn onClick={() => delClosingPara(i)} danger title="Xóa đoạn" className="mt-1 flex-shrink-0">✕</IconBtn>
+                <IconBtn onClick={() => delClosingPara(i)} danger title="Xóa đoạn" className="mt-1 flex-shrink-0"><TrashIcon className="w-3.5 h-3.5" /></IconBtn>
               </div>
             ))}
           </div>
           <button onClick={addClosingPara}
             className="mt-2 text-xs text-ghn-orange hover:text-ghn-orange-dark font-semibold flex items-center gap-1 transition-colors">
-            + Thêm đoạn văn
+            <PlusIcon className="w-3.5 h-3.5" /> Thêm đoạn văn
           </button>
         </div>
         <div>
@@ -333,8 +345,8 @@ function EditForm({ initial, onSave, onCancel, saving }) {
 
       {/* Save / Cancel */}
       <div className="flex gap-3 pt-2">
-        <button onClick={() => onSave(d)} disabled={saving} className="flex-1 btn-primary py-3">
-          {saving ? 'Đang lưu...' : '💾 Lưu tất cả thay đổi'}
+        <button onClick={() => onSave(d)} disabled={saving} className="flex-1 btn-primary py-3 inline-flex items-center justify-center gap-1.5">
+          {saving ? 'Đang lưu...' : (<><BookmarkIcon className="w-4 h-4" /> Lưu tất cả thay đổi</>)}
         </button>
         <button onClick={onCancel} disabled={saving} className="flex-1 btn-ghost py-3">
           Hủy
@@ -397,21 +409,18 @@ export default function RulesPage() {
       {/* Admin toolbar */}
       {isAdmin && (
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-bold text-gray-700">
-            {editMode ? '✏️ Chỉnh sửa nội quy' : 'Nội quy phòng họp'}
+          <h2 className="text-base font-bold text-gray-700 inline-flex items-center gap-1.5">
+            {editMode ? (<><PencilSquareIcon className="w-4 h-4" /> Chỉnh sửa nội quy</>) : 'Nội quy phòng họp'}
           </h2>
           {!editMode && (
             <div className="flex gap-2">
               <button onClick={handleReset}
-                className="text-xs text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                ↺ Mặc định
+                className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                <ArrowUturnLeftIcon className="w-3.5 h-3.5" /> Mặc định
               </button>
               <button onClick={() => setEditMode(true)}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-ghn-orange text-white text-sm font-semibold hover:bg-ghn-orange-dark transition-colors">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+                <PencilSquareIcon className="w-3.5 h-3.5" />
                 Chỉnh sửa
               </button>
             </div>
@@ -419,7 +428,11 @@ export default function RulesPage() {
         </div>
       )}
 
-      {saved  && <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-medium">✅ Đã lưu thành công.</div>}
+      {saved  && (
+        <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-medium inline-flex items-center gap-1.5">
+          <CheckCircleIcon className="w-4 h-4" /> Đã lưu thành công.
+        </div>
+      )}
       {error  && <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">{error}</div>}
 
       {editMode ? (

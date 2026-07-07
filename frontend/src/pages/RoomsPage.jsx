@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { roomsApi } from '../api';
 import RoomCard from '../components/RoomCard';
+import {
+  ClockIcon,
+  UsersIcon,
+  MagnifyingGlassIcon,
+  FaceFrownIcon,
+} from '@heroicons/react/24/outline';
 
 function toLocalDateTimeInput(date) {
   const d = new Date(date);
@@ -78,8 +84,8 @@ export default function RoomsPage() {
         <form onSubmit={handleSearch}>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                🕐 Bắt đầu
+              <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1.5">
+                <ClockIcon className="w-4 h-4" /> Bắt đầu
               </label>
               <input
                 type="datetime-local"
@@ -90,8 +96,8 @@ export default function RoomsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                🕑 Kết thúc
+              <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1.5">
+                <ClockIcon className="w-4 h-4" /> Kết thúc
               </label>
               <input
                 type="datetime-local"
@@ -102,8 +108,8 @@ export default function RoomsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                👥 Số người (tối thiểu)
+              <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-1.5">
+                <UsersIcon className="w-4 h-4" /> Số người (tối thiểu)
               </label>
               <input
                 type="number"
@@ -116,8 +122,8 @@ export default function RoomsPage() {
               />
             </div>
             <div className="flex items-end">
-              <button type="submit" disabled={loading} className="btn-primary w-full">
-                {loading ? 'Đang tìm...' : '🔍 Tìm phòng'}
+              <button type="submit" disabled={loading} className="btn-primary w-full inline-flex items-center justify-center gap-1.5">
+                {loading ? 'Đang tìm...' : (<><MagnifyingGlassIcon className="w-4 h-4" /> Tìm phòng</>)}
               </button>
             </div>
           </div>
@@ -149,7 +155,7 @@ export default function RoomsPage() {
 
           {rooms.length === 0 ? (
             <div className="card p-12 text-center">
-              <p className="text-4xl mb-3">😕</p>
+              <FaceFrownIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">Không tìm thấy phòng trống</p>
               <p className="text-sm text-gray-400 mt-1">Thử chọn thời gian hoặc sức chứa khác</p>
             </div>
@@ -165,7 +171,7 @@ export default function RoomsPage() {
 
       {!searched && (
         <div className="card p-12 text-center border-dashed">
-          <p className="text-4xl mb-3">🔍</p>
+          <MagnifyingGlassIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-400">Nhập thời gian họp và nhấn "Tìm phòng" để xem các phòng trống</p>
         </div>
       )}
