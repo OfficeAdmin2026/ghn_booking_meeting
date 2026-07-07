@@ -1256,44 +1256,46 @@ export default function CalendarPage() {
 
         {/* Scrollable body — header is sticky inside so columns always align */}
         <div ref={calendarScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-          {/* Header row — sticky so it stays visible while scrolling */}
-          <div className="flex border-b border-gray-200 bg-white sticky top-0 z-40">
-            {/* time axis spacer */}
-            <div className="w-14 flex-shrink-0 border-r border-gray-100" />
-            {weekDays.map((d) => {
-              const ds = toVNDateStr(d);
-              const isToday = ds === today;
-              return (
-                <div
-                  key={ds}
-                  className={`flex-1 min-w-0 text-center py-2 border-r border-gray-100 last:border-r-0 ${
-                    isToday ? 'bg-orange-50' : ''
-                  }`}
-                >
-                  <div className={`text-xs font-medium ${isToday ? 'text-ghn-orange' : 'text-gray-500'}`}>
-                    {DAY_LABELS[d.getDay()]}
-                  </div>
+          {/* Header row + warning — sticky as one unit so the warning stays visible at any scroll position */}
+          <div className="sticky top-0 z-40 bg-white">
+            <div className="flex border-b border-gray-200 bg-white">
+              {/* time axis spacer */}
+              <div className="w-14 flex-shrink-0 border-r border-gray-100" />
+              {weekDays.map((d) => {
+                const ds = toVNDateStr(d);
+                const isToday = ds === today;
+                return (
                   <div
-                    className={`text-lg font-bold leading-tight ${
-                      isToday
-                        ? 'w-8 h-8 rounded-full bg-ghn-orange text-white flex items-center justify-center mx-auto'
-                        : 'text-gray-800'
+                    key={ds}
+                    className={`flex-1 min-w-0 text-center py-2 border-r border-gray-100 last:border-r-0 ${
+                      isToday ? 'bg-orange-50' : ''
                     }`}
                   >
-                    {d.getDate()}
+                    <div className={`text-xs font-medium ${isToday ? 'text-ghn-orange' : 'text-gray-500'}`}>
+                      {DAY_LABELS[d.getDay()]}
+                    </div>
+                    <div
+                      className={`text-lg font-bold leading-tight ${
+                        isToday
+                          ? 'w-8 h-8 rounded-full bg-ghn-orange text-white flex items-center justify-center mx-auto'
+                          : 'text-gray-800'
+                      }`}
+                    >
+                      {d.getDate()}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Booking range warning */}
-          {slotWarning && (
-            <div className="mx-3 mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700 flex items-center gap-2 animate-pulse">
-              <span>⚠️</span>
-              <span>{slotWarning}</span>
+                );
+              })}
             </div>
-          )}
+
+            {/* Booking range warning */}
+            {slotWarning && (
+              <div className="mx-3 mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700 flex items-center gap-2 animate-pulse">
+                <span>⚠️</span>
+                <span>{slotWarning}</span>
+              </div>
+            )}
+          </div>
           {!selRoom ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
               <svg className="w-16 h-16 text-gray-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
