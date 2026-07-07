@@ -78,10 +78,6 @@ All endpoints require authentication (JWT token) except `/api/auth/login`.
 - `PUT /api/bookings/:id` - Extend or early finish
 - `DELETE /api/bookings/:id` - Cancel booking
 
-### Check-in
-- `POST /api/checkins/:bookingId` - Check-in
-- `GET /api/checkins/status/:bookingId` - Get check-in status
-
 ### Dashboard (admin only)
 - `GET /api/dashboard/metrics` - Get metrics
 - `GET /api/dashboard/rooms` - Get room stats
@@ -122,17 +118,10 @@ All endpoints require authentication (JWT token) except `/api/auth/login`.
 - status (pending, confirmed, active, completed, cancelled)
 - recurring (none, weekly, monthly)
 
-### CheckIns
-- id (UUID)
-- booking_id
-- check_in_time
-- method (qr_code, nfc, tablet, mobile_app)
-- is_valid
-
 ### Notifications
 - id (UUID)
 - booking_id, user_id
-- type (booking_confirmed, reminder, auto_cancelled, etc.)
+- type (booking_confirmed, reminder, cancelled, etc.)
 - recipient_email
 - sent_at, is_sent
 
@@ -162,9 +151,7 @@ Configure in `.env`:
 ## 🎯 Key Features
 
 - Real-time room availability check
-- Auto-cancel booking if no check-in within 15 minutes
 - Email notifications (15 min before meeting)
-- QR code generation for check-in
 - Meeting extend/early finish functionality
 - Role-based access control (user, admin, vip)
 - Booking policy enforcement
@@ -234,7 +221,6 @@ pm2 start src/server.js --name "ghn-booking-api"
 - [ ] Authentication controller implementation
 - [ ] Room management
 - [ ] Booking management
-- [ ] Check-in system
 - [ ] Email notifications
 - [ ] Dashboard analytics
 - [ ] Admin panel
@@ -245,8 +231,7 @@ pm2 start src/server.js --name "ghn-booking-api"
 2. Implement room management (CRUD)
 3. Implement booking logic
 4. Setup email service integration
-5. Implement check-in system
-6. Build admin dashboard
+5. Build admin dashboard
 
 ---
 

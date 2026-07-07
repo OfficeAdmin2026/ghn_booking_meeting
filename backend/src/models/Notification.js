@@ -27,8 +27,7 @@ const Notification = sequelize.define('notifications', {
     type: DataTypes.ENUM(
       'booking_confirmed',
       'reminder',             // 15 min before
-      'check_in_reminder',
-      'auto_cancelled',
+      'cancelled',
       'meeting_completed'
     ),
     allowNull: false

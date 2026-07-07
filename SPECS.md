@@ -13,7 +13,6 @@ Mục tiêu khi xây dựng hệ thống book phòng nội bộ:
 - Tích hợp lịch calendar
 - Hiển thị trạng thái phòng realtime
 - Giới hạn khung thời gian booking
-- **Tính năng Auto release phòng:** Quá 15 phút không check-in sẽ bị cancel lịch ⇒ giảm "book ảo"
 - Đưa ra được thống kê - báo cáo (VD: Phòng dùng nhiều nhất/ít nhất; Người book nhưng không dùng nhiều nhất)
 
 ---
@@ -40,7 +39,6 @@ Mục tiêu khi xây dựng hệ thống book phòng nội bộ:
 - Book phòng trong thời gian giới hạn của Admin
 - Hủy booking
 - Gia hạn meeting
-- Check-in
 - Được book các phòng VIP (VIP User only)
 
 ---
@@ -52,7 +50,7 @@ Các metric cần hiển thị:
 | Metric | Ý nghĩa |
 |--------|---------|
 | **Occupancy rate** | % sử dụng |
-| **No-show rate** | Book nhưng không tới |
+| **Cancellation rate** | Tỷ lệ booking bị hủy |
 | **Peak hour** | Giờ cao điểm |
 | **Most used rooms** | Phòng hot |
 | **Average meeting duration** | Thời lượng trung bình |
@@ -97,27 +95,7 @@ User search được các thông tin để tìm kiếm phòng trống nhanh hơn
 ### Bước 5: Nhận email nhắc nhở
 Gửi email nội bộ nhắc nhở lịch dùng phòng trong 15 phút tới
 
-### Bước 6: Check-in tại phòng
-
-Các hình thức check-in:
-
-| Method | Description |
-|--------|-------------|
-| QR Code | scan |
-| NFC | tap |
-| Tablet | press check-in |
-| Mobile App | app confirm |
-
-**Nếu check-in hợp lệ:**
-- Booking trở thành active
-
-**Nếu không check-in trong vòng 15 phút:**
-Hệ thống thực hiện:
-- Xoá phòng khỏi booking
-- Cập nhật dashboard
-- Thông báo cho user
-
-### Bước 7: Trong Meeting
+### Bước 6: Trong Meeting
 User có thể:
 
 - **Extend meeting:** Gia hạn thời gian họp (Điều kiện: không conflict booking sau)
@@ -155,7 +133,6 @@ User có thể:
 
 - **Tích hợp:** Nội bộ GHN và app Gtalk
 - **Phân quyền VIP:** Một số phòng chỉ manager được book
-- **Auto-cancel:** Tự động hủy booking nếu không check-in trong 15 phút
 - **Recurring booking:** Hỗ trợ booking định kỳ (ví dụ: Weekly)
 
 ---
@@ -179,18 +156,14 @@ User có thể:
 4. **Email reminder:**
    - Dùng dịch vụ email nào? (Gmail, SendGrid, etc.)
 
-5. **Check-in methods:**
-   - Có thiết bị QR/NFC reader sẵn không?
-   - Tablet check-in sử dụng hệ điều hành nào? (iOS/Android)
-
-6. **Timeline & Budget:**
+5. **Timeline & Budget:**
    - Deadline hoàn thành là khi nào?
    - Budget có giới hạn không?
 
-7. **Authentication:**
+6. **Authentication:**
    - Xác thực user dùng LDAP/AD nội bộ hay khác?
 
-8. **Báo cáo:**
+7. **Báo cáo:**
    - Báo cáo cần xuất định dạng nào? (PDF, Excel, CSV)
    - Tần suất báo cáo?
 

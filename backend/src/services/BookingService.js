@@ -1,4 +1,4 @@
-const { Booking, Room, User, CheckIn } = require('../models');
+const { Booking, Room, User } = require('../models');
 const { Op, Transaction } = require('sequelize');
 const { sequelize } = require('../config/database');
 const AdminSettingService = require('./AdminSettingService');
@@ -26,10 +26,6 @@ class BookingService {
         where,
         include: [
           {
-            association: 'checkin',
-            attributes: ['id', 'check_in_time', 'method', 'is_valid']
-          },
-          {
             model: Room,
             attributes: ['id', 'name', 'location', 'floor', 'capacity', 'code'],
             include: [
@@ -56,10 +52,6 @@ class BookingService {
     try {
       const booking = await Booking.findByPk(bookingId, {
         include: [
-          {
-            association: 'checkin',
-            attributes: ['id', 'check_in_time', 'method', 'is_valid']
-          },
           {
             model: Room,
             attributes: ['id', 'name', 'location', 'floor', 'capacity', 'code'],
@@ -528,52 +520,6 @@ class BookingService {
 
       return bookings;
     } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Auto-cancel booking (background job)
-   * Gọi mỗi phút từ cron job
-   */
-  static async autoCancelNoShowBookings() {
-    try {
-      const timeoutMinutes = parseInt(process.env.AUTO_CHECKIN_TIMEOUT_MINUTES || 10);
-      const timeoutMs = timeoutMinutes * 60 * 1000;
-      const now = new Date();
-      const cutoffTime = new Date(now.getTime() - timeoutMs);
-
-      // Tìm booking:
-      // - Status = confirmed (chưa check-in)
-      // - Start time trong quá khứ nhưng không quá 15 phút
-      const noShowBookings = await Booking.findAll({
-        where: {
-          status: 'confirmed',
-          start_time: {
-            [Op.lte]: cutoffTime
-          }
-        },
-        include: [
-          {
-            association: 'checkin',
-            attributes: ['id'],
-            required: false
-          }
-        ]
-      });
-
-      // Filter những booking không có checkin
-      const toCancel = noShowBookings.filter(b => !b.checkin);
-
-      for (const booking of toCancel) {
-        booking.status = 'cancelled';
-        await booking.save();
-        console.log(`[Auto-Cancel] Booking ${booking.id} cancelled (no check-in)`);
-      }
-
-      return toCancel.length;
-    } catch (error) {
-      console.error('Auto-cancel error:', error);
       throw error;
     }
   }

@@ -13,13 +13,11 @@ backend/
 │   │   ├── Room.js
 │   │   ├── RoomAmenity.js
 │   │   ├── Booking.js
-│   │   ├── CheckIn.js
 │   │   └── Notification.js
 │   ├── routes/                     ✅ Route skeleton
 │   │   ├── auth.js                 (Placeholder)
 │   │   ├── rooms.js                (Placeholder)
 │   │   ├── bookings.js             (Placeholder)
-│   │   ├── checkins.js             (Placeholder)
 │   │   ├── dashboard.js            (Placeholder)
 │   │   └── admin.js                (Placeholder)
 │   ├── middleware/auth.js          ✅ JWT authentication
@@ -140,7 +138,6 @@ EMAIL_API_URL=https://your-email-service.com/api/send
 EMAIL_FROM=noreply@ghn.vn
 
 # Feature flags
-AUTO_CHECKIN_TIMEOUT_MINUTES=15
 MAX_BOOKING_DURATION_HOURS=4
 BOOKING_WINDOW_DAYS=30
 ```
@@ -152,7 +149,6 @@ BOOKING_WINDOW_DAYS=30
 - `rooms` - Meeting room catalog
 - `room_amenities` - Room features (TV, projector, etc)
 - `bookings` - Meeting reservations
-- `checkins` - Check-in records
 - `notifications` - Email notifications
 - `audit_log` - Action audit trail
 
@@ -171,10 +167,8 @@ BOOKING_WINDOW_DAYS=30
 4. **Booking Management** - Cancel, view, extend, early finish
 
 ### Phase 2 - Core Features (Week 3-4)
-1. **Check-in System** - QR code generation & validation
-2. **Email Notifications** - Booking confirmations & reminders
-3. **Auto-cancel Logic** - 15-minute no-show cancellation
-4. **Dashboard** - Basic analytics & metrics
+1. **Email Notifications** - Booking confirmations & reminders
+2. **Dashboard** - Basic analytics & metrics
 
 ### Phase 3 - Advanced (Week 5-6)
 1. **Admin Panel** - User management, policies

@@ -264,7 +264,7 @@ export default function AnalyticsPage() {
             <MetricCard
               icon="❌"
               label="Tỷ lệ hủy"
-              value={`${s.no_show_rate}%`}
+              value={`${s.cancellation_rate}%`}
               sub={`${s.cancelled} lượt hủy`}
               color="bg-red-50 text-red-500"
             />

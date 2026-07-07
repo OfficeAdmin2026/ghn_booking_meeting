@@ -32,7 +32,7 @@ router.get('/metrics', authMiddleware, adminMiddleware, async (req, res) => {
     for (const r of statusRows) counts[r.status] = parseInt(r.count);
     const totalBookings = Object.values(counts).reduce((a, b) => a + b, 0);
     const cancelled = counts.cancelled || 0;
-    const noShowRate = totalBookings > 0
+    const cancellationRate = totalBookings > 0
       ? parseFloat((cancelled / totalBookings * 100).toFixed(1))
       : 0;
 
@@ -190,7 +190,7 @@ router.get('/metrics', authMiddleware, adminMiddleware, async (req, res) => {
           active:                     counts.active     || 0,
           pending:                    counts.pending    || 0,
           confirmed:                  counts.confirmed  || 0,
-          no_show_rate:               noShowRate,
+          cancellation_rate:          cancellationRate,
           avg_duration_minutes:       avgMinutes,
           occupancy_rate:             occupancyRate,
           total_rooms:                totalRooms,

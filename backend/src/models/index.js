@@ -2,7 +2,6 @@ const User = require('./User');
 const Room = require('./Room');
 const RoomAmenity = require('./RoomAmenity');
 const Booking = require('./Booking');
-const CheckIn = require('./CheckIn');
 const Notification = require('./Notification');
 const AdminSetting = require('./AdminSetting');
 
@@ -16,9 +15,6 @@ Booking.belongsTo(Room, { foreignKey: 'room_id' });
 User.hasMany(Booking, { foreignKey: 'user_id', as: 'bookings' });
 Booking.belongsTo(User, { foreignKey: 'user_id' });
 
-Booking.hasOne(CheckIn, { foreignKey: 'booking_id', as: 'checkin' });
-CheckIn.belongsTo(Booking, { foreignKey: 'booking_id' });
-
 Booking.hasMany(Notification, { foreignKey: 'booking_id', as: 'notifications' });
 Notification.belongsTo(Booking, { foreignKey: 'booking_id' });
 
@@ -30,7 +26,6 @@ module.exports = {
   Room,
   RoomAmenity,
   Booking,
-  CheckIn,
   Notification,
   AdminSetting
 };

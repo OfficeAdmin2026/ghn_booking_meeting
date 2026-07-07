@@ -8,7 +8,6 @@
 - [x] Room model
 - [x] RoomAmenity model
 - [x] Booking model
-- [x] CheckIn model
 - [x] Notification model
 - [x] Model associations
 - [ ] Run database migrations
@@ -68,20 +67,6 @@
 - [ ] Handle email sending errors
 - [ ] Test email delivery
 
-### Check-in System
-- [ ] Generate QR code for each booking
-- [ ] Create QR code endpoint
-- [ ] POST /api/checkins/:bookingId
-  - [ ] Validate booking exists
-  - [ ] Check if within check-in window
-  - [ ] Create CheckIn record
-  - [ ] Update booking status to 'active'
-- [ ] GET /api/checkins/status/:bookingId
-- [ ] Implement auto-cancel logic (15 min no check-in)
-  - [ ] Background job to check no-check-in bookings
-  - [ ] Auto-cancel after 15 minutes
-  - [ ] Send notification to user
-
 ### Meeting Management (In-Progress)
 - [ ] PUT /api/bookings/:id - Extend meeting
   - [ ] Validate no conflict with next booking
@@ -95,7 +80,6 @@
 ### Dashboard (Basic)
 - [ ] GET /api/dashboard/metrics
   - [ ] Occupancy rate calculation
-  - [ ] No-show rate calculation
   - [ ] Peak hour analysis
   - [ ] Most used rooms
   - [ ] Average meeting duration
@@ -115,7 +99,6 @@
 
 ### Background Jobs
 - [ ] Setup job scheduler (node-cron or bull)
-- [ ] Auto-cancel job (every minute)
 - [ ] Email reminder job (every 5 minutes)
 - [ ] Generate metrics job (hourly)
 
@@ -228,7 +211,6 @@
 
 ### Key Constraints
 - Max booking duration: 4 hours
-- Auto-cancel timeout: 15 minutes
 - Booking window: 30 days future
 - Email domain: @ghn.vn only
 - Employees: ~1000 users

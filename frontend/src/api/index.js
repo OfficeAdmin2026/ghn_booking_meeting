@@ -36,8 +36,6 @@ export const bookingsApi = {
   update: (id, data) => api.put(`/bookings/${id}`, data),
 
   cancel: (id, message = null) => api.delete(`/bookings/${id}`, { data: { message } }),
-
-  checkIn: (id) => api.post(`/bookings/${id}/checkin`),
 };
 
 export const dashboardApi = {

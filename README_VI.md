@@ -32,7 +32,6 @@ booking_meeting/                           ← Thư mục gốc dự án
     │   │   ├── Room.js                    ← Model phòng họp
     │   │   ├── RoomAmenity.js             ← Model tiện nghi (TV, projector, etc)
     │   │   ├── Booking.js                 ← Model đặt phòng
-    │   │   ├── CheckIn.js                 ← Model check-in
     │   │   ├── Notification.js            ← Model thông báo email
     │   │   └── index.js                   ← Kết nối các model lại với nhau
     │   │
@@ -40,7 +39,6 @@ booking_meeting/                           ← Thư mục gốc dự án
     │   │   ├── auth.js                    ← Routes đăng nhập/logout
     │   │   ├── rooms.js                   ← Routes quản lý phòng
     │   │   ├── bookings.js                ← Routes đặt phòng
-    │   │   ├── checkins.js                ← Routes check-in
     │   │   ├── dashboard.js               ← Routes dashboard admin
     │   │   └── admin.js                   ← Routes admin settings
     │   │
@@ -118,30 +116,16 @@ booking_meeting/                           ← Thư mục gốc dự án
 - end_time: Thời gian kết thúc
 - status: Trạng thái
   - 'pending' = Chờ xác nhận
-  - 'confirmed' = Đã xác nhận nhưng chưa bắt đầu
-  - 'active' = Đã check-in, đang họp
+  - 'confirmed' = Đã xác nhận, chưa tới giờ họp
+  - 'active' = Đang trong giờ họp
   - 'completed' = Kết thúc
-  - 'cancelled' = Hủy/Tự động xoá (>15 phút không check-in)
+  - 'cancelled' = Hủy (bởi user hoặc admin)
 - recurring: Lặp lại
   - 'none' = Không lặp
   - 'weekly' = Mỗi tuần
   - 'monthly' = Mỗi tháng
 - recurring_end_date: Kết thúc lặp lại
 - notes: Ghi chú
-```
-
-#### **CheckIn (Check-in)**
-```
-- id: UUID duy nhất
-- booking_id: Booking nào
-- check_in_time: Thời gian check-in
-- method: Cách check-in
-  - 'qr_code' = Quét QR
-  - 'nfc' = Tap thẻ
-  - 'tablet' = Ấn tablet tại phòng
-  - 'mobile_app' = Ứng dụng điện thoại
-- is_valid: Check-in có hợp lệ không
-- device_id: Thiết bị nào check-in
 ```
 
 #### **Notification (Thông báo email)**
@@ -152,8 +136,7 @@ booking_meeting/                           ← Thư mục gốc dự án
 - type: Loại thông báo
   - 'booking_confirmed' = Xác nhận đặt phòng
   - 'reminder' = Nhắc nhở 15 phút trước
-  - 'check_in_reminder' = Nhắc check-in
-  - 'auto_cancelled' = Tự động hủy
+  - 'cancelled' = Booking bị hủy
   - 'meeting_completed' = Kết thúc họp
 - recipient_email: Email nhận
 - subject: Tiêu đề email
@@ -238,25 +221,11 @@ DELETE /api/bookings/:id
   → Hủy booking
 ```
 
-#### **Check-in**
-```
-POST /api/checkins/:bookingId
-  → Check-in vào phòng
-  Body: {
-    method: 'qr_code' | 'nfc' | 'tablet' | 'mobile_app',
-    device_id?
-  }
-
-GET /api/checkins/status/:bookingId
-  → Lấy trạng thái check-in
-```
-
 #### **Dashboard (Admin only - Bảng điều khiển)**
 ```
 GET /api/dashboard/metrics
   → Các số liệu chính:
     • occupancy_rate: Tỉ lệ sử dụng phòng (%)
-    • no_show_rate: Tỉ lệ book mà không tới (%)
     • peak_hour: Giờ cao điểm
     • most_used_rooms: Top phòng dùng nhiều nhất
     • avg_meeting_duration: Thời lượng họp trung bình
@@ -290,7 +259,7 @@ GET /api/admin/policies
 
 ## 🔄 Quy Trình Hoạt Động
 
-### **Quy Trình Booking Phòng Họp (7 bước)**
+### **Quy Trình Booking Phòng Họp (6 bước)**
 
 ```
 1️⃣ USER TRUY CẬP HỆ THỐNG
@@ -314,20 +283,7 @@ GET /api/admin/policies
    → 15 phút trước khi họp, hệ thống gửi email nhắc nhở
    → Email có thông tin phòng, thời gian, vị trí
 
-6️⃣ CHECK-IN TẠI PHÒNG
-   → Đến phòng trong vòng 15 phút trước giờ họp
-   → Check-in bằng 1 trong 4 cách:
-     • Quét mã QR
-     • Tap thẻ NFC
-     • Ấn nút trên tablet tại phòng
-     • Xác nhận qua app điện thoại
-   → Nếu check-in hợp lệ → booking status = "active"
-   → Nếu KHÔNG check-in trong 15 phút → hệ thống:
-     ✗ Xoá booking
-     ✗ Cập nhật dashboard
-     ✗ Thông báo cho user
-
-7️⃣ TRONG CUỘC HỌP - CÓ THỂ
+6️⃣ TRONG CUỘC HỌP - CÓ THỂ
    → Gia hạn thời gian (nếu phòng sau không bị đặt)
    → Kết thúc sớm → tự động release phòng
 ```
@@ -341,7 +297,6 @@ GET /api/admin/policies
 - React Router - Điều hướng trang
 - Axios - Gọi API
 - TailwindCSS - CSS framework cho styling
-- React-QR-Reader - Quét mã QR
 
 ### **Backend (Đang làm)**
 - Node.js - JavaScript runtime
@@ -367,8 +322,6 @@ GET /api/admin/policies
 └─────────────────┘
         │
         ├──→ BOOKINGS ← Đặt phòng
-        │         │
-        │         ├──→ CHECKINS (check-in)
         │         │
         │         └──→ NOTIFICATIONS (email)
         │
@@ -458,9 +411,7 @@ GET /api/admin/policies
 
 ### **GIAI ĐOẠN 2: Core Features (Tuần 3-4)**
 ```
-- Check-in system (QR code)
 - Email notifications (15 min reminder)
-- Auto-cancel (15 min no-show)
 - Dashboard metrics
 ```
 
@@ -539,7 +490,6 @@ User (nhân viên thường):
   → Book phòng
   → View phòng của mình
   → Hủy booking
-  → Check-in
   
 VIP (lãnh đạo):
   → Mọi quyền của user
@@ -581,9 +531,6 @@ A: Có! Sequelize sẽ auto-sync. Nhưng nên chạy SQL schema trước để s
 
 ### **Q: Phòng VIP là gì?**
 A: Phòng chỉ lãnh đạo (BOD) được book, nhân viên không được phép.
-
-### **Q: Auto-cancel 15 phút làm sao?**
-A: Background job chạy mỗi phút kiểm tra. Nếu booking >15 phút không check-in → cancel.
 
 ### **Q: Email dùng công ty API hay SMTP?**
 A: API (bạn sẽ config khi giai đoạn 2).

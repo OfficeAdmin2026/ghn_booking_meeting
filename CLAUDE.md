@@ -100,8 +100,7 @@ Routes → Controllers → Services. All business logic lives in services.
 **API routes** (all prefixed `/api`):
 - `/auth` — login (email-only, auto-creates account for new `@ghn.vn` emails)
 - `/rooms` — CRUD for rooms and search
-- `/bookings` — user bookings (create, update, cancel, check-in, freeze-status)
-- `/checkins` — check-in flow
+- `/bookings` — user bookings (create, update, cancel, freeze-status)
 - `/dashboard` — admin metrics and reports
 - `/admin` — admin-only: settings, booking overrides
 
@@ -113,7 +112,7 @@ Routes → Controllers → Services. All business logic lives in services.
 **Models** (`backend/src/models/`): Sequelize models with UUID PKs. Associations defined in `index.js`:
 - `Room` → `RoomAmenity` (as `amenities`), `Booking` (as `bookings`)
 - `User` → `Booking` (as `bookings`), `Notification`
-- `Booking` → `CheckIn` (as `checkin`), `Notification` (as `notifications`)
+- `Booking` → `Notification` (as `notifications`)
 
 **Booking status flow**: `pending → confirmed → active → completed | cancelled`
 

@@ -20,6 +20,9 @@
   .header-meta { display: flex; justify-content: center; gap: 32px; margin-top: 28px; flex-wrap: wrap; }
   .header-meta-item .val { font-size: 28px; font-weight: 700; color: var(--orange); }
   .header-meta-item .lbl { font-size: 12px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; }
+  .header-nav { margin-top: 24px; }
+  .header-nav a { color: #D1D5DB; font-size: 13px; text-decoration: none; border-bottom: 1px dashed #6B7280; }
+  .header-nav a:hover { color: white; }
   .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
   section { padding: 48px 0; border-bottom: 1px solid var(--border); }
   section:last-child { border-bottom: none; }
@@ -113,11 +116,12 @@
     <h1>GHN Meeting Room Booking</h1>
     <p>Hệ thống đặt phòng họp nội bộ GiaoHangNhanh — Giải pháp quản lý phòng họp thông minh cho toàn bộ nhân viên GHN</p>
     <div class="header-meta">
-      <div class="header-meta-item"><div class="val">17</div><div class="lbl">Phòng họp</div></div>
+      <div class="header-meta-item"><div class="val">18</div><div class="lbl">Phòng họp</div></div>
       <div class="header-meta-item"><div class="val">3</div><div class="lbl">Vai trò</div></div>
-      <div class="header-meta-item"><div class="val">15</div><div class="lbl">Phút check-in</div></div>
+      <div class="header-meta-item"><div class="val">15</div><div class="lbl">Phút / mốc kéo lịch</div></div>
       <div class="header-meta-item"><div class="val">2</div><div class="lbl">Văn phòng</div></div>
     </div>
+    <div class="header-nav"><a href="huong-dan-su-dung.html">📖 Xem Hướng dẫn sử dụng →</a></div>
   </div>
 </div>
 
@@ -150,7 +154,7 @@ const LB_IMGS = [
   { src: document.querySelector('.sg .si:nth-child(2) img').src, cap: '📅 Lịch phòng — Giao diện người dùng thường' },
   { src: document.querySelector('.sg .si:nth-child(3) img').src, cap: '🏢 Lịch tuần — Đã chọn phòng Đài Tư (Mipec 8F, 50 người)' },
   { src: document.querySelector('.sg .si:nth-child(4) img').src, cap: '📋 Admin — Quản lý lịch đặt phòng tất cả user' },
-  { src: document.querySelector('.sg .si:nth-child(5) img').src, cap: '🏢 Admin — Quản lý 17 phòng họp (thêm/sửa/xóa)' },
+  { src: document.querySelector('.sg .si:nth-child(5) img').src, cap: '🏢 Admin — Quản lý 18 phòng họp (thêm/sửa/xóa)' },
   { src: document.querySelector('.sg .si:nth-child(6) img').src, cap: '⚙️ Admin — Cài đặt hệ thống mở booking hàng tuần' },
 ];
 let lbIdx = 0;
@@ -185,7 +189,7 @@ document.addEventListener('keydown', (e) => {
     <div class="card"><div class="fi">🚫</div><div class="ft">Không còn đặt trùng phòng</div><div class="fd">Hệ thống kiểm tra xung đột lịch theo thời gian thực. Cùng một phòng, cùng một khung giờ — chỉ một người được đặt thành công.</div></div>
     <div class="card"><div class="fi">⏱️</div><div class="ft">Tiết kiệm thời gian tìm phòng</div><div class="fd">Không cần nhắn Slack hay gọi điện hỏi phòng còn trống không. Lọc theo văn phòng, tầng, sức chứa và khung giờ — tìm phòng phù hợp trong vài giây.</div></div>
     <div class="card"><div class="fi">💻</div><div class="ft">Truy cập mọi lúc, mọi nơi</div><div class="fd">Chạy trực tiếp trên trình duyệt, không cần cài app. Đặt phòng, xem lịch, hủy booking từ máy tính hoặc điện thoại.</div></div>
-    <div class="card"><div class="fi">🔓</div><div class="ft">Phòng bỏ trống được giải phóng tự động</div><div class="fd">Nếu người đặt không check-in sau 15 phút, phòng tự động được giải phóng. Không còn tình trạng phòng bị giữ nhưng thực tế bỏ trống.</div></div>
+    <div class="card"><div class="fi">📊</div><div class="ft">Báo cáo sử dụng minh bạch</div><div class="fd">Admin xem được tỷ lệ lấp đầy từng phòng, xếp hạng phòng theo lượt đặt trên trang Analytics, xuất báo cáo CSV để ra quyết định.</div></div>
     <div class="card"><div class="fi">👁️</div><div class="ft">Admin kiểm soát toàn bộ lịch</div><div class="fd">Xem lịch đặt phòng của tất cả nhân viên, hủy booking khi cần với lý do cụ thể, điều chỉnh lịch họp mà không cần liên hệ từng người.</div></div>
     <div class="card"><div class="fi">🗓️</div><div class="ft">Kiểm soát cửa sổ đặt phòng</div><div class="fd">Admin cấu hình ngày giờ mở lịch đặt phòng tuần tiếp theo, đảm bảo phân bổ phòng công bằng và có kế hoạch.</div></div>
   </div>
@@ -199,10 +203,10 @@ document.addEventListener('keydown', (e) => {
     <div class="card"><div class="fi">📅</div><div class="ft">Lịch đặt phòng dạng tuần</div><div class="fd">Week-view 7 ngày với timeline giờ. Kéo chuột để chọn khung giờ, xem lịch bận theo màu sắc (của tôi / người khác / hoàn thành / đã hủy).</div></div>
     <div class="card"><div class="fi">🔍</div><div class="ft">Tìm phòng trống</div><div class="fd">Lọc theo văn phòng, tầng, sức chứa và khoảng thời gian. Hiển thị danh sách phòng phù hợp để chọn nhanh.</div></div>
     <div class="card"><div class="fi">🔒</div><div class="ft">Cửa sổ mở booking hàng tuần</div><div class="fd">Admin cấu hình ngày + giờ mở. Trước giờ mở: chỉ book tuần hiện tại. Sau giờ mở: mở thêm tuần kế tiếp. Cảnh báo hiện ngay khi kéo chuột.</div></div>
-    <div class="card"><div class="fi">✅</div><div class="ft">Check-in &amp; Auto-cancel</div><div class="fd">Phải check-in trong vòng 15 phút sau giờ bắt đầu. Nếu không check-in, hệ thống tự động hủy và giải phóng phòng cho người khác sử dụng.</div></div>
-    <div class="card"><div class="fi">🏢</div><div class="ft">Quản lý phòng (Admin)</div><div class="fd">17 phòng tại Rivera Park &amp; Mipec. Admin thêm/sửa/xóa, cấu hình sức chứa, tầng, tiện ích, phân loại VIP.</div></div>
+    <div class="card"><div class="fi">📜</div><div class="ft">Quy định sử dụng phòng</div><div class="fd">Trang <code>/rules</code> hiển thị nội quy phòng họp, Admin soạn/sửa nội dung trực tiếp trên web, áp dụng ngay cho mọi user.</div></div>
+    <div class="card"><div class="fi">🏢</div><div class="ft">Quản lý phòng (Admin)</div><div class="fd">18 phòng tại Rivera Park &amp; Mipec. Admin thêm/sửa/xóa, cấu hình sức chứa, tầng, tiện ích, phân loại VIP.</div></div>
     <div class="card"><div class="fi">📋</div><div class="ft">Quản lý lịch (Admin)</div><div class="fd">Admin xem toàn bộ lịch của tất cả user, lọc theo trạng thái (sắp tới / đã hủy / tất cả), hủy booking bất kỳ với lý do.</div></div>
-    <div class="card"><div class="fi">📊</div><div class="ft">Dashboard Analytics (Admin)</div><div class="fd">Trang <code>/analytics</code> dành cho admin với metrics tổng hợp: tổng booking, tỉ lệ check-in, báo cáo theo khoảng thời gian.</div></div>
+    <div class="card"><div class="fi">📊</div><div class="ft">Dashboard Analytics (Admin)</div><div class="fd">Trang <code>/analytics</code> dành cho admin: lượt booking/tuần, tỷ lệ lấp đầy (fill rate), xếp hạng phòng theo lượt đặt, xuất báo cáo CSV.</div></div>
     <div class="card"><div class="fi">🎨</div><div class="ft">Màu sắc trạng thái booking</div><div class="fd"><span style="color:#3B82F6">■</span> Của tôi &nbsp;<span style="color:#F97316">■</span> Người khác &nbsp;<span style="color:#EAB308">■</span> Chờ xác nhận &nbsp;<span style="color:#6B7280">■</span> Hoàn thành &nbsp;<span style="color:#FCA5A5">■</span> Đã hủy</div></div>
   </div>
 
@@ -212,8 +216,7 @@ document.addEventListener('keydown', (e) => {
       <div class="fs">1. Đăng nhập @ghn.vn</div><span class="fa">→</span>
       <div class="fs">2. Chọn phòng &amp; tuần</div><span class="fa">→</span>
       <div class="fs">3. Kéo chuột chọn giờ</div><span class="fa">→</span>
-      <div class="fs">4. Điền form &amp; confirm</div><span class="fa">→</span>
-      <div class="fs">5. Check-in ≤ 15 phút</div>
+      <div class="fs">4. Điền form &amp; confirm</div>
     </div>
   </div>
 </section>
@@ -262,32 +265,39 @@ document.addEventListener('keydown', (e) => {
 
 <section>
   <h2><span class="sn">5</span> Danh sách phòng họp</h2>
-  <p class="sub">17 phòng tại 2 văn phòng — sức chứa từ 4 đến 50 người</p>
+  <p class="sub">18 phòng tại 2 văn phòng — sức chứa từ 4 đến 56 người</p>
   <div class="g2">
     <div class="card">
-      <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;">📍 Rivera Park (15 phòng)</h3>
+      <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;">📍 Rivera Park (16 phòng)</h3>
       <table style="width:100%;font-size:12px;border-collapse:collapse;">
         <tr style="background:#F9FAFB;"><th style="padding:6px 8px;text-align:left;">Tầng</th><th style="padding:6px 8px;text-align:left;">Phòng</th><th style="padding:6px 8px;text-align:center;">Chứa</th></tr>
-        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">1F</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Thành Thái</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">20</td></tr>
-        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">1F</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Hưng Yên</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">10</td></tr>
-        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;" rowspan="4">G</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">GHN Thành Công</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">10</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;" rowspan="4">1F</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Hưng Yên</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">40</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Thành Thái</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">14</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Our Roads</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">6</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Your Loads</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">6</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;" rowspan="3">G</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">GHN Thành Công</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">10</td></tr>
         <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Khách Hàng Thành Công</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">10</td></tr>
-        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Hiệu Suất Cao</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">10</td></tr>
         <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Chính Trực</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">4</td></tr>
-        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;" rowspan="9">3F</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Hàng Nặng Ký, Sảnh Lễ Tân, Dịch Vụ 5 Sao, Shop Siêu Sao, Lữ Gia, Nguyễn Huy Tưởng, Hoàng Văn Thụ, Đồng Nai</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">10</td></tr>
-        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;"><span class="badge bp">⭐ VIP</span> Learning Center</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">50</td></tr>
-        <tr><td style="padding:5px 8px;">Thiên Phước, War Room</td><td style="padding:5px 8px;text-align:center;">20</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;" rowspan="9">3F</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Sảnh Lễ Tân</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">40</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Dịch Vụ 5 Sao</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">10</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Shop Siêu Sao</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">10</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Hàng Nặng Ký</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">10</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Lữ Gia</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">6</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Đồng Nai</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">6</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Nguyễn Huy Tưởng</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">6</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Hoàng Văn Thụ</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">6</td></tr>
+        <tr><td style="padding:5px 8px;"><span class="badge bp">⭐ VIP</span> Learning Center</td><td style="padding:5px 8px;text-align:center;">56</td></tr>
       </table>
     </div>
     <div class="card">
       <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;">📍 Mipec (2 phòng)</h3>
       <table style="width:100%;font-size:12px;border-collapse:collapse;">
         <tr style="background:#F9FAFB;"><th style="padding:6px 8px;text-align:left;">Tầng</th><th style="padding:6px 8px;text-align:left;">Phòng</th><th style="padding:6px 8px;text-align:center;">Chứa</th></tr>
-        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">8F</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Nguyễn Ngọc Vũ</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">8</td></tr>
-        <tr><td style="padding:5px 8px;">8F</td><td style="padding:5px 8px;">Đài Tư</td><td style="padding:5px 8px;text-align:center;">50</td></tr>
+        <tr><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">8F</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;">Nguyễn Ngọc Vũ</td><td style="padding:5px 8px;border-bottom:1px solid #F3F4F6;text-align:center;">6</td></tr>
+        <tr><td style="padding:5px 8px;">8F</td><td style="padding:5px 8px;">Đài Tư</td><td style="padding:5px 8px;text-align:center;">20</td></tr>
       </table>
       <div style="margin-top:16px;padding:12px;background:#F0FDF4;border-radius:8px;font-size:12px;color:#166534;">
-        ✅ Mọi phòng có mã code riêng (VD: <code>RPARK-1F-001</code>, <code>MIPEC-8F-002</code>) phục vụ check-in và báo cáo.
+        ✅ Mọi phòng có mã code riêng (VD: <code>RPARK-1F-001</code>, <code>MIPEC-8F-002</code>) phục vụ tra cứu và báo cáo.
       </div>
       <div style="margin-top:12px;padding:12px;background:#F5F3FF;border-radius:8px;font-size:12px;color:#5B21B6;">
         ⭐ Phòng VIP (Learning Center): chỉ role VIP và Admin mới được đặt.
@@ -300,24 +310,22 @@ document.addEventListener('keydown', (e) => {
   <h2><span class="sn">6</span> Kế hoạch phát triển</h2>
   <p class="sub">Các tính năng dự kiến bổ sung trong thời gian tới</p>
 
-  <div class="ri rp1"><div class="rtitle">Quản lý người dùng <span class="pt pt1">P1 — Cần làm</span></div><div class="rdesc">Xây dựng giao diện admin để xem danh sách nhân viên, phân quyền (user/vip/admin), kích hoạt hoặc vô hiệu hóa tài khoản — không cần can thiệp kỹ thuật.</div></div>
+  <div class="ri rp1"><div class="rtitle">Thông báo Email <span class="pt pt1">P1 — Cần làm</span></div><div class="rdesc">Cấu hình gửi email: (1) xác nhận booking mới, (2) nhắc trước giờ họp, (3) thông báo khi booking bị admin hủy kèm lý do. Model <code>Notification</code> (5 loại) và package <code>nodemailer</code> đã có trong dependencies, nhưng chưa được tích hợp — chưa có service hoặc route nào tạo/gửi thông báo thật.</div></div>
 
-  <div class="ri rp1"><div class="rtitle">Thông báo Email <span class="pt pt1">P1 — Cần làm</span></div><div class="rdesc">Cấu hình Email API key và gửi: (1) xác nhận booking mới, (2) nhắc check-in 15 phút trước, (3) thông báo khi booking bị admin hủy kèm lý do. Infrastructure nodemailer đã có sẵn.</div></div>
+  <div class="ri rp2"><div class="rtitle">Vô hiệu hóa tài khoản người dùng <span class="pt pt2">P2 — Nên làm</span></div><div class="rdesc">Tab Phân quyền hiện đã xem được danh sách nhân viên và cấp/đổi vai trò (user/vip/admin). Còn thiếu: khóa/mở tài khoản khi nhân viên nghỉ việc hoặc vi phạm quy định.</div></div>
 
-  <div class="ri rp2"><div class="rtitle">Dashboard Analytics đầy đủ <span class="pt pt2">P2 — Nên làm</span></div><div class="rdesc">Bổ sung biểu đồ thống kê: tỉ lệ sử dụng phòng theo tuần/tháng, top phòng được đặt nhiều nhất, tỉ lệ check-in thực tế và phân tích theo phòng ban.</div></div>
+  <div class="ri rp2"><div class="rtitle">Dashboard Analytics mở rộng <span class="pt pt2">P2 — Nên làm</span></div><div class="rdesc">Trang Analytics hiện đã có tỷ lệ lấp đầy và xếp hạng phòng theo lượt đặt. Còn thiếu: phân tích theo phòng ban.</div></div>
 
-  <div class="ri rp2"><div class="rtitle">Responsive Mobile <span class="pt pt2">P2 — Nên làm</span></div><div class="rdesc">Calendar week-view chỉ tối ưu cho desktop (1440px). Cần layout riêng cho mobile: xem lịch theo ngày, tap-to-select thay drag-to-select, sidebar thu gọn cho màn hình nhỏ.</div></div>
+  <div class="ri rp2"><div class="rtitle">Responsive Mobile <span class="pt pt2">P2 — Nên làm</span></div><div class="rdesc">Calendar week-view chỉ tối ưu cho desktop (1440px), chưa có breakpoint mobile. Cần layout riêng: xem lịch theo ngày, tap-to-select thay drag-to-select, sidebar thu gọn cho màn hình nhỏ.</div></div>
 
-  <div class="ri rp3"><div class="rtitle">Recurring Booking <span class="pt pt3">P3 — Nice to have</span></div><div class="rdesc">Cho phép đặt phòng lặp lại định kỳ (ví dụ: họp team mỗi thứ Hai 9h–10h) mà không cần đặt thủ công từng tuần.</div></div>
-
-  <div class="ri rp3"><div class="rtitle">Check-in UI rõ ràng hơn <span class="pt pt3">P3 — Nice to have</span></div><div class="rdesc">Làm nổi bật nút check-in trong giao diện khi đến giờ họp, hoặc bổ sung tính năng quét mã QR tại cửa phòng.</div></div>
+  <div class="ri rp3"><div class="rtitle">Recurring Booking <span class="pt pt3">P3 — Nice to have</span></div><div class="rdesc">Trường <code>recurring</code> đã có ở model Booking và ở một trang đặt phòng cũ (không nằm trong luồng chính hiện tại), nhưng chỉ lưu nhãn — chưa có logic tự tạo các lịch lặp lại định kỳ (ví dụ: họp team mỗi thứ Hai 9h–10h).</div></div>
 </section>
 
 </div>
 
 <div class="footer">
   <strong>GHN Meeting Room Booking</strong> — Project Report • 1 tháng 6, 2026<br>
-  <span style="margin-top:4px;display:block;font-size:11px;opacity:.7;">Dành cho nội bộ GHN — 17 phòng họp tại Rivera Park &amp; Mipec</span>
+  <span style="margin-top:4px;display:block;font-size:11px;opacity:.7;">Dành cho nội bộ GHN — 18 phòng họp tại Rivera Park &amp; Mipec</span>
 </div>
 </body>
 </html>

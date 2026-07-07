@@ -13,7 +13,6 @@
 - ~1000 users
 - Real-time room availability
 - Email notifications
-- Check-in system (QR Code)
 - Admin dashboard with analytics
 
 ---
@@ -49,22 +48,18 @@ Chính tính năng cốt lõi - tối thiểu để system hoạt động đư�
 Thêm các tính năng quan trọng
 
 **Backend:**
-- [ ] Check-in system (QR code)
-- [ ] Auto-cancel logic (15 min no check-in)
 - [ ] Email notifications
 - [ ] Extend meeting
 - [ ] Early finish
 - [ ] Dashboard API (metrics)
 
 **Frontend:**
-- [ ] Check-in page (QR scanner)
 - [ ] Active meeting view
 - [ ] Extend/Early finish buttons
 - [ ] Email notification settings
 - [ ] Basic dashboard
 
 **Database:**
-- [ ] Check-in logs table
 - [ ] Notifications table
 
 ---
@@ -113,9 +108,7 @@ Frontend:
 ├── React Router (navigation)
 ├── Axios (API calls)
 ├── React Query (state management)
-├── TailwindCSS (styling)
-├── React-QR-Code (QR code display)
-└── React-QR-Reader (QR scanning)
+└── TailwindCSS (styling)
 
 Backend:
 ├── Node.js 18+
@@ -225,20 +218,11 @@ booking_meeting/
 - created_at
 ```
 
-### Check_Ins
-```sql
-- id (PK)
-- booking_id (FK)
-- check_in_time
-- method (qr_code, nfc, tablet, mobile)
-- is_valid (boolean)
-```
-
 ### Notifications
 ```sql
 - id (PK)
 - booking_id (FK)
-- type (reminder, confirmed, auto_cancelled)
+- type (reminder, confirmed, cancelled)
 - sent_at
 - recipient_email
 ```
@@ -274,15 +258,9 @@ PUT    /api/bookings/:id        (extend/early finish)
 DELETE /api/bookings/:id        (cancel)
 ```
 
-### Check-in
-```
-POST   /api/checkins/:bookingId (check-in)
-GET    /api/checkins/status/:bookingId
-```
-
 ### Dashboard (Admin)
 ```
-GET    /api/dashboard/metrics   (occupancy, no-show, etc)
+GET    /api/dashboard/metrics   (occupancy, peak hour, etc)
 GET    /api/dashboard/rooms     (room stats)
 GET    /api/dashboard/users     (user stats)
 ```
@@ -321,7 +299,7 @@ npm install react-router-dom axios react-query
 | Phase | Target | Features |
 |-------|--------|----------|
 | MVP | Week 1-2 | Book, Cancel, View rooms |
-| Core | Week 3-4 | Check-in, Auto-cancel, Notifications |
+| Core | Week 3-4 | Extend/Early finish, Notifications |
 | Admin | Week 5-6 | Dashboard, Analytics, Permissions |
 | Polish | Week 7+ | Deploy, Optimize, Test |
 
@@ -333,8 +311,6 @@ npm install react-router-dom axios react-query
 2. **Email integration** - use company email service
 3. **On-premise** - no cloud dependency
 4. **Authentication** - email-based (no LDAP for now, can add later)
-5. **QR code** - generate server-side, client scans
-6. **Auto-cancel** - background job checks no-check-in every minute
 
 ---
 

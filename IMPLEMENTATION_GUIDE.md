@@ -178,11 +178,11 @@ const rooms = await RoomService.searchAvailableRooms({
 ```javascript
 // Lấy booking của user
 getUserBookings(userId, status?)
-  Output: Danh sách booking + room + check-in info
+  Output: Danh sách booking + room
 
 // Lấy chi tiết 1 booking
 getBookingById(bookingId)
-  Output: Booking + room + user + check-in
+  Output: Booking + room + user
 
 // Kiểm tra time conflict
 checkTimeConflict(roomId, startTime, endTime, excludeBookingId?)
@@ -236,17 +236,6 @@ cancelBooking(bookingId, userId)
   - Booking status != 'completed'
   
   Set status = 'cancelled'
-
-// Auto-cancel no-show (background job)
-autoCancelNoShowBookings()
-  Logic:
-  1. Tìm booking status='confirmed' (chưa check-in)
-  2. start_time <= 15 phút trước
-  3. Không có checkin record
-  4. Set status = 'cancelled'
-  5. Log action
-  
-  Call: Mỗi phút từ cron job
 ```
 
 **Ví dụ:**

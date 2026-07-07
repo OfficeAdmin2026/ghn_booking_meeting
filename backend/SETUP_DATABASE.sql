@@ -8,8 +8,7 @@ CREATE TYPE user_role AS ENUM ('user', 'admin', 'vip');
 CREATE TYPE booking_status AS ENUM ('pending', 'confirmed', 'active', 'completed', 'cancelled');
 CREATE TYPE recurring_type AS ENUM ('none', 'weekly', 'monthly');
 CREATE TYPE amenity_type AS ENUM ('TV', 'Audio Conference', 'Video Conference', 'Projector');
-CREATE TYPE checkin_method AS ENUM ('qr_code', 'nfc', 'tablet', 'mobile_app');
-CREATE TYPE notification_type AS ENUM ('booking_confirmed', 'reminder', 'check_in_reminder', 'auto_cancelled', 'meeting_completed');
+CREATE TYPE notification_type AS ENUM ('booking_confirmed', 'reminder', 'cancelled', 'meeting_completed');
 
 -- Users
 CREATE TABLE users (
@@ -78,20 +77,6 @@ CREATE INDEX idx_bookings_status ON bookings(status);
 CREATE INDEX idx_bookings_start_time ON bookings(start_time);
 CREATE INDEX idx_bookings_room_time ON bookings(room_id, start_time, end_time);
 CREATE INDEX idx_bookings_user_status ON bookings(user_id, status);
-
--- Check-Ins
-CREATE TABLE checkins (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
-  check_in_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  method checkin_method NOT NULL,
-  is_valid BOOLEAN DEFAULT true,
-  device_id VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX idx_checkins_booking_id ON checkins(booking_id);
-CREATE UNIQUE INDEX idx_checkins_one_per_booking ON checkins(booking_id);
 
 -- Notifications
 CREATE TABLE notifications (
