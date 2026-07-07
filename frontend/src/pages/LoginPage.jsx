@@ -34,7 +34,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <img src="/images/logo.png" alt="GHN" className="h-14 object-contain mb-4" />
-            <h1 className="text-xl font-bold text-gray-800">Đặt phòng họp</h1>
+            <h1 className="text-xl font-bold font-heading text-gray-800">Đặt phòng họp</h1>
             <p className="text-sm text-gray-500 mt-1">Hệ thống nội bộ GiaoHangNhanh</p>
           </div>
 

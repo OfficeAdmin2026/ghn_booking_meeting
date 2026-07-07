@@ -7,15 +7,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        'ghn-orange': '#F26522',
-        'ghn-orange-dark': '#D4531A',
-        'ghn-orange-light': '#FFF0E8',
+        'ghn-orange': '#FF6C0A',
+        'ghn-orange-dark': '#CC5608',
+        'ghn-orange-light': '#FFF7EC',
         'ghn-blue': '#1B5FAF',
         'ghn-blue-dark': '#144A8C',
         'ghn-blue-light': '#EBF3FF',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Be Vietnam Pro', 'system-ui', 'sans-serif'],
+        heading: ['Exo', 'Be Vietnam Pro', 'sans-serif'],
       },
     },
   },
