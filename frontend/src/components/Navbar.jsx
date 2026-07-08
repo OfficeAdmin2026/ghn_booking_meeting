@@ -18,15 +18,15 @@ export default function Navbar() {
   };
 
   const linkClass = (active) =>
-    `flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+    `flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 ${
       active
-        ? 'bg-ghn-orange-light text-ghn-orange'
-        : 'text-gray-600 hover:bg-gray-100'
+        ? 'bg-ghn-orange text-white shadow-sm shadow-ghn-orange/30'
+        : 'text-gray-700 hover:bg-white hover:text-ghn-orange hover:shadow-sm'
     }`;
 
   const mobileLinkClass = (active) =>
-    `flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors duration-200 ${
-      active ? 'bg-ghn-orange-light text-ghn-orange' : 'text-gray-600 hover:bg-gray-100'
+    `flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors duration-200 ${
+      active ? 'bg-ghn-orange text-white shadow-sm' : 'text-gray-700 hover:bg-white hover:text-ghn-orange'
     }`;
 
   return (
@@ -42,7 +42,7 @@ export default function Navbar() {
           </Link>
 
           {/* Nav links */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1 bg-gray-100 rounded-xl p-1">
             <Link to="/" className={linkClass(location.pathname === '/')}>
               <HomeIcon className="w-4 h-4" /> Trang chủ
             </Link>
@@ -82,7 +82,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile nav */}
-        <div className="md:hidden flex items-center gap-1 pb-2 overflow-x-auto px-0">
+        <div className="md:hidden flex items-center gap-1 pb-2 pt-1 overflow-x-auto px-0 bg-gray-100 rounded-xl">
           <Link to="/" className={mobileLinkClass(location.pathname === '/')}>
             <HomeIcon className="w-3.5 h-3.5" /> Trang chủ
           </Link>
