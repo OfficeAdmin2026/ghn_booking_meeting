@@ -73,6 +73,11 @@ class AuthService {
       // Tìm user
       let user = await this.findUserByEmail(email);
 
+      // Tài khoản đã bị admin chặn truy cập
+      if (user && !user.is_active) {
+        throw new Error('Tài khoản của bạn đã bị khóa truy cập. Vui lòng liên hệ quản trị viên.');
+      }
+
       // Nếu chưa tồn tại, tạo mới
       if (!user) {
         user = await this.createUser(

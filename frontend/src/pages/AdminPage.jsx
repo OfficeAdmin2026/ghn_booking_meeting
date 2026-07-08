@@ -16,6 +16,9 @@ import {
   ExclamationTriangleIcon,
   LightBulbIcon,
   BookmarkIcon,
+  NoSymbolIcon,
+  MagnifyingGlassIcon,
+  LockClosedIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
@@ -72,6 +75,10 @@ export default function AdminPage() {
   const [roleActionLoading, setRoleActionLoading] = useState(null); // userId being changed
   const [roleActionError, setRoleActionError] = useState('');
   const [roleActionSuccess, setRoleActionSuccess] = useState('');
+  const [banEmail, setBanEmail] = useState('');
+  const [banLoading, setBanLoading] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all'); // all | admin | vip | banned
 
   const loadRooms = useCallback(async () => {
     setLoading(true);
@@ -118,7 +125,7 @@ export default function AdminPage() {
     try {
       const res = await adminApi.getUsers();
       const users = res.data.data.users || [];
-      setElevatedUsers(users.filter(u => u.role !== 'user'));
+      setElevatedUsers(users.filter(u => u.role !== 'user' || !u.is_active));
     } catch (e) {
       console.error(e);
     } finally {
@@ -154,6 +161,45 @@ export default function AdminPage() {
       await adminApi.setUserRole(userId, role);
       await loadElevatedUsers();
       setRoleActionSuccess('Cập nhật quyền thành công');
+      setTimeout(() => setRoleActionSuccess(''), 3000);
+    } catch (err) {
+      setRoleActionError(err.response?.data?.error?.message || 'Cập nhật thất bại');
+      setTimeout(() => setRoleActionError(''), 3000);
+    } finally {
+      setRoleActionLoading(null);
+    }
+  };
+
+  const handleBan = async () => {
+    const email = banEmail.trim().toLowerCase();
+    if (!email) return;
+    if (!confirm(`Chặn truy cập email "${email}"? Người này sẽ không thể đăng nhập lại cho đến khi được bỏ chặn.`)) return;
+    setBanLoading(true);
+    setRoleActionError('');
+    setRoleActionSuccess('');
+    try {
+      const res = await adminApi.banUser(email);
+      const u = res.data.data.user;
+      await loadElevatedUsers();
+      setBanEmail('');
+      setRoleActionSuccess(`Đã chặn truy cập: ${u.full_name || email}`);
+      setTimeout(() => setRoleActionSuccess(''), 4000);
+    } catch (err) {
+      setRoleActionError(err.response?.data?.error?.message || 'Thất bại');
+      setTimeout(() => setRoleActionError(''), 5000);
+    } finally {
+      setBanLoading(false);
+    }
+  };
+
+  const handleSetStatus = async (userId, isActive, label) => {
+    if (!isActive && !confirm(`Chặn truy cập "${label}"? Người này sẽ không thể đăng nhập lại cho đến khi được bỏ chặn.`)) return;
+    setRoleActionLoading(userId);
+    setRoleActionError('');
+    try {
+      await adminApi.setUserStatus(userId, isActive);
+      await loadElevatedUsers();
+      setRoleActionSuccess(isActive ? 'Đã bỏ chặn truy cập' : 'Đã chặn truy cập');
       setTimeout(() => setRoleActionSuccess(''), 3000);
     } catch (err) {
       setRoleActionError(err.response?.data?.error?.message || 'Cập nhật thất bại');
@@ -289,6 +335,19 @@ export default function AdminPage() {
       const floorDiff = floorrank(a) - floorrank(b);
       if (floorDiff !== 0) return floorDiff;
       return a.name.localeCompare(b.name, 'vi');
+    });
+
+  const filteredUsers = elevatedUsers
+    .filter(u => {
+      if (userRoleFilter === 'admin') return u.role === 'admin' && u.is_active;
+      if (userRoleFilter === 'vip') return u.role === 'vip' && u.is_active;
+      if (userRoleFilter === 'banned') return !u.is_active;
+      return true;
+    })
+    .filter(u => {
+      const q = userSearch.trim().toLowerCase();
+      if (!q) return true;
+      return u.email.toLowerCase().includes(q) || (u.full_name || '').toLowerCase().includes(q);
     });
 
   return (
@@ -573,7 +632,7 @@ export default function AdminPage() {
         <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Quản lý quyền người dùng</h2>
-            <p className="text-gray-500 mt-1">Cấp / thu hồi quyền Admin và VIP (chỉ áp dụng với email @ghn.vn)</p>
+            <p className="text-gray-500 mt-1">Cấp / thu hồi quyền Admin, VIP và chặn truy cập theo email (chỉ áp dụng với email @ghn.vn)</p>
           </div>
 
           {/* Promote form */}
@@ -621,12 +680,43 @@ export default function AdminPage() {
             )}
           </div>
 
+          {/* Ban form */}
+          <div className="card p-5">
+            <h3 className="text-sm font-semibold text-gray-700 mb-1 inline-flex items-center gap-1.5">
+              <NoSymbolIcon className="w-4 h-4" /> Chặn truy cập theo email
+            </h3>
+            <p className="text-xs text-gray-400 mb-4">
+              Email bị chặn sẽ không thể đăng nhập lại. Dùng khi người dùng đặt phòng nhiều lần rồi không đến.
+            </p>
+            <div className="flex gap-3 flex-wrap">
+              <input
+                type="email"
+                value={banEmail}
+                onChange={e => { setBanEmail(e.target.value); setRoleActionError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleBan()}
+                placeholder="ten.nhanvien@ghn.vn"
+                className="input-field flex-1 min-w-[220px]"
+              />
+              <button
+                onClick={handleBan}
+                disabled={banLoading || !banEmail.trim()}
+                className="inline-flex items-center gap-1.5 px-6 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+              >
+                <NoSymbolIcon className="w-4 h-4" /> {banLoading ? 'Đang xử lý...' : 'Chặn truy cập'}
+              </button>
+            </div>
+          </div>
+
           {/* Current elevated users list */}
           <div className="card p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <h3 className="text-sm font-semibold text-gray-700">
-                Danh sách Admin & VIP hiện tại
-                {elevatedUsers.length > 0 && <span className="ml-2 text-xs font-normal text-gray-400">({elevatedUsers.length})</span>}
+                Danh sách Admin, VIP & Bị chặn
+                {elevatedUsers.length > 0 && (
+                  <span className="ml-2 text-xs font-normal text-gray-400">
+                    ({filteredUsers.length}{filteredUsers.length !== elevatedUsers.length ? `/${elevatedUsers.length}` : ''})
+                  </span>
+                )}
               </h3>
               <button
                 onClick={loadElevatedUsers}
@@ -636,58 +726,112 @@ export default function AdminPage() {
               </button>
             </div>
 
+            {/* Filters */}
+            <div className="flex gap-3 flex-wrap mb-4">
+              <div className="relative flex-1 min-w-[220px]">
+                <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={userSearch}
+                  onChange={e => setUserSearch(e.target.value)}
+                  placeholder="Tìm theo tên hoặc email..."
+                  className="input-field pl-9 w-full"
+                />
+              </div>
+              <select
+                value={userRoleFilter}
+                onChange={e => setUserRoleFilter(e.target.value)}
+                className="input-field w-40"
+              >
+                <option value="all">Tất cả</option>
+                <option value="admin">Admin</option>
+                <option value="vip">VIP (BOD)</option>
+                <option value="banned">Bị chặn</option>
+              </select>
+            </div>
+
             {usersLoading ? (
               <div className="text-center py-8 text-gray-400">Đang tải...</div>
-            ) : elevatedUsers.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">Chưa có Admin hoặc VIP nào ngoài bạn</div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                {elevatedUsers.length === 0 ? 'Chưa có Admin, VIP hoặc tài khoản bị chặn nào ngoài bạn' : 'Không tìm thấy kết quả phù hợp'}
+              </div>
             ) : (
               <div className="space-y-2">
-                {['admin', 'vip'].map(roleGroup => {
-                  const group = elevatedUsers.filter(u => u.role === roleGroup);
+                {['admin', 'vip', 'banned'].map(groupKey => {
+                  const group = groupKey === 'banned'
+                    ? filteredUsers.filter(u => !u.is_active)
+                    : filteredUsers.filter(u => u.role === groupKey && u.is_active);
                   if (group.length === 0) return null;
                   return (
-                    <div key={roleGroup}>
+                    <div key={groupKey}>
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 mt-3 inline-flex items-center gap-1">
-                        {roleGroup === 'admin' ? (<><KeyIcon className="w-3.5 h-3.5" /> Admin</>) : (<><StarIcon className="w-3.5 h-3.5" /> VIP (BOD)</>)}
+                        {groupKey === 'admin' && (<><KeyIcon className="w-3.5 h-3.5" /> Admin</>)}
+                        {groupKey === 'vip' && (<><StarIcon className="w-3.5 h-3.5" /> VIP (BOD)</>)}
+                        {groupKey === 'banned' && (<><LockClosedIcon className="w-3.5 h-3.5" /> Bị chặn truy cập</>)}
                       </p>
                       <div className="space-y-1.5">
                         {group.map(u => (
                           <div key={u.id} className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
                             <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${roleGroup === 'admin' ? 'bg-ghn-orange' : 'bg-amber-400'}`}>
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${
+                                groupKey === 'banned' ? 'bg-gray-400' : groupKey === 'admin' ? 'bg-ghn-orange' : 'bg-amber-400'
+                              }`}>
                                 {u.full_name?.charAt(0)?.toUpperCase() || '?'}
                               </div>
                               <div>
-                                <p className="text-sm font-medium text-gray-800">{u.full_name}</p>
+                                <p className="text-sm font-medium text-gray-800 inline-flex items-center gap-2">
+                                  {u.full_name}
+                                  {groupKey === 'banned' && <RoleBadge role={u.role} />}
+                                </p>
                                 <p className="text-xs text-gray-500">{u.email}{u.department ? ` · ${u.department}` : ''}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              {roleGroup === 'admin' && (
+                              {groupKey === 'banned' ? (
                                 <button
-                                  onClick={() => handleSetRole(u.id, 'vip')}
+                                  onClick={() => handleSetStatus(u.id, true, u.full_name || u.email)}
                                   disabled={roleActionLoading === u.id}
-                                  className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-50"
+                                  className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50"
                                 >
-                                  <ArrowRightIcon className="w-3 h-3" /> VIP
+                                  {roleActionLoading === u.id ? '...' : 'Bỏ chặn'}
                                 </button>
+                              ) : (
+                                <>
+                                  {groupKey === 'admin' && (
+                                    <button
+                                      onClick={() => handleSetRole(u.id, 'vip')}
+                                      disabled={roleActionLoading === u.id}
+                                      className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 transition-colors disabled:opacity-50"
+                                    >
+                                      <ArrowRightIcon className="w-3 h-3" /> VIP
+                                    </button>
+                                  )}
+                                  {groupKey === 'vip' && (
+                                    <button
+                                      onClick={() => handleSetRole(u.id, 'admin')}
+                                      disabled={roleActionLoading === u.id}
+                                      className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-orange-200 text-orange-700 hover:bg-orange-50 transition-colors disabled:opacity-50"
+                                    >
+                                      <ArrowRightIcon className="w-3 h-3" /> Admin
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => handleSetRole(u.id, 'user')}
+                                    disabled={roleActionLoading === u.id}
+                                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                                  >
+                                    {roleActionLoading === u.id ? '...' : 'Gỡ quyền'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleSetStatus(u.id, false, u.full_name || u.email)}
+                                    disabled={roleActionLoading === u.id}
+                                    className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                                  >
+                                    <NoSymbolIcon className="w-3 h-3" /> Chặn
+                                  </button>
+                                </>
                               )}
-                              {roleGroup === 'vip' && (
-                                <button
-                                  onClick={() => handleSetRole(u.id, 'admin')}
-                                  disabled={roleActionLoading === u.id}
-                                  className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-orange-200 text-orange-700 hover:bg-orange-50 transition-colors disabled:opacity-50"
-                                >
-                                  <ArrowRightIcon className="w-3 h-3" /> Admin
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleSetRole(u.id, 'user')}
-                                disabled={roleActionLoading === u.id}
-                                className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
-                              >
-                                {roleActionLoading === u.id ? '...' : 'Gỡ quyền'}
-                              </button>
                             </div>
                           </div>
                         ))}

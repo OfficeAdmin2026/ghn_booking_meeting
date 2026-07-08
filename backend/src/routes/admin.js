@@ -154,4 +154,43 @@ router.patch('/users/:id/role', authMiddleware, adminMiddleware, async (req, res
   }
 });
 
+// POST /api/admin/ban - Block access by email (creates user record if not exists)
+router.post('/ban', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const email = (req.body.email || '').trim().toLowerCase();
+    if (!email) return res.status(400).json({ error: { status: 400, message: 'Email không được để trống' } });
+    let user = await User.findOne({ where: { email: { [Op.iLike]: email } } });
+    if (!user) {
+      const defaultName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      user = await User.create({ email, full_name: defaultName, role: 'user', is_active: false });
+    } else {
+      if (user.id === req.user.id)
+        return res.status(400).json({ error: { status: 400, message: 'Không thể tự chặn chính mình' } });
+      await user.update({ is_active: false, updated_at: new Date() });
+    }
+    res.json({ status: 'success', data: { user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, is_active: user.is_active } } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// PATCH /api/admin/users/:id/status - Ban / unban a user by id
+router.patch('/users/:id/status', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { is_active } = req.body;
+    if (typeof is_active !== 'boolean') {
+      return res.status(400).json({ error: { status: 400, message: 'is_active phải là true/false' } });
+    }
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ error: { status: 400, message: 'Không thể tự chặn chính mình' } });
+    }
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng' } });
+    await user.update({ is_active, updated_at: new Date() });
+    res.json({ status: 'success', data: { user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, is_active: user.is_active } } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
 module.exports = router;

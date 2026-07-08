@@ -63,4 +63,8 @@ export const adminApi = {
   setUserRole: (id, role) => api.patch(`/admin/users/${id}/role`, { role }),
 
   promote: (email, role) => api.post('/admin/promote', { email, role }),
+
+  banUser: (email) => api.post('/admin/ban', { email }),
+
+  setUserStatus: (id, isActive) => api.patch(`/admin/users/${id}/status`, { is_active: isActive }),
 };

@@ -45,6 +45,17 @@ class AuthController {
       });
     } catch (error) {
       console.error('Login error:', error);
+
+      // Tài khoản bị chặn truy cập
+      if (error.message.includes('khóa truy cập')) {
+        return res.status(403).json({
+          error: {
+            status: 403,
+            message: error.message
+          }
+        });
+      }
+
       res.status(500).json({
         error: {
           status: 500,
