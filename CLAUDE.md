@@ -30,8 +30,8 @@ Internal meeting room booking system for GHN (Giao Hàng Nhanh).
 Vercel (frontend) and Render (backend) both auto-deploy on push to `main` — pushing **is** the deploy step, there is no separate deploy action.
 
 When the user asks for a code change (fix, feature, content/copy update, etc.) in a normal chat turn:
-1. Implement it, review related areas it touches, and verify (lint/build, and a real run-through for UI changes).
-2. Commit with a clear message and **push to `main` right away, without pausing to ask for confirmation first** — the user has pre-authorized this so requested changes go live without an extra round trip.
+1. Implement it, review related areas it touches, and verify (lint/build, and a real run-through for UI changes when a browser tool is available).
+2. Commit with a clear message and **push to `main` right away, without pausing to ask for confirmation first** — the user has pre-authorized this so requested changes go live without an extra round trip. This applies even when no browser tool is available to visually confirm a UI change (e.g. CSS/Tailwind class tweaks) — lint/build passing and correct code review are sufficient; don't pause to ask the user to preview locally first unless they ask to.
 
 Still stop and ask before proceeding when:
 - The action is destructive or hard to reverse (force-push, `git reset --hard`, rewriting history, deleting branches, dropping/altering production DB data).
