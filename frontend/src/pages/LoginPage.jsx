@@ -54,6 +54,7 @@ export default function LoginPage() {
           client_id: GOOGLE_CLIENT_ID,
           callback: handleCredentialResponse,
           hd: 'ghn.vn',
+          use_fedcm_for_prompt: true,
         });
         window.google.accounts.id.renderButton(buttonRef.current, {
           type: 'standard',
@@ -63,6 +64,8 @@ export default function LoginPage() {
           text: 'signin_with',
           locale: 'vi',
         });
+        // One Tap: tự nổi popup góc màn hình nếu trình duyệt đã có sẵn phiên Google
+        window.google.accounts.id.prompt();
       })
       .catch(() => {
         if (!cancelled) setScriptError(true);
