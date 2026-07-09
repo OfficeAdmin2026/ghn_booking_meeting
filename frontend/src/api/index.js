@@ -1,8 +1,8 @@
 import api from './axios';
 
 export const authApi = {
-  loginWithGoogle: (credential) =>
-    api.post('/auth/google', { credential }),
+  login: (email, fullName) =>
+    api.post('/auth/login', { email, full_name: fullName }),
 
   getMe: () => api.get('/auth/me'),
 };

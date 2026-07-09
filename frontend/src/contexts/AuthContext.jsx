@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { authApi } from '../api';
 
 const AuthContext = createContext(null);
@@ -10,10 +10,10 @@ export function AuthProvider({ children }) {
   });
   const [loading, setLoading] = useState(false);
 
-  const loginWithGoogle = async (credential) => {
+  const login = async (email, fullName) => {
     setLoading(true);
     try {
-      const res = await authApi.loginWithGoogle(credential);
+      const res = await authApi.login(email, fullName);
       const { token, user: userData } = res.data.data;
       localStorage.setItem('ghn_token', token);
       localStorage.setItem('ghn_user', JSON.stringify(userData));
@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
   const isVip = user?.role === 'vip' || user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, isAdmin, isVip }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin, isVip }}>
       {children}
     </AuthContext.Provider>
   );
