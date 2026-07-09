@@ -8,10 +8,20 @@ const AuthService = require('../services/AuthService');
 class AuthController {
   /**
    * POST /api/auth/login
-   * Login bằng email (đơn giản, không cần verify)
+   * Login bằng email, không verify danh tính (chỉ dùng khi phát triển local).
+   * Production bắt buộc dùng /api/auth/google để tránh giả mạo email người khác.
    */
   static async login(req, res) {
     try {
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({
+          error: {
+            status: 403,
+            message: 'Vui lòng đăng nhập bằng Google'
+          }
+        });
+      }
+
       const { email, full_name } = req.body;
 
       if (!email) {
@@ -66,67 +76,49 @@ class AuthController {
   }
 
   /**
-   * POST /api/auth/register
-   * Register user mới (similar to login nhưng explicit)
+   * POST /api/auth/google
+   * Login bằng Google Sign-In (ID token). Đây là đường đăng nhập chính thức
+   * cho production — Google xác thực người dùng thực sự sở hữu email @ghn.vn.
    */
-  static async register(req, res) {
+  static async googleLogin(req, res) {
     try {
-      const { email, full_name, department } = req.body;
+      const { credential } = req.body;
 
-      if (!email || !full_name) {
+      if (!credential) {
         return res.status(400).json({
           error: {
             status: 400,
-            message: 'Email and full_name are required'
+            message: 'Thiếu Google credential'
           }
         });
       }
 
-      // Validate email domain
-      if (!email.endsWith('@ghn.vn')) {
-        return res.status(400).json({
-          error: {
-            status: 400,
-            message: 'Only @ghn.vn email addresses are allowed'
-          }
-        });
-      }
+      const result = await AuthService.loginWithGoogle(credential);
 
-      // Tạo user
-      const user = await AuthService.createUser(email, full_name, department, 'user');
-
-      // Tạo token
-      const token = AuthService.generateToken(user);
-
-      res.status(201).json({
+      res.json({
         status: 'success',
         data: {
-          token,
-          user: {
-            id: user.id,
-            email: user.email,
-            full_name: user.full_name,
-            role: user.role
-          }
+          token: result.token,
+          user: result.user
         }
       });
     } catch (error) {
-      console.error('Register error:', error);
+      console.error('Google login error:', error);
 
-      // Check nếu user đã tồn tại
-      if (error.message.includes('already exists')) {
-        return res.status(409).json({
+      if (error.message.includes('khóa truy cập')) {
+        return res.status(403).json({
           error: {
-            status: 409,
-            message: 'Email already registered'
+            status: 403,
+            message: error.message
           }
         });
       }
 
-      res.status(500).json({
+      // Lỗi xác thực Google / sai domain email → 401
+      res.status(401).json({
         error: {
-          status: 500,
-          message: error.message || 'Registration failed'
+          status: 401,
+          message: error.message || 'Đăng nhập Google thất bại'
         }
       });
     }

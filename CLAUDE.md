@@ -52,7 +52,7 @@ Browser → Vercel (React SPA) → Render (Express API) → Supabase (PostgreSQL
 
 ---
 
-## Demo Accounts (no password — login only requires email + name)
+## Demo Accounts
 
 | Email | Role |
 |-------|------|
@@ -62,7 +62,8 @@ Browser → Vercel (React SPA) → Render (Express API) → Supabase (PostgreSQL
 | jane@ghn.vn | User |
 | mike@ghn.vn | User |
 
-> Auth is email-only (no password): any `@ghn.vn` email auto-creates a `user` account on first login. Role is set manually in the DB.
+> Production auth is **Sign in with Google**, restricted to the `@ghn.vn` Google Workspace domain (see `frontend/src/pages/LoginPage.jsx` and `backend/src/services/AuthService.js#loginWithGoogle`) — Google verifies the person actually owns the mailbox before issuing a token, so one user can no longer type in a colleague's email to access their account. A matching `@ghn.vn` Google account must exist for these demo emails to actually sign in; any `@ghn.vn` Google account auto-creates a `user` account on first login, and role is set manually in the DB (Admin panel → Quản lý quyền).
+> The old email-only login (`POST /api/auth/login`, no identity verification) still exists but is disabled whenever `NODE_ENV=production` — it's for local dev convenience only, never expose it in production.
 
 ---
 
@@ -75,15 +76,19 @@ NODE_ENV=production
 PORT=10000
 JWT_SECRET=<secret>
 ALLOWED_ORIGINS=https://ghn-booking-meeting-seven.vercel.app
+GOOGLE_CLIENT_ID=<oauth-client-id>.apps.googleusercontent.com
 ```
 > Use Session Pooler URL (pooler.supabase.com), NOT direct connection.
+> `GOOGLE_CLIENT_ID` must match the frontend's `VITE_GOOGLE_CLIENT_ID` — used to verify the audience of the Google ID token server-side.
 
 ### Frontend (set on Vercel)
 ```
 VITE_API_URL=https://ghn-booking-meeting.onrender.com/api
+VITE_GOOGLE_CLIENT_ID=<oauth-client-id>.apps.googleusercontent.com
 ```
 > Must include `/api` suffix. Vite env vars are baked at build time — redeploy after changing.
 > Local fallback: `http://localhost:5001/api` (see `frontend/src/api/axios.js`).
+> `VITE_GOOGLE_CLIENT_ID` comes from a Google Cloud Console OAuth Client ID (type "Web application") — see [Google Sign-In Setup](#google-sign-in-setup) below.
 
 ---
 
@@ -113,7 +118,7 @@ No test suite exists — there are no test commands.
 Routes → Controllers → Services. All business logic lives in services.
 
 **API routes** (all prefixed `/api`):
-- `/auth` — login (email-only, auto-creates account for new `@ghn.vn` emails)
+- `/auth` — `POST /auth/google` (Sign in with Google, production login path, auto-creates account for new `@ghn.vn` Google accounts); `POST /auth/login` (email-only, dev only — disabled when `NODE_ENV=production`)
 - `/rooms` — CRUD for rooms and search
 - `/bookings` — user bookings (create, update, cancel, freeze-status)
 - `/dashboard` — admin metrics and reports
@@ -195,8 +200,25 @@ Single-page React app using React Router v7. Entry: `frontend/src/App.jsx`.
 
 ---
 
+## Google Sign-In Setup
+
+Login is enforced via Google OAuth (Sign in with Google) restricted to `@ghn.vn` — required once per Google Cloud project, not per deploy:
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) → create/select a project.
+2. **APIs & Services → OAuth consent screen**: set up as Internal (if the Workspace admin allows) or External; app name, support email.
+3. **APIs & Services → Credentials → Create Credentials → OAuth Client ID**, type **Web application**.
+   - Authorized JavaScript origins: `https://ghn-booking-meeting-seven.vercel.app`, `http://localhost:5173` (and `5174` if used).
+   - No redirect URI needed — the frontend uses the Google Identity Services popup/one-tap flow (`google.accounts.id`), not the redirect-based OAuth flow.
+4. Copy the generated **Client ID** (`....apps.googleusercontent.com`).
+5. Set it as `GOOGLE_CLIENT_ID` on Render (backend) and `VITE_GOOGLE_CLIENT_ID` on Vercel (frontend) — **same value on both**, then redeploy both (Vercel env vars are baked at build time).
+
+Without these two env vars set, the login page shows an error instead of the Google button, and `/api/auth/google` rejects everything with "Google Sign-In chưa được cấu hình trên server".
+
+---
+
 ## Deployment Checklist (fresh deploy)
 
 1. **Supabase**: Create project → run `SETUP_DATABASE.sql` in SQL Editor → copy Session Pooler connection string → reset DB password
-2. **Render**: New Web Service → connect GitHub → set root to `backend` → add all env vars above
-3. **Vercel**: New project → connect GitHub → set root to `frontend` → add `VITE_API_URL` → deploy
+2. **Render**: New Web Service → connect GitHub → set root to `backend` → add all env vars above (including `GOOGLE_CLIENT_ID`)
+3. **Vercel**: New project → connect GitHub → set root to `frontend` → add `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID` → deploy
+4. **Google Cloud Console**: follow [Google Sign-In Setup](#google-sign-in-setup) above

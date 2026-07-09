@@ -1,12 +1,15 @@
 const { User } = require('../models');
 const jwt = require('jsonwebtoken');
 const bcryptjs = require('bcryptjs');
+const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
 
 /**
  * Service layer cho authentication
  * Xử lý: login, register, JWT generation, password hashing
  */
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 class AuthService {
   /**
@@ -107,6 +110,39 @@ class AuthService {
     } catch (error) {
       throw error;
     }
+  }
+
+  /**
+   * Login bằng Google ID token (Sign in with Google).
+   * Google xác thực người dùng thực sự sở hữu email @ghn.vn trước khi trả token,
+   * nên không thể tự gõ email người khác để đăng nhập như cách cũ.
+   */
+  static async loginWithGoogle(idToken) {
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      throw new Error('Google Sign-In chưa được cấu hình trên server');
+    }
+
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch (err) {
+      throw new Error('Xác thực Google thất bại');
+    }
+
+    if (!payload || !payload.email_verified) {
+      throw new Error('Email Google chưa được xác thực');
+    }
+
+    const email = payload.email.toLowerCase();
+    if (!email.endsWith('@ghn.vn')) {
+      throw new Error('Chỉ chấp nhận tài khoản Google @ghn.vn');
+    }
+
+    return this.login(email, payload.name);
   }
 
   /**

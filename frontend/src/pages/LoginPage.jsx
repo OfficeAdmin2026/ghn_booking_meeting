@@ -1,30 +1,78 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function LoginPage() {
-  const { user, login, loading } = useAuth();
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [error, setError] = useState('');
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const GSI_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
-  if (user) return <Navigate to="/" replace />;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!email.endsWith('@ghn.vn')) {
-      setError('Vui lòng dùng email công ty @ghn.vn');
+function loadGoogleScript() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) return resolve();
+    const existing = document.querySelector(`script[src="${GSI_SCRIPT_SRC}"]`);
+    if (existing) {
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', reject);
       return;
     }
-    const result = await login(email, fullName);
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.message);
-    }
-  };
+    const script = document.createElement('script');
+    script.src = GSI_SCRIPT_SRC;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+export default function LoginPage() {
+  const { user, loginWithGoogle, loading } = useAuth();
+  const navigate = useNavigate();
+  const [error, setError] = useState('');
+  const [scriptError, setScriptError] = useState(false);
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    if (user || !GOOGLE_CLIENT_ID) return;
+
+    let cancelled = false;
+
+    const handleCredentialResponse = async (response) => {
+      setError('');
+      const result = await loginWithGoogle(response.credential);
+      if (cancelled) return;
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.message);
+      }
+    };
+
+    loadGoogleScript()
+      .then(() => {
+        if (cancelled || !buttonRef.current) return;
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleCredentialResponse,
+          hd: 'ghn.vn',
+        });
+        window.google.accounts.id.renderButton(buttonRef.current, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          width: 320,
+          text: 'signin_with',
+          locale: 'vi',
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setScriptError(true);
+      });
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  if (user) return <Navigate to="/" replace />;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ghn-blue-light via-white to-ghn-orange-light flex items-center justify-center p-4">
@@ -38,58 +86,37 @@ export default function LoginPage() {
             <p className="text-sm text-gray-500 mt-1">Hệ thống nội bộ GiaoHangNhanh</p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Email công ty
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
-                placeholder="ten@ghn.vn"
-                required
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Họ tên <span className="text-gray-400 font-normal">(tùy chọn - lần đầu đăng nhập)</span>
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="input-field"
-                placeholder="Nguyễn Văn A"
-              />
-            </div>
+          <p className="text-center text-sm text-gray-500 mb-5">
+            Đăng nhập bằng tài khoản Google công ty (@ghn.vn)
+          </p>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-                {error}
+          <div className="flex justify-center min-h-[44px]">
+            {!GOOGLE_CLIENT_ID ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 text-center">
+                Google Sign-In chưa được cấu hình. Vui lòng liên hệ quản trị viên.
               </div>
+            ) : scriptError ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 text-center">
+                Không tải được Google Sign-In. Vui lòng kiểm tra kết nối mạng và thử lại.
+              </div>
+            ) : loading ? (
+              <span className="flex items-center gap-2 text-gray-500 text-sm">
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Đang đăng nhập...
+              </span>
+            ) : (
+              <div ref={buttonRef} />
             )}
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full text-base py-3"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Đang đăng nhập...
-                </span>
-              ) : 'Đăng nhập'}
-            </button>
-          </form>
-
+          {error && (
+            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
         </div>
       </div>
     </div>

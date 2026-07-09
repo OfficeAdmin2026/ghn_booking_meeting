@@ -3,11 +3,11 @@ const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
 const AuthController = require('../controllers/AuthController');
 
-// POST /api/auth/login - Login with email
-router.post('/login', AuthController.login);
+// POST /api/auth/google - Login with Google Sign-In (production)
+router.post('/google', AuthController.googleLogin);
 
-// POST /api/auth/register - Register new user
-router.post('/register', AuthController.register);
+// POST /api/auth/login - Login with email only (dev only, disabled in production)
+router.post('/login', AuthController.login);
 
 // GET /api/auth/me - Get current user info
 router.get('/me', authMiddleware, AuthController.getCurrentUser);
