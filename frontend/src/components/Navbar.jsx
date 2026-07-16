@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   HomeIcon,
+  MapIcon,
   ClipboardDocumentListIcon,
   ChartBarIcon,
   Cog6ToothIcon,
@@ -49,6 +50,9 @@ export default function Navbar() {
             <Link to="/rules" className={linkClass(location.pathname === '/rules')}>
               <ClipboardDocumentListIcon className="w-4 h-4" /> Nội quy phòng họp
             </Link>
+            <Link to="/office-map" className={linkClass(location.pathname === '/office-map')}>
+              <MapIcon className="w-4 h-4" /> Bản đồ văn phòng
+            </Link>
             {isAdmin && (
               <>
                 <Link to="/analytics" className={linkClass(location.pathname === '/analytics')}>
@@ -88,6 +92,9 @@ export default function Navbar() {
           </Link>
           <Link to="/rules" className={mobileLinkClass(location.pathname === '/rules')}>
             <ClipboardDocumentListIcon className="w-3.5 h-3.5" /> Nội quy
+          </Link>
+          <Link to="/office-map" className={mobileLinkClass(location.pathname === '/office-map')}>
+            <MapIcon className="w-3.5 h-3.5" /> Bản đồ
           </Link>
           {isAdmin && (
             <>

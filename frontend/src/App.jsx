@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import LoginPage from './pages/LoginPage';
 import CalendarPage from './pages/CalendarPage';
+import OfficeMapPage from './pages/OfficeMapPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
 import AnalyticsPage from './pages/AnalyticsPage';
@@ -27,6 +28,11 @@ export default function App() {
           <Route path="/" element={
             <ProtectedRoute>
               <Layout fullHeight><CalendarPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/office-map" element={
+            <ProtectedRoute>
+              <Layout fullHeight><OfficeMapPage /></Layout>
             </ProtectedRoute>
           } />
           <Route path="/dashboard" element={

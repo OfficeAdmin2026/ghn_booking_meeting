@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { roomsApi, bookingsApi, authApi } from '../api';
 import BookingModal from '../components/BookingModal';
 import {
@@ -164,6 +164,7 @@ const MY_BOOKING_STATUSES = [
 export default function CalendarPage() {
   const today = toVNDateStr(new Date());
   const location = useLocation();
+  const navigate = useNavigate();
   const navStateHandled = useRef(false);
   const selRoomRestoredRef = useRef(false); // true after room restoration attempt completes
   const calendarScrollRef = useRef(null);
@@ -1474,7 +1475,13 @@ export default function CalendarPage() {
           startTime={modalSlot.startTime}
           endTime={modalSlot.endTime}
           onClose={() => setModalSlot(null)}
-          onSuccess={() => { setModalSlot(null); fetchBookings(); }}
+          onSuccess={({ room }) => {
+            setModalSlot(null);
+            fetchBookings();
+            navigate(
+              `/office-map?location=${encodeURIComponent(room.location)}&floor=${encodeURIComponent(room.floor)}&roomId=${room.id}&highlight=1`
+            );
+          }}
         />
       )}
 

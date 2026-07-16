@@ -121,7 +121,7 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
               </div>
               <div className="flex gap-3 justify-center">
                 <button
-                  onClick={() => { onSuccess(); onClose(); }}
+                  onClick={() => { onSuccess({ room, startTime: actualStart, endTime: actualEnd }); onClose(); }}
                   className="btn-primary"
                 >
                   Đã hiểu
