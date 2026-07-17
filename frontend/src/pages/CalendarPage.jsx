@@ -1475,12 +1475,9 @@ export default function CalendarPage() {
           startTime={modalSlot.startTime}
           endTime={modalSlot.endTime}
           onClose={() => setModalSlot(null)}
-          onSuccess={({ room }) => {
+          onSuccess={() => {
             setModalSlot(null);
             fetchBookings();
-            navigate(
-              `/office-map?location=${encodeURIComponent(room.location)}&floor=${encodeURIComponent(room.floor)}&roomId=${room.id}&highlight=1`
-            );
           }}
         />
       )}
@@ -1598,6 +1595,19 @@ export default function CalendarPage() {
                       </div>
                     )}
                   </div>
+
+                  {room.id && (
+                    <div className="px-5 pb-3">
+                      <button
+                        onClick={() => navigate(
+                          `/office-map?location=${encodeURIComponent(room.location)}&floor=${encodeURIComponent(room.floor)}&roomId=${room.id}&highlight=1`
+                        )}
+                        className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-ghn-blue-light bg-ghn-blue-light hover:bg-blue-100 text-ghn-blue font-semibold text-sm transition-colors"
+                      >
+                        <MapPinIcon className="w-4 h-4" /> Xem hướng dẫn đến phòng {room.name}
+                      </button>
+                    </div>
+                  )}
 
                   {/* Actions — own booking */}
                   {isOwn && (() => {

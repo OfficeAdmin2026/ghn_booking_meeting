@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { bookingsApi } from '../api';
-import { XMarkIcon, ClockIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ClockIcon, ExclamationTriangleIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 // VN timezone helpers
@@ -30,6 +31,7 @@ function fmtTime(isoStr) {
 }
 
 export default function BookingModal({ room, startTime, endTime, onClose, onSuccess }) {
+  const navigate = useNavigate();
   const dateStr = toVNDateStr(startTime); // fixed date, can't change from modal
   const [startInput, setStartInput] = useState(() => toVNTimeStr(startTime));
   const [endInput,   setEndInput]   = useState(() => toVNTimeStr(endTime));
@@ -122,9 +124,21 @@ export default function BookingModal({ room, startTime, endTime, onClose, onSucc
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => { onSuccess({ room, startTime: actualStart, endTime: actualEnd }); onClose(); }}
-                  className="btn-primary"
+                  className="btn-ghost px-5"
                 >
                   Đã hiểu
+                </button>
+                <button
+                  onClick={() => {
+                    onSuccess({ room, startTime: actualStart, endTime: actualEnd });
+                    onClose();
+                    navigate(
+                      `/office-map?location=${encodeURIComponent(room.location)}&floor=${encodeURIComponent(room.floor)}&roomId=${room.id}&highlight=1`
+                    );
+                  }}
+                  className="btn-primary inline-flex items-center gap-1.5"
+                >
+                  <MapPinIcon className="w-4 h-4" /> Xem hướng dẫn đến phòng ngay
                 </button>
               </div>
             </div>
