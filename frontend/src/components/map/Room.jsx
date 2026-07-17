@@ -5,7 +5,7 @@ const STATUS_COLOR = {
   occupied: '#EF4444',
 };
 
-export default function Room({ code, points, centroid, label, status, selected, highlighted, hovered, onHover, onClick }) {
+export default function Room({ code, points, centroid, label, status, selected, highlighted, hovered, onHover, onClick, hideLabel }) {
   const color = STATUS_COLOR[status] || STATUS_COLOR.available;
   const fillOpacity = selected ? 0.35 : hovered ? 0.3 : 0.2;
 
@@ -39,15 +39,18 @@ export default function Room({ code, points, centroid, label, status, selected, 
         className="transition-[fill-opacity] duration-200"
       />
 
-      <text
-        x={centroid.x}
-        y={centroid.y}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        className="text-[11px] font-semibold fill-gray-800 select-none pointer-events-none"
-      >
-        {label}
-      </text>
+      {/* Ảnh nền sơ đồ thật đã có sẵn tên phòng — không vẽ chồng nhãn nữa để tránh trùng chữ */}
+      {!hideLabel && (
+        <text
+          x={centroid.x}
+          y={centroid.y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="text-[11px] font-semibold fill-gray-800 select-none pointer-events-none"
+        >
+          {label}
+        </text>
+      )}
     </g>
   );
 }

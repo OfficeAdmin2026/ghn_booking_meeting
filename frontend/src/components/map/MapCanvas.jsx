@@ -128,6 +128,17 @@ export default function MapCanvas({
 
             <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full">
               <svg viewBox={`0 0 ${canvas.width} ${canvas.height}`} className="w-full h-full" style={{ minWidth: canvas.width, minHeight: canvas.height }}>
+                {floorData.background && (
+                  <image
+                    href={floorData.background.src}
+                    x={0}
+                    y={0}
+                    width={canvas.width}
+                    height={canvas.height}
+                    preserveAspectRatio="xMidYMid meet"
+                  />
+                )}
+
                 {filters.room &&
                   rooms.map((r) => {
                     const room = roomsByCode[r.code];
@@ -145,6 +156,7 @@ export default function MapCanvas({
                           hovered={hoveredCode === r.code}
                           onHover={onRoomHover}
                           onClick={onRoomClick}
+                          hideLabel={!!floorData.background}
                         />
                       </g>
                     );

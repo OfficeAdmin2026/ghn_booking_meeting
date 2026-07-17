@@ -113,32 +113,35 @@ export const officeMapData = {
     3,
     poisFor('rpark-g')
   ),
-  // Rivera Park / 1F: bố cục theo "sơ đồ tầng-1.pdf" (tỉ lệ tương đối, không
-  // phải bản vẽ CAD chính xác) — chỉ vẽ 4 phòng họp thật đang có trong hệ
-  // thống đặt phòng (Thành Thái, Hưng Yên, Our Roads, Your Loads) + các tiện
-  // ích chung (WC, Pantry, thang máy, lối thoát hiểm). Các phòng họp khác và
-  // khu làm việc theo team trong sơ đồ gốc không đưa vào theo yêu cầu.
+  // Rivera Park / 1F: ảnh nền là sơ đồ thật (frontend/public/floor-plans/
+  // rivera-park-1f.png, cắt từ "sơ đồ tầng-1.pdf"). Toạ độ room/poi bên dưới
+  // được đo trực tiếp trên ảnh 1600x667 này nên khớp đúng vị trí thật — chỉ
+  // đặt overlay cho 4 phòng họp thật đang có trong hệ thống đặt phòng (Thành
+  // Thái, Hưng Yên, Our Roads, Your Loads) + tiện ích chung (WC, Pantry,
+  // thang máy, lối thoát hiểm). Các phòng họp khác/khu làm việc theo team
+  // trong sơ đồ gốc không có overlay vì chưa tồn tại trong hệ thống đặt phòng.
   'Rivera Park__1F': {
-    canvas: { width: 1000, height: 600 },
+    canvas: { width: 1600, height: 667 },
+    background: { src: '/floor-plans/rivera-park-1f.png', width: 1600, height: 667 },
     rooms: [
-      { code: 'RPARK-1F-004', points: '330,260 430,260 430,330 330,330', centroid: { x: 380, y: 295 } }, // Your Loads
-      { code: 'RPARK-1F-003', points: '330,330 430,330 430,400 330,400', centroid: { x: 380, y: 365 } }, // Our Roads
-      { code: 'RPARK-1F-001', points: '600,260 740,260 740,330 600,330', centroid: { x: 670, y: 295 } }, // Thành Thái
-      { code: 'RPARK-1F-002', points: '600,330 740,330 740,430 600,430', centroid: { x: 670, y: 380 } }, // Hưng Yên (phòng lớn, 40 người)
+      { code: 'RPARK-1F-004', points: '542,366 626,366 626,426 542,426', centroid: { x: 584, y: 396 } }, // Your Loads
+      { code: 'RPARK-1F-003', points: '542,426 626,426 626,494 542,494', centroid: { x: 584, y: 460 } }, // Our Roads
+      { code: 'RPARK-1F-001', points: '882,306 1025,306 1025,360 882,360', centroid: { x: 953, y: 333 } }, // Thành Thái
+      { code: 'RPARK-1F-002', points: '882,360 1040,360 1040,494 882,494', centroid: { x: 961, y: 427 } }, // Hưng Yên (phòng lớn, 40 người)
     ],
     pois: [
-      { id: 'rpark-1f-toilet-1', type: 'toilet', shape: 'point', x: 172, y: 60, label: 'WC' },
-      { id: 'rpark-1f-toilet-2', type: 'toilet', shape: 'point', x: 783, y: 90, label: 'WC' },
-      { id: 'rpark-1f-pantry-1', type: 'pantry', shape: 'polygon', points: '618,154 678,154 678,204 618,204', label: 'Khu vực Pantry' },
-      { id: 'rpark-1f-pantry-2', type: 'pantry', shape: 'polygon', points: '765,335 825,335 825,385 765,385', label: 'Khu vực Pantry' },
-      { id: 'rpark-1f-pantry-3', type: 'pantry', shape: 'polygon', points: '20,455 100,455 100,515 20,515', label: 'Khu vực Pantry' },
-      { id: 'rpark-1f-elevator-1', type: 'elevator', shape: 'point', x: 273, y: 208, label: 'Thang máy' },
-      { id: 'rpark-1f-elevator-2', type: 'elevator', shape: 'point', x: 273, y: 311, label: 'Thang máy' },
-      { id: 'rpark-1f-elevator-3', type: 'elevator', shape: 'point', x: 273, y: 356, label: 'Thang máy' },
-      { id: 'rpark-1f-exit-1', type: 'exit', shape: 'point', x: 186, y: 208, label: 'Khu vực thang thoát hiểm' },
-      { id: 'rpark-1f-exit-2', type: 'exit', shape: 'point', x: 186, y: 311, label: 'Khu vực thang thoát hiểm' },
-      { id: 'rpark-1f-exit-3', type: 'exit', shape: 'point', x: 810, y: 208, label: 'Khu vực thang thoát hiểm' },
-      { id: 'rpark-1f-exit-4', type: 'exit', shape: 'point', x: 875, y: 420, label: 'Khu vực thang thoát hiểm' },
+      { id: 'rpark-1f-toilet-1', type: 'toilet', shape: 'point', x: 286, y: 70, label: 'WC' },
+      { id: 'rpark-1f-toilet-2', type: 'toilet', shape: 'point', x: 1246, y: 126, label: 'WC' },
+      { id: 'rpark-1f-pantry-1', type: 'pantry', shape: 'point', x: 1036, y: 226, label: 'Khu vực Pantry' },
+      { id: 'rpark-1f-pantry-2', type: 'pantry', shape: 'point', x: 1110, y: 386, label: 'Khu vực Pantry' },
+      { id: 'rpark-1f-pantry-3', type: 'pantry', shape: 'point', x: 106, y: 586, label: 'Khu vực Pantry' },
+      { id: 'rpark-1f-elevator-1', type: 'elevator', shape: 'point', x: 442, y: 276, label: 'Thang máy' },
+      { id: 'rpark-1f-elevator-2', type: 'elevator', shape: 'point', x: 446, y: 388, label: 'Thang máy' },
+      { id: 'rpark-1f-elevator-3', type: 'elevator', shape: 'point', x: 446, y: 452, label: 'Thang máy' },
+      { id: 'rpark-1f-exit-1', type: 'exit', shape: 'point', x: 306, y: 276, label: 'Khu vực thang thoát hiểm' },
+      { id: 'rpark-1f-exit-2', type: 'exit', shape: 'point', x: 306, y: 426, label: 'Khu vực thang thoát hiểm' },
+      { id: 'rpark-1f-exit-3', type: 'exit', shape: 'point', x: 1284, y: 276, label: 'Khu vực thang thoát hiểm' },
+      { id: 'rpark-1f-exit-4', type: 'exit', shape: 'point', x: 1284, y: 426, label: 'Khu vực thang thoát hiểm' },
     ],
   },
   'Rivera Park__3F': buildFloorLayout(
