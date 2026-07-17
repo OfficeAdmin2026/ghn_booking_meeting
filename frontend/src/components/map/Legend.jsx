@@ -7,7 +7,7 @@ const ROOM_STATUS_LEGEND = [
   { label: 'Đang họp', color: '#EF4444' },
 ];
 
-export default function Legend() {
+export default function Legend({ hasBackground }) {
   const [expanded, setExpanded] = useState(true);
 
   return (
@@ -30,13 +30,18 @@ export default function Legend() {
               {item.label}
             </div>
           ))}
-          <div className="border-t border-gray-100 my-1.5" />
-          {Object.entries(POI_META).map(([type, meta]) => (
-            <div key={type} className="flex items-center gap-2 text-xs text-gray-600">
-              <meta.Icon className="w-3.5 h-3.5 shrink-0" style={{ color: meta.color }} />
-              {meta.label}
-            </div>
-          ))}
+          {/* Tầng đã có ảnh sơ đồ thật thì icon/note các loại POI đã có sẵn trong ảnh */}
+          {!hasBackground && (
+            <>
+              <div className="border-t border-gray-100 my-1.5" />
+              {Object.entries(POI_META).map(([type, meta]) => (
+                <div key={type} className="flex items-center gap-2 text-xs text-gray-600">
+                  <meta.Icon className="w-3.5 h-3.5 shrink-0" style={{ color: meta.color }} />
+                  {meta.label}
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>

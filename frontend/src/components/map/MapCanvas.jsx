@@ -206,11 +206,13 @@ export default function MapCanvas({
                     );
                   })}
 
-                {pois.filter((p) => filters[p.type]).map((p) => (
-                  <g key={p.id} id={`poi-${p.id}`}>
-                    <POIMarker {...p} />
-                  </g>
-                ))}
+                {/* Tầng đã có ảnh sơ đồ thật thì icon/note các loại POI đã có sẵn trong ảnh, không vẽ chồng nữa */}
+                {!floorData.background &&
+                  pois.filter((p) => filters[p.type]).map((p) => (
+                    <g key={p.id} id={`poi-${p.id}`}>
+                      <POIMarker {...p} />
+                    </g>
+                  ))}
 
                 <AnimatePresence>
                   {!drawMode && directionPath && <DirectionArrow key={selectedCode} points={directionPath} />}

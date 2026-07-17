@@ -243,12 +243,17 @@ export default function OfficeMapPage() {
             <h1 className="text-lg font-bold text-gray-900">Bản đồ văn phòng</h1>
             <p className="text-xs text-gray-500">Xem vị trí phòng họp, phòng ban và tiện ích trong toà nhà</p>
           </div>
-          <SearchBar rooms={liveRooms} pois={floorData?.pois || []} onSelect={handleSearchSelect} inputRef={searchInputRef} />
+          <SearchBar
+            rooms={liveRooms}
+            pois={floorData?.background ? [] : floorData?.pois || []}
+            onSelect={handleSearchSelect}
+            inputRef={searchInputRef}
+          />
         </div>
 
         <div className="flex items-center justify-between flex-wrap gap-3">
           <FloorSelector location={location_} floor={floor} onChange={handleFloorChange} />
-          <FilterPanel filters={filters} onChange={setFilters} />
+          <FilterPanel filters={filters} onChange={setFilters} hasBackground={!!floorData?.background} />
         </div>
       </div>
 
@@ -276,7 +281,7 @@ export default function OfficeMapPage() {
             onCanvasPoint={handleCanvasPoint}
           />
         )}
-        <Legend />
+        <Legend hasBackground={!!floorData?.background} />
       </div>
 
       <AnimatePresence>
