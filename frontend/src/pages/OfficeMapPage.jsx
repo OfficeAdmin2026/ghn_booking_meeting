@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { roomsApi, bookingsApi, wayfindingApi } from '../api';
 import { getFloorData, getFloorKey, normalizeLocation, DEFAULT_LOCATION, DEFAULT_FLOOR, DEFAULT_FILTERS } from '../data/officeMapData';
 import { isRoomOccupiedNow } from '../utils/roomStatus';
@@ -38,7 +37,7 @@ export default function OfficeMapPage() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [focusRequest, setFocusRequest] = useState(null);
-  const [toast, setToast] = useState(null);
+  const [highlightedCode, setHighlightedCode] = useState(null);
 
   const [savedPathsByRoomId, setSavedPathsByRoomId] = useState({});
   const [drawMode, setDrawMode] = useState(false);
@@ -123,8 +122,8 @@ export default function OfficeMapPage() {
       setPanelOpen(true);
       if (pending.highlight) {
         setFocusRequest({ domId: `room-${room.code}`, nonce: Date.now() });
-        setToast(room);
-        setTimeout(() => setToast(null), 4000);
+        setHighlightedCode(room.code);
+        setTimeout(() => setHighlightedCode(null), 4000);
       }
     }
     pendingDeepLink.current = { roomId: null, highlight: false };
@@ -268,7 +267,7 @@ export default function OfficeMapPage() {
             roomsByCode={roomsByCode}
             statusByCode={statusByCode}
             selectedCode={selectedCode}
-            highlightedCode={toast ? selectedCode : null}
+            highlightedCode={highlightedCode}
             hoveredCode={hoveredCode}
             onRoomHover={setHoveredCode}
             onRoomClick={handleRoomClick}
@@ -304,16 +303,6 @@ export default function OfficeMapPage() {
           />
         )}
       </AnimatePresence>
-
-      {toast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-white border border-green-200 shadow-lg rounded-xl px-5 py-3 flex items-center gap-3">
-          <CheckCircleIcon className="w-6 h-6 text-green-500 shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-gray-800">Đặt phòng thành công</p>
-            <p className="text-xs text-gray-500">Bạn đã đặt: {toast.name} · Tầng {toast.floor}</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
