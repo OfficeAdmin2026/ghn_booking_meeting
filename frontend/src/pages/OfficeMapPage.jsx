@@ -207,6 +207,7 @@ export default function OfficeMapPage() {
             onRoomClick={handleRoomClick}
             filters={filters}
             focusRequest={focusRequest}
+            showDirection={panelOpen}
           />
         )}
         <Legend />

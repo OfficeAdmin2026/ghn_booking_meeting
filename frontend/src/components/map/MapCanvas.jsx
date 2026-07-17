@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { AnimatePresence } from 'framer-motion';
 import {
   MagnifyingGlassPlusIcon,
   MagnifyingGlassMinusIcon,
@@ -9,6 +10,8 @@ import {
 import Room from './Room';
 import POIMarker from './POIMarker';
 import MiniMap from './MiniMap';
+import DirectionArrow from './DirectionArrow';
+import { nearestPoiOfType } from '../../utils/svgGeometry';
 
 const ZOOM_STORAGE_PREFIX = 'ghn_office_map_zoom__';
 
@@ -45,6 +48,7 @@ export default function MapCanvas({
   onRoomClick,
   filters,
   focusRequest,
+  showDirection,
 }) {
   const transformRef = useRef(null);
   const wrapperRef = useRef(null);
@@ -60,6 +64,16 @@ export default function MapCanvas({
     if (!focusRequest || !transformRef.current) return;
     transformRef.current.zoomToElement(focusRequest.domId, 1.3, 600);
   }, [focusRequest]);
+
+  // Mũi tên chỉ đường từ thang máy gần nhất tới phòng đang chọn
+  const directionArrow = useMemo(() => {
+    if (!floorData || !showDirection || !selectedCode) return null;
+    const room = floorData.rooms.find((r) => r.code === selectedCode);
+    if (!room) return null;
+    const from = nearestPoiOfType(floorData.pois, 'elevator', room.centroid);
+    if (!from) return null;
+    return { from, to: room.centroid };
+  }, [floorData, showDirection, selectedCode]);
 
   if (!floorData) {
     return <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Chưa có dữ liệu bản đồ cho tầng này</div>;
@@ -128,6 +142,12 @@ export default function MapCanvas({
 
             <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full">
               <svg viewBox={`0 0 ${canvas.width} ${canvas.height}`} className="w-full h-full" style={{ minWidth: canvas.width, minHeight: canvas.height }}>
+                <defs>
+                  <marker id="direction-arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                    <path d="M0,0 L8,4 L0,8 Z" fill="#1B5FAF" />
+                  </marker>
+                </defs>
+
                 {floorData.background && (
                   <image
                     href={floorData.background.src}
@@ -167,6 +187,10 @@ export default function MapCanvas({
                     <POIMarker {...p} />
                   </g>
                 ))}
+
+                <AnimatePresence>
+                  {directionArrow && <DirectionArrow key={selectedCode} from={directionArrow.from} to={directionArrow.to} />}
+                </AnimatePresence>
               </svg>
             </TransformComponent>
           </>

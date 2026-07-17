@@ -1,18 +1,12 @@
 import { motion } from 'framer-motion';
 import { POI_META } from './poiMeta';
-
-function polygonCentroid(pointsStr) {
-  const pts = pointsStr.trim().split(/\s+/).map((p) => p.split(',').map(Number));
-  const x = pts.reduce((sum, p) => sum + p[0], 0) / pts.length;
-  const y = pts.reduce((sum, p) => sum + p[1], 0) / pts.length;
-  return { x, y };
-}
+import { poiCenter } from '../../utils/svgGeometry';
 
 export default function POIMarker({ type, shape, points, x, y, label, highlighted, onHover }) {
   const meta = POI_META[type];
   if (!meta) return null;
   const { Icon, color } = meta;
-  const center = shape === 'polygon' ? polygonCentroid(points) : { x, y };
+  const center = poiCenter({ shape, points, x, y });
 
   return (
     <g
