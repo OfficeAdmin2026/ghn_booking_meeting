@@ -11,7 +11,7 @@ import Room from './Room';
 import POIMarker from './POIMarker';
 import MiniMap from './MiniMap';
 import DirectionArrow from './DirectionArrow';
-import { nearestPoiOfType, screenPointToSvg } from '../../utils/svgGeometry';
+import { nearestPoiOfType, screenPointToSvg, pointsToSvgString } from '../../utils/svgGeometry';
 import { findCorridorPath } from '../../utils/corridorPath';
 
 const ZOOM_STORAGE_PREFIX = 'ghn_office_map_zoom__';
@@ -51,7 +51,7 @@ export default function MapCanvas({
   focusRequest,
   showDirection,
   savedPathsByRoomId,
-  drawMode,
+  activeDrawTool,
   drawingPoints,
   onCanvasPoint,
 }) {
@@ -88,7 +88,7 @@ export default function MapCanvas({
   }, [floorData, showDirection, selectedCode, roomsByCode, savedPathsByRoomId]);
 
   const handleSvgClick = (e) => {
-    if (!drawMode || !svgRef.current) return;
+    if (!activeDrawTool || !svgRef.current) return;
     const point = screenPointToSvg(svgRef.current, e.clientX, e.clientY);
     onCanvasPoint?.(point);
   };
@@ -162,7 +162,7 @@ export default function MapCanvas({
               <svg
                 ref={svgRef}
                 viewBox={`0 0 ${canvas.width} ${canvas.height}`}
-                className={`w-full h-full ${drawMode ? 'cursor-crosshair' : ''}`}
+                className={`w-full h-full ${activeDrawTool ? 'cursor-crosshair' : ''}`}
                 style={{ minWidth: canvas.width, minHeight: canvas.height }}
                 onClick={handleSvgClick}
               >
@@ -187,6 +187,8 @@ export default function MapCanvas({
                   rooms.map((r) => {
                     const room = roomsByCode[r.code];
                     if (!room) return null;
+                    // Đang vẽ lại khung của chính phòng này — ẩn khung cũ để nhìn rõ ảnh nền bên dưới mà đồ theo
+                    if (activeDrawTool === 'shape' && selectedCode === r.code) return null;
                     return (
                       <g key={r.code} id={`room-${r.code}`}>
                         <Room
@@ -199,7 +201,7 @@ export default function MapCanvas({
                           highlighted={highlightedCode === r.code}
                           hovered={hoveredCode === r.code}
                           onHover={onRoomHover}
-                          onClick={drawMode ? undefined : onRoomClick}
+                          onClick={activeDrawTool ? undefined : onRoomClick}
                           hideLabel={!!floorData.background}
                         />
                       </g>
@@ -215,15 +217,20 @@ export default function MapCanvas({
                   ))}
 
                 <AnimatePresence>
-                  {!drawMode && directionPath && <DirectionArrow key={selectedCode} points={directionPath} />}
+                  {!activeDrawTool && directionPath && <DirectionArrow key={selectedCode} points={directionPath} />}
                 </AnimatePresence>
 
-                {drawMode && drawingPoints?.length > 0 && (
+                {activeDrawTool && drawingPoints?.length > 0 && (
                   <g className="pointer-events-none">
                     {drawingPoints.length > 1 && (
                       <polyline
-                        points={drawingPoints.map((p) => `${p.x},${p.y}`).join(' ')}
-                        fill="none"
+                        points={pointsToSvgString(
+                          activeDrawTool === 'shape' && drawingPoints.length >= 3
+                            ? [...drawingPoints, drawingPoints[0]]
+                            : drawingPoints
+                        )}
+                        fill={activeDrawTool === 'shape' ? '#FF6C0A' : 'none'}
+                        fillOpacity={activeDrawTool === 'shape' ? 0.15 : 0}
                         stroke="#FF6C0A"
                         strokeWidth={3}
                         strokeDasharray="6 5"

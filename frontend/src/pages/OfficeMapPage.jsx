@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { roomsApi, bookingsApi, wayfindingApi } from '../api';
+import { PhotoIcon } from '@heroicons/react/24/outline';
+import { roomsApi, bookingsApi, wayfindingApi, roomShapesApi, floorBackgroundsApi } from '../api';
 import { getFloorData, getFloorKey, normalizeLocation, DEFAULT_LOCATION, DEFAULT_FLOOR, DEFAULT_FILTERS } from '../data/officeMapData';
 import { isRoomOccupiedNow } from '../utils/roomStatus';
+import { polygonCentroid, pointsToSvgString } from '../utils/svgGeometry';
+import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/map/SearchBar';
 import FilterPanel from '../components/map/FilterPanel';
 import FloorSelector from '../components/map/FloorSelector';
 import Legend from '../components/map/Legend';
 import MapCanvas from '../components/map/MapCanvas';
 import InfoPanel from '../components/map/InfoPanel';
+import UploadBackgroundModal from '../components/map/UploadBackgroundModal';
 
 function dayRangeISO() {
   const start = new Date();
@@ -21,6 +25,7 @@ function dayRangeISO() {
 
 export default function OfficeMapPage() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchInputRef = useRef(null);
 
@@ -40,9 +45,16 @@ export default function OfficeMapPage() {
   const [highlightedCode, setHighlightedCode] = useState(null);
 
   const [savedPathsByRoomId, setSavedPathsByRoomId] = useState({});
-  const [drawMode, setDrawMode] = useState(false);
+  const [savedShapesByRoomId, setSavedShapesByRoomId] = useState({});
+  const [backgroundsByFloorKey, setBackgroundsByFloorKey] = useState({});
+  const [activeDrawTool, setActiveDrawTool] = useState(null); // null | 'path' | 'shape'
   const [drawingPoints, setDrawingPoints] = useState([]);
   const [savingPath, setSavingPath] = useState(false);
+  const [savingShape, setSavingShape] = useState(false);
+
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   const pendingDeepLink = useRef({
     roomId: searchParams.get('roomId'),
@@ -69,7 +81,33 @@ export default function OfficeMapPage() {
       .catch(() => {});
   }, []);
 
+  const fetchSavedShapes = useCallback(() => {
+    roomShapesApi
+      .getAll()
+      .then((res) => {
+        const map = {};
+        (res.data.data?.shapes || []).forEach((s) => { map[s.room_id] = s.points; });
+        setSavedShapesByRoomId(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  const fetchBackgrounds = useCallback(() => {
+    floorBackgroundsApi
+      .getAll()
+      .then((res) => {
+        const map = {};
+        (res.data.data?.backgrounds || []).forEach((b) => {
+          map[getFloorKey(normalizeLocation(b.location), b.floor)] = b;
+        });
+        setBackgroundsByFloorKey(map);
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => { fetchSavedPaths(); }, [fetchSavedPaths]);
+  useEffect(() => { fetchSavedShapes(); }, [fetchSavedShapes]);
+  useEffect(() => { fetchBackgrounds(); }, [fetchBackgrounds]);
 
   const roomsByCode = useMemo(() => {
     const map = {};
@@ -77,8 +115,41 @@ export default function OfficeMapPage() {
     return map;
   }, [liveRooms]);
 
+  const roomsById = useMemo(() => {
+    const map = {};
+    liveRooms.forEach((r) => { map[r.id] = r; });
+    return map;
+  }, [liveRooms]);
+
   const floorKey = getFloorKey(location_, floor);
-  const floorData = useMemo(() => getFloorData(location_, floor), [location_, floor]);
+
+  // Dữ liệu tĩnh trong officeMapData.js — nền tảng ban đầu, sẽ bị ghi đè bởi
+  // khung phòng (room_shapes) và ảnh nền (floor_backgrounds) admin đã lưu trong DB.
+  const staticFloorData = useMemo(() => getFloorData(location_, floor), [location_, floor]);
+
+  const floorData = useMemo(() => {
+    if (!staticFloorData) return null;
+
+    const roomsByCodeMap = {};
+    staticFloorData.rooms.forEach((r) => { roomsByCodeMap[r.code] = r; });
+    Object.entries(savedShapesByRoomId).forEach(([roomId, points]) => {
+      const liveRoom = roomsById[roomId];
+      if (!liveRoom) return;
+      // chỉ áp dụng khung đã vẽ cho đúng phòng thuộc tầng đang xem
+      if (normalizeLocation(liveRoom.location) !== location_ || liveRoom.floor !== floor) return;
+      const svgPoints = pointsToSvgString(points);
+      roomsByCodeMap[liveRoom.code] = { code: liveRoom.code, points: svgPoints, centroid: polygonCentroid(svgPoints) };
+    });
+
+    const bgOverride = backgroundsByFloorKey[floorKey];
+    const background = bgOverride
+      ? { src: bgOverride.image_url, width: bgOverride.width, height: bgOverride.height }
+      : staticFloorData.background;
+    const canvas = bgOverride ? { width: bgOverride.width, height: bgOverride.height } : staticFloorData.canvas;
+
+    return { ...staticFloorData, canvas, background, rooms: Object.values(roomsByCodeMap) };
+  }, [staticFloorData, savedShapesByRoomId, backgroundsByFloorKey, roomsById, location_, floor, floorKey]);
+
   const floorRooms = useMemo(
     () => liveRooms.filter((r) => normalizeLocation(r.location) === location_ && r.floor === floor),
     [liveRooms, location_, floor]
@@ -137,7 +208,7 @@ export default function OfficeMapPage() {
         searchInputRef.current?.focus();
       } else if (e.key === 'Escape' && panelOpen) {
         setPanelOpen(false);
-        setDrawMode(false);
+        setActiveDrawTool(null);
         setDrawingPoints([]);
       }
     };
@@ -155,7 +226,7 @@ export default function OfficeMapPage() {
   }, [floorRooms, bookingsByRoomId, now]);
 
   const exitDrawMode = () => {
-    setDrawMode(false);
+    setActiveDrawTool(null);
     setDrawingPoints([]);
   };
 
@@ -178,9 +249,14 @@ export default function OfficeMapPage() {
     exitDrawMode();
   };
 
-  const handleStartDraw = () => {
+  const handleStartDrawPath = () => {
     setDrawingPoints([]);
-    setDrawMode(true);
+    setActiveDrawTool('path');
+  };
+
+  const handleStartDrawShape = () => {
+    setDrawingPoints([]);
+    setActiveDrawTool('shape');
   };
 
   const handleCanvasPoint = (point) => {
@@ -195,7 +271,7 @@ export default function OfficeMapPage() {
 
   const handleCancelDraw = () => exitDrawMode();
 
-  const handleSaveDraw = () => {
+  const handleSavePath = () => {
     if (!selectedRoom || drawingPoints.length < 2) return;
     setSavingPath(true);
     wayfindingApi
@@ -206,6 +282,66 @@ export default function OfficeMapPage() {
       })
       .catch(() => {})
       .finally(() => setSavingPath(false));
+  };
+
+  const handleSaveShape = () => {
+    if (!selectedRoom || drawingPoints.length < 3) return;
+    setSavingShape(true);
+    roomShapesApi
+      .save(selectedRoom.id, drawingPoints)
+      .then(() => {
+        setSavedShapesByRoomId((m) => ({ ...m, [selectedRoom.id]: drawingPoints }));
+        exitDrawMode();
+      })
+      .catch(() => {})
+      .finally(() => setSavingShape(false));
+  };
+
+  const handleDeleteShape = () => {
+    if (!selectedRoom) return;
+    setSavingShape(true);
+    roomShapesApi
+      .remove(selectedRoom.id)
+      .then(() => {
+        setSavedShapesByRoomId((m) => {
+          const next = { ...m };
+          delete next[selectedRoom.id];
+          return next;
+        });
+      })
+      .catch(() => {})
+      .finally(() => setSavingShape(false));
+  };
+
+  const handleOpenUploadModal = () => {
+    setUploadError('');
+    setUploadModalOpen(true);
+  };
+
+  const handleUploadBackground = (file) => {
+    setUploading(true);
+    setUploadError('');
+    floorBackgroundsApi
+      .upload(location_, floor, file)
+      .then(() => {
+        fetchBackgrounds();
+        setUploadModalOpen(false);
+      })
+      .catch((err) => setUploadError(err.response?.data?.error?.message || 'Tải ảnh lên thất bại'))
+      .finally(() => setUploading(false));
+  };
+
+  const handleDeleteBackground = () => {
+    setUploading(true);
+    setUploadError('');
+    floorBackgroundsApi
+      .remove(location_, floor)
+      .then(() => {
+        fetchBackgrounds();
+        setUploadModalOpen(false);
+      })
+      .catch((err) => setUploadError(err.response?.data?.error?.message || 'Xoá ảnh thất bại'))
+      .finally(() => setUploading(false));
   };
 
   const handleSearchSelect = (result) => {
@@ -251,7 +387,19 @@ export default function OfficeMapPage() {
         </div>
 
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <FloorSelector location={location_} floor={floor} onChange={handleFloorChange} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <FloorSelector location={location_} floor={floor} onChange={handleFloorChange} />
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleOpenUploadModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:border-ghn-orange hover:text-ghn-orange transition-colors"
+                title="Cập nhật sơ đồ tầng"
+              >
+                <PhotoIcon className="w-3.5 h-3.5" /> Sơ đồ tầng
+              </button>
+            )}
+          </div>
           <FilterPanel filters={filters} onChange={setFilters} hasBackground={!!floorData?.background} />
         </div>
       </div>
@@ -275,7 +423,7 @@ export default function OfficeMapPage() {
             focusRequest={focusRequest}
             showDirection={panelOpen}
             savedPathsByRoomId={savedPathsByRoomId}
-            drawMode={drawMode}
+            activeDrawTool={activeDrawTool}
             drawingPoints={drawingPoints}
             onCanvasPoint={handleCanvasPoint}
           />
@@ -292,17 +440,35 @@ export default function OfficeMapPage() {
             onClose={handleClosePanel}
             onBook={handleBook}
             hasCustomPath={!!savedPathsByRoomId[selectedRoom.id]}
-            drawMode={drawMode}
+            hasCustomShape={!!savedShapesByRoomId[selectedRoom.id]}
+            activeDrawTool={activeDrawTool}
             drawingPoints={drawingPoints}
-            onStartDraw={handleStartDraw}
+            onStartDrawPath={handleStartDrawPath}
+            onStartDrawShape={handleStartDrawShape}
             onUndoPoint={handleUndoPoint}
             onClearDraw={handleClearDraw}
             onCancelDraw={handleCancelDraw}
-            onSaveDraw={handleSaveDraw}
-            saving={savingPath}
+            onSavePath={handleSavePath}
+            onSaveShape={handleSaveShape}
+            onDeleteShape={handleDeleteShape}
+            savingPath={savingPath}
+            savingShape={savingShape}
           />
         )}
       </AnimatePresence>
+
+      {uploadModalOpen && (
+        <UploadBackgroundModal
+          location={location_}
+          floor={floor}
+          hasBackground={!!backgroundsByFloorKey[floorKey]}
+          uploading={uploading}
+          error={uploadError}
+          onClose={() => setUploadModalOpen(false)}
+          onUpload={handleUploadBackground}
+          onDelete={handleDeleteBackground}
+        />
+      )}
     </div>
   );
 }

@@ -1,3 +1,8 @@
+/** Đổi mảng điểm [{x,y},...] (từ vẽ tay) sang chuỗi `points` dùng cho SVG polygon/polyline. */
+export function pointsToSvgString(points) {
+  return points.map((p) => `${p.x},${p.y}`).join(' ');
+}
+
 /** Tâm của 1 polygon SVG (trung bình toạ độ các đỉnh) — dùng cho POI dạng vùng. */
 export function polygonCentroid(pointsStr) {
   const pts = pointsStr.trim().split(/\s+/).map((p) => p.split(',').map(Number));

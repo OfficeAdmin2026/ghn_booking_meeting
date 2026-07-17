@@ -138,3 +138,28 @@ CREATE TABLE wayfinding_paths (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_wayfinding_paths_room_id ON wayfinding_paths(room_id);
+
+-- Room Shapes (khung phòng vẽ tay trên Bản đồ văn phòng)
+CREATE TABLE room_shapes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id UUID NOT NULL UNIQUE REFERENCES rooms(id) ON DELETE CASCADE,
+  points JSONB NOT NULL,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_room_shapes_room_id ON room_shapes(room_id);
+
+-- Floor Backgrounds (ảnh sơ đồ tầng do admin upload, lưu trên Supabase Storage)
+CREATE TABLE floor_backgrounds (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  location VARCHAR(255) NOT NULL,
+  floor VARCHAR(10) NOT NULL,
+  image_url TEXT NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  uploaded_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(location, floor)
+);

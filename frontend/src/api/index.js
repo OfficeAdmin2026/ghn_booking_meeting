@@ -76,3 +76,28 @@ export const wayfindingApi = {
 
   remove: (roomId) => api.delete(`/wayfinding-paths/${roomId}`),
 };
+
+export const roomShapesApi = {
+  getAll: () => api.get('/room-shapes'),
+
+  save: (roomId, points) => api.put(`/room-shapes/${roomId}`, { points }),
+
+  remove: (roomId) => api.delete(`/room-shapes/${roomId}`),
+};
+
+export const floorBackgroundsApi = {
+  getAll: () => api.get('/floor-backgrounds'),
+
+  upload: (location, floor, file) => {
+    const formData = new FormData();
+    formData.append('location', location);
+    formData.append('floor', floor);
+    formData.append('image', file);
+    return api.post('/floor-backgrounds', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  remove: (location, floor) =>
+    api.delete(`/floor-backgrounds/${encodeURIComponent(location)}/${encodeURIComponent(floor)}`),
+};

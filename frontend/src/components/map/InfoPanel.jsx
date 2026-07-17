@@ -37,14 +37,19 @@ export default function InfoPanel({
   onClose,
   onBook,
   hasCustomPath,
-  drawMode,
+  hasCustomShape,
+  activeDrawTool,
   drawingPoints,
-  onStartDraw,
+  onStartDrawPath,
+  onStartDrawShape,
   onUndoPoint,
   onClearDraw,
   onCancelDraw,
-  onSaveDraw,
-  saving,
+  onSavePath,
+  onSaveShape,
+  onDeleteShape,
+  savingPath,
+  savingShape,
 }) {
   const { isAdmin } = useAuth();
   if (!room) return null;
@@ -145,17 +150,39 @@ export default function InfoPanel({
 
         {isAdmin && (
           <div className="border-t border-gray-100 pt-4">
-            {!drawMode ? (
-              <button
-                onClick={onStartDraw}
-                className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium text-ghn-blue bg-ghn-blue-light hover:bg-blue-100 rounded-lg px-4 py-2 transition-colors"
-              >
-                <PencilIcon className="w-4 h-4" /> {hasCustomPath ? 'Vẽ lại đường chỉ dẫn' : 'Vẽ đường chỉ dẫn'}
-              </button>
+            {!activeDrawTool ? (
+              <div className="space-y-2">
+                <button
+                  onClick={onStartDrawPath}
+                  className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium text-ghn-blue bg-ghn-blue-light hover:bg-blue-100 rounded-lg px-4 py-2 transition-colors"
+                >
+                  <PencilIcon className="w-4 h-4" /> {hasCustomPath ? 'Vẽ lại đường chỉ dẫn' : 'Vẽ đường chỉ dẫn'}
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={onStartDrawShape}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-ghn-orange bg-ghn-orange-light hover:bg-orange-100 rounded-lg px-4 py-2 transition-colors"
+                  >
+                    <PencilIcon className="w-4 h-4" /> {hasCustomShape ? 'Vẽ lại khung phòng' : 'Vẽ khung phòng'}
+                  </button>
+                  {hasCustomShape && (
+                    <button
+                      onClick={onDeleteShape}
+                      disabled={savingShape}
+                      title="Xoá khung phòng"
+                      className="shrink-0 px-3 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-40 transition-colors"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
             ) : (
               <div className="space-y-2">
                 <p className="text-xs text-gray-500">
-                  Nhấp vào bản đồ để thêm điểm ({drawingPoints?.length || 0} điểm đã thêm).
+                  {activeDrawTool === 'shape'
+                    ? `Nhấp vào bản đồ để vẽ khung phòng (cần ít nhất 3 điểm — ${drawingPoints?.length || 0} điểm đã thêm).`
+                    : `Nhấp vào bản đồ để thêm điểm (${drawingPoints?.length || 0} điểm đã thêm).`}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -181,11 +208,15 @@ export default function InfoPanel({
                     Huỷ
                   </button>
                   <button
-                    onClick={onSaveDraw}
-                    disabled={(drawingPoints?.length || 0) < 2 || saving}
+                    onClick={activeDrawTool === 'shape' ? onSaveShape : onSavePath}
+                    disabled={
+                      (drawingPoints?.length || 0) < (activeDrawTool === 'shape' ? 3 : 2) ||
+                      (activeDrawTool === 'shape' ? savingShape : savingPath)
+                    }
                     className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-semibold text-white bg-ghn-orange rounded-lg px-3 py-1.5 hover:bg-ghn-orange-dark disabled:opacity-40 transition-colors"
                   >
-                    <CheckIcon className="w-3.5 h-3.5" /> {saving ? 'Đang lưu...' : 'Lưu'}
+                    <CheckIcon className="w-3.5 h-3.5" />{' '}
+                    {(activeDrawTool === 'shape' ? savingShape : savingPath) ? 'Đang lưu...' : 'Lưu'}
                   </button>
                 </div>
               </div>

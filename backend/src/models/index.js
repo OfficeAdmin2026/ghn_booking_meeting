@@ -5,6 +5,8 @@ const Booking = require('./Booking');
 const Notification = require('./Notification');
 const AdminSetting = require('./AdminSetting');
 const WayfindingPath = require('./WayfindingPath');
+const RoomShape = require('./RoomShape');
+const FloorBackground = require('./FloorBackground');
 
 // Define associations
 Room.hasMany(RoomAmenity, { foreignKey: 'room_id', as: 'amenities' });
@@ -12,6 +14,9 @@ RoomAmenity.belongsTo(Room, { foreignKey: 'room_id' });
 
 Room.hasOne(WayfindingPath, { foreignKey: 'room_id', as: 'wayfindingPath' });
 WayfindingPath.belongsTo(Room, { foreignKey: 'room_id' });
+
+Room.hasOne(RoomShape, { foreignKey: 'room_id', as: 'shape' });
+RoomShape.belongsTo(Room, { foreignKey: 'room_id' });
 
 Room.hasMany(Booking, { foreignKey: 'room_id', as: 'bookings' });
 Booking.belongsTo(Room, { foreignKey: 'room_id' });
@@ -32,5 +37,7 @@ module.exports = {
   Booking,
   Notification,
   AdminSetting,
-  WayfindingPath
+  WayfindingPath,
+  RoomShape,
+  FloorBackground
 };
