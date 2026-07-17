@@ -11,7 +11,7 @@ import Room from './Room';
 import POIMarker from './POIMarker';
 import MiniMap from './MiniMap';
 import DirectionArrow from './DirectionArrow';
-import { nearestPoiOfType } from '../../utils/svgGeometry';
+import { nearestPoiOfType, screenPointToSvg } from '../../utils/svgGeometry';
 import { findCorridorPath } from '../../utils/corridorPath';
 
 const ZOOM_STORAGE_PREFIX = 'ghn_office_map_zoom__';
@@ -50,9 +50,14 @@ export default function MapCanvas({
   filters,
   focusRequest,
   showDirection,
+  savedPathsByRoomId,
+  drawMode,
+  drawingPoints,
+  onCanvasPoint,
 }) {
   const transformRef = useRef(null);
   const wrapperRef = useRef(null);
+  const svgRef = useRef(null);
   const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
@@ -66,16 +71,27 @@ export default function MapCanvas({
     transformRef.current.zoomToElement(focusRequest.domId, 1.3, 600);
   }, [focusRequest]);
 
-  // Mũi tên chỉ đường từ thang máy gần nhất tới phòng đang chọn — đi theo
-  // hành lang (corridorGraph của tầng) thay vì cắt thẳng qua tường
+  // Mũi tên chỉ đường: ưu tiên đường admin đã vẽ tay và lưu (chính xác nhất);
+  // nếu phòng chưa có, fallback về đường tự tính qua corridorGraph của tầng.
   const directionPath = useMemo(() => {
     if (!floorData || !showDirection || !selectedCode) return null;
-    const room = floorData.rooms.find((r) => r.code === selectedCode);
-    if (!room) return null;
-    const from = nearestPoiOfType(floorData.pois, 'elevator', room.centroid);
+    const room = roomsByCode[selectedCode];
+    const geometry = floorData.rooms.find((r) => r.code === selectedCode);
+    if (!geometry) return null;
+
+    const saved = room && savedPathsByRoomId?.[room.id];
+    if (saved) return saved;
+
+    const from = nearestPoiOfType(floorData.pois, 'elevator', geometry.centroid);
     if (!from) return null;
-    return findCorridorPath(floorData.corridorGraph, from, room.centroid);
-  }, [floorData, showDirection, selectedCode]);
+    return findCorridorPath(floorData.corridorGraph, from, geometry.centroid);
+  }, [floorData, showDirection, selectedCode, roomsByCode, savedPathsByRoomId]);
+
+  const handleSvgClick = (e) => {
+    if (!drawMode || !svgRef.current) return;
+    const point = screenPointToSvg(svgRef.current, e.clientX, e.clientY);
+    onCanvasPoint?.(point);
+  };
 
   if (!floorData) {
     return <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Chưa có dữ liệu bản đồ cho tầng này</div>;
@@ -143,7 +159,13 @@ export default function MapCanvas({
             <MiniMap floorData={floorData} roomsByCode={roomsByCode} statusByCode={statusByCode} />
 
             <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full">
-              <svg viewBox={`0 0 ${canvas.width} ${canvas.height}`} className="w-full h-full" style={{ minWidth: canvas.width, minHeight: canvas.height }}>
+              <svg
+                ref={svgRef}
+                viewBox={`0 0 ${canvas.width} ${canvas.height}`}
+                className={`w-full h-full ${drawMode ? 'cursor-crosshair' : ''}`}
+                style={{ minWidth: canvas.width, minHeight: canvas.height }}
+                onClick={handleSvgClick}
+              >
                 <defs>
                   <marker id="direction-arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
                     <path d="M0,0 L8,4 L0,8 Z" fill="#1B5FAF" />
@@ -177,7 +199,7 @@ export default function MapCanvas({
                           highlighted={highlightedCode === r.code}
                           hovered={hoveredCode === r.code}
                           onHover={onRoomHover}
-                          onClick={onRoomClick}
+                          onClick={drawMode ? undefined : onRoomClick}
                           hideLabel={!!floorData.background}
                         />
                       </g>
@@ -191,8 +213,25 @@ export default function MapCanvas({
                 ))}
 
                 <AnimatePresence>
-                  {directionPath && <DirectionArrow key={selectedCode} points={directionPath} />}
+                  {!drawMode && directionPath && <DirectionArrow key={selectedCode} points={directionPath} />}
                 </AnimatePresence>
+
+                {drawMode && drawingPoints?.length > 0 && (
+                  <g className="pointer-events-none">
+                    {drawingPoints.length > 1 && (
+                      <polyline
+                        points={drawingPoints.map((p) => `${p.x},${p.y}`).join(' ')}
+                        fill="none"
+                        stroke="#FF6C0A"
+                        strokeWidth={3}
+                        strokeDasharray="6 5"
+                      />
+                    )}
+                    {drawingPoints.map((p, i) => (
+                      <circle key={i} cx={p.x} cy={p.y} r={5} fill="#FF6C0A" stroke="white" strokeWidth={1.5} />
+                    ))}
+                  </g>
+                )}
               </svg>
             </TransformComponent>
           </>

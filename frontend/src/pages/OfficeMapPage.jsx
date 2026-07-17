@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
-import { roomsApi, bookingsApi } from '../api';
+import { roomsApi, bookingsApi, wayfindingApi } from '../api';
 import { getFloorData, getFloorKey, normalizeLocation, DEFAULT_LOCATION, DEFAULT_FLOOR, DEFAULT_FILTERS } from '../data/officeMapData';
 import { isRoomOccupiedNow } from '../utils/roomStatus';
 import SearchBar from '../components/map/SearchBar';
@@ -40,6 +40,11 @@ export default function OfficeMapPage() {
   const [focusRequest, setFocusRequest] = useState(null);
   const [toast, setToast] = useState(null);
 
+  const [savedPathsByRoomId, setSavedPathsByRoomId] = useState({});
+  const [drawMode, setDrawMode] = useState(false);
+  const [drawingPoints, setDrawingPoints] = useState([]);
+  const [savingPath, setSavingPath] = useState(false);
+
   const pendingDeepLink = useRef({
     roomId: searchParams.get('roomId'),
     highlight: searchParams.get('highlight') === '1',
@@ -53,6 +58,19 @@ export default function OfficeMapPage() {
       .catch(() => setLiveRooms([]))
       .finally(() => setRoomsLoading(false));
   }, []);
+
+  const fetchSavedPaths = useCallback(() => {
+    wayfindingApi
+      .getAll()
+      .then((res) => {
+        const map = {};
+        (res.data.data?.paths || []).forEach((p) => { map[p.room_id] = p.points; });
+        setSavedPathsByRoomId(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { fetchSavedPaths(); }, [fetchSavedPaths]);
 
   const roomsByCode = useMemo(() => {
     const map = {};
@@ -120,6 +138,8 @@ export default function OfficeMapPage() {
         searchInputRef.current?.focus();
       } else if (e.key === 'Escape' && panelOpen) {
         setPanelOpen(false);
+        setDrawMode(false);
+        setDrawingPoints([]);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -135,16 +155,58 @@ export default function OfficeMapPage() {
     return map;
   }, [floorRooms, bookingsByRoomId, now]);
 
+  const exitDrawMode = () => {
+    setDrawMode(false);
+    setDrawingPoints([]);
+  };
+
   const handleFloorChange = ({ location, floor: nextFloor }) => {
     setLocation_(location);
     setFloor(nextFloor);
     setSearchParams({ location, floor: nextFloor }, { replace: true });
     setPanelOpen(false);
+    exitDrawMode();
   };
 
   const handleRoomClick = (code) => {
     setSelectedCode(code);
     setPanelOpen(true);
+    exitDrawMode();
+  };
+
+  const handleClosePanel = () => {
+    setPanelOpen(false);
+    exitDrawMode();
+  };
+
+  const handleStartDraw = () => {
+    setDrawingPoints([]);
+    setDrawMode(true);
+  };
+
+  const handleCanvasPoint = (point) => {
+    setDrawingPoints((pts) => [...pts, point]);
+  };
+
+  const handleUndoPoint = () => {
+    setDrawingPoints((pts) => pts.slice(0, -1));
+  };
+
+  const handleClearDraw = () => setDrawingPoints([]);
+
+  const handleCancelDraw = () => exitDrawMode();
+
+  const handleSaveDraw = () => {
+    if (!selectedRoom || drawingPoints.length < 2) return;
+    setSavingPath(true);
+    wayfindingApi
+      .save(selectedRoom.id, drawingPoints)
+      .then(() => {
+        setSavedPathsByRoomId((m) => ({ ...m, [selectedRoom.id]: drawingPoints }));
+        exitDrawMode();
+      })
+      .catch(() => {})
+      .finally(() => setSavingPath(false));
   };
 
   const handleSearchSelect = (result) => {
@@ -208,6 +270,10 @@ export default function OfficeMapPage() {
             filters={filters}
             focusRequest={focusRequest}
             showDirection={panelOpen}
+            savedPathsByRoomId={savedPathsByRoomId}
+            drawMode={drawMode}
+            drawingPoints={drawingPoints}
+            onCanvasPoint={handleCanvasPoint}
           />
         )}
         <Legend />
@@ -219,8 +285,17 @@ export default function OfficeMapPage() {
             room={selectedRoom}
             bookingsToday={bookingsToday}
             occupiedInfo={occupiedInfo}
-            onClose={() => setPanelOpen(false)}
+            onClose={handleClosePanel}
             onBook={handleBook}
+            hasCustomPath={!!savedPathsByRoomId[selectedRoom.id]}
+            drawMode={drawMode}
+            drawingPoints={drawingPoints}
+            onStartDraw={handleStartDraw}
+            onUndoPoint={handleUndoPoint}
+            onClearDraw={handleClearDraw}
+            onCancelDraw={handleCancelDraw}
+            onSaveDraw={handleSaveDraw}
+            saving={savingPath}
           />
         )}
       </AnimatePresence>

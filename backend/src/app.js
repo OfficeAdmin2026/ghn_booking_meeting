@@ -44,6 +44,7 @@ app.use('/api/rooms', require('./routes/rooms'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/wayfinding-paths', require('./routes/wayfindingPaths'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

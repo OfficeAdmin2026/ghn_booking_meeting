@@ -9,8 +9,12 @@ import {
   MicrophoneIcon,
   CheckIcon,
   ClockIcon,
+  PencilIcon,
+  ArrowUturnLeftIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Trùng với RoomCard.jsx's amenityIcons cho 4 loại tiện ích thật trong DB —
 // nhân bản có chủ đích (thay vì import từ RoomCard) để không đụng vào file
@@ -26,7 +30,23 @@ function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function InfoPanel({ room, bookingsToday, occupiedInfo, onClose, onBook }) {
+export default function InfoPanel({
+  room,
+  bookingsToday,
+  occupiedInfo,
+  onClose,
+  onBook,
+  hasCustomPath,
+  drawMode,
+  drawingPoints,
+  onStartDraw,
+  onUndoPoint,
+  onClearDraw,
+  onCancelDraw,
+  onSaveDraw,
+  saving,
+}) {
+  const { isAdmin } = useAuth();
   if (!room) return null;
 
   const sortedBookings = [...(bookingsToday || [])]
@@ -121,6 +141,56 @@ export default function InfoPanel({ room, bookingsToday, occupiedInfo, onClose, 
           <button onClick={() => onBook(room)} className="btn-primary w-full">
             Đặt phòng
           </button>
+        )}
+
+        {isAdmin && (
+          <div className="border-t border-gray-100 pt-4">
+            {!drawMode ? (
+              <button
+                onClick={onStartDraw}
+                className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium text-ghn-blue bg-ghn-blue-light hover:bg-blue-100 rounded-lg px-4 py-2 transition-colors"
+              >
+                <PencilIcon className="w-4 h-4" /> {hasCustomPath ? 'Vẽ lại đường chỉ dẫn' : 'Vẽ đường chỉ dẫn'}
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500">
+                  Nhấp vào bản đồ để thêm điểm ({drawingPoints?.length || 0} điểm đã thêm).
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={onUndoPoint}
+                    disabled={!drawingPoints?.length}
+                    className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                  >
+                    <ArrowUturnLeftIcon className="w-3.5 h-3.5" /> Hoàn tác
+                  </button>
+                  <button
+                    onClick={onClearDraw}
+                    disabled={!drawingPoints?.length}
+                    className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" /> Xoá hết
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={onCancelDraw}
+                    className="flex-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+                  >
+                    Huỷ
+                  </button>
+                  <button
+                    onClick={onSaveDraw}
+                    disabled={(drawingPoints?.length || 0) < 2 || saving}
+                    className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-semibold text-white bg-ghn-orange rounded-lg px-3 py-1.5 hover:bg-ghn-orange-dark disabled:opacity-40 transition-colors"
+                  >
+                    <CheckIcon className="w-3.5 h-3.5" /> {saving ? 'Đang lưu...' : 'Lưu'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </motion.div>

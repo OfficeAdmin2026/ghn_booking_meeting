@@ -68,3 +68,11 @@ export const adminApi = {
 
   setUserStatus: (id, isActive) => api.patch(`/admin/users/${id}/status`, { is_active: isActive }),
 };
+
+export const wayfindingApi = {
+  getAll: () => api.get('/wayfinding-paths'),
+
+  save: (roomId, points) => api.put(`/wayfinding-paths/${roomId}`, { points }),
+
+  remove: (roomId) => api.delete(`/wayfinding-paths/${roomId}`),
+};

@@ -117,6 +117,17 @@ CREATE TABLE audit_log (
   changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Wayfinding Paths (đường chỉ dẫn vẽ tay trên Bản đồ văn phòng)
+CREATE TABLE wayfinding_paths (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id UUID NOT NULL UNIQUE REFERENCES rooms(id) ON DELETE CASCADE,
+  points JSONB NOT NULL,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_wayfinding_paths_room_id ON wayfinding_paths(room_id);
+
 -- View
 CREATE VIEW available_rooms_at_time AS
 SELECT DISTINCT r.id, r.name, r.location, r.floor, r.capacity, r.is_vip, r.code

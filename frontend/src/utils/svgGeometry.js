@@ -32,3 +32,18 @@ export function nearestPoiOfType(pois, type, target) {
   }
   return best;
 }
+
+/**
+ * Đổi toạ độ 1 sự kiện chuột/chạm (screen space) sang toạ độ user-space của
+ * 1 phần tử <svg> — tự đúng dù đang zoom/pan (react-zoom-pan-pinch) bao nhiêu,
+ * vì dùng thẳng ma trận biến đổi thực tế của trình duyệt (getScreenCTM).
+ */
+export function screenPointToSvg(svgEl, clientX, clientY) {
+  const pt = svgEl.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  const ctm = svgEl.getScreenCTM();
+  if (!ctm) return { x: 0, y: 0 };
+  const svgPoint = pt.matrixTransform(ctm.inverse());
+  return { x: svgPoint.x, y: svgPoint.y };
+}
