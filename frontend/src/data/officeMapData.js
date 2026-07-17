@@ -143,6 +143,28 @@ export const officeMapData = {
       { id: 'rpark-1f-exit-3', type: 'exit', shape: 'point', x: 1284, y: 276, label: 'Khu vực thang thoát hiểm' },
       { id: 'rpark-1f-exit-4', type: 'exit', shape: 'point', x: 1284, y: 426, label: 'Khu vực thang thoát hiểm' },
     ],
+    // Waypoint hành lang (đo theo vùng trắng/mở trên ảnh nền) — mũi tên chỉ
+    // đường sẽ đi qua các node này thay vì cắt thẳng qua tường phòng.
+    corridorGraph: {
+      nodes: {
+        n0: { x: 480, y: 270 },  // hành lang trái, gần thang máy 1
+        n0s: { x: 480, y: 225 }, // vòng lên khoảng trống phía trên cụm phòng họp
+        n1: { x: 480, y: 420 },  // hành lang trái, gần thang máy 2/3
+        n1s: { x: 480, y: 510 }, // vòng xuống khoảng trống phía dưới cụm phòng họp
+        n2: { x: 556, y: 396 },  // cửa vào cụm phòng họp (Your Loads/Our Roads)
+        n3top: { x: 720, y: 225 }, // vòng qua khoảng trống phía trên, tới khu thang cuốn
+        n3bot: { x: 720, y: 510 }, // vòng qua khoảng trống phía dưới, tới khu thang cuốn
+        n4: { x: 800, y: 370 },  // khu vực thang cuốn (khoảng mở)
+        n6: { x: 865, y: 333 },  // ngay trước cửa Thành Thái
+        n7: { x: 865, y: 427 },  // ngay trước cửa Hưng Yên
+      },
+      edges: [
+        ['n0', 'n0s'], ['n0', 'n1'], ['n1', 'n1s'], ['n1', 'n2'],
+        ['n0s', 'n3top'], ['n1s', 'n3bot'],
+        ['n3top', 'n4'], ['n3bot', 'n4'],
+        ['n4', 'n6'], ['n4', 'n7'],
+      ],
+    },
   },
   'Rivera Park__3F': buildFloorLayout(
     [

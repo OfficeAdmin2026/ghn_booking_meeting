@@ -12,6 +12,7 @@ import POIMarker from './POIMarker';
 import MiniMap from './MiniMap';
 import DirectionArrow from './DirectionArrow';
 import { nearestPoiOfType } from '../../utils/svgGeometry';
+import { findCorridorPath } from '../../utils/corridorPath';
 
 const ZOOM_STORAGE_PREFIX = 'ghn_office_map_zoom__';
 
@@ -65,14 +66,15 @@ export default function MapCanvas({
     transformRef.current.zoomToElement(focusRequest.domId, 1.3, 600);
   }, [focusRequest]);
 
-  // Mũi tên chỉ đường từ thang máy gần nhất tới phòng đang chọn
-  const directionArrow = useMemo(() => {
+  // Mũi tên chỉ đường từ thang máy gần nhất tới phòng đang chọn — đi theo
+  // hành lang (corridorGraph của tầng) thay vì cắt thẳng qua tường
+  const directionPath = useMemo(() => {
     if (!floorData || !showDirection || !selectedCode) return null;
     const room = floorData.rooms.find((r) => r.code === selectedCode);
     if (!room) return null;
     const from = nearestPoiOfType(floorData.pois, 'elevator', room.centroid);
     if (!from) return null;
-    return { from, to: room.centroid };
+    return findCorridorPath(floorData.corridorGraph, from, room.centroid);
   }, [floorData, showDirection, selectedCode]);
 
   if (!floorData) {
@@ -189,7 +191,7 @@ export default function MapCanvas({
                 ))}
 
                 <AnimatePresence>
-                  {directionArrow && <DirectionArrow key={selectedCode} from={directionArrow.from} to={directionArrow.to} />}
+                  {directionPath && <DirectionArrow key={selectedCode} points={directionPath} />}
                 </AnimatePresence>
               </svg>
             </TransformComponent>
