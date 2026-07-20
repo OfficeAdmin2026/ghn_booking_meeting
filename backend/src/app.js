@@ -47,6 +47,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/wayfinding-paths', require('./routes/wayfindingPaths'));
 app.use('/api/room-shapes', require('./routes/roomShapes'));
 app.use('/api/floor-backgrounds', require('./routes/floorBackgrounds'));
+app.use('/api/map-annotations', require('./routes/mapAnnotations'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

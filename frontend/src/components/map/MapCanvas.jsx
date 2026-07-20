@@ -54,6 +54,8 @@ export default function MapCanvas({
   activeDrawTool,
   drawingPoints,
   onCanvasPoint,
+  isAdmin,
+  onAnnotationClick,
 }) {
   const transformRef = useRef(null);
   const wrapperRef = useRef(null);
@@ -208,11 +210,16 @@ export default function MapCanvas({
                     );
                   })}
 
-                {/* Tầng đã có ảnh sơ đồ thật thì icon/note các loại POI đã có sẵn trong ảnh, không vẽ chồng nữa */}
-                {!floorData.background &&
-                  pois.filter((p) => filters[p.type]).map((p) => (
+                {/* Tầng đã có ảnh sơ đồ thật thì icon/note POI tĩnh đã có sẵn trong ảnh, không vẽ chồng nữa —
+                    riêng khu vực chung do admin tự vẽ (custom) luôn hiển thị vì đó chính là mục đích tính năng này */}
+                {pois
+                  .filter((p) => filters[p.type] && (p.custom || !floorData.background))
+                  .map((p) => (
                     <g key={p.id} id={`poi-${p.id}`}>
-                      <POIMarker {...p} />
+                      <POIMarker
+                        {...p}
+                        onClick={p.custom && isAdmin && !activeDrawTool ? () => onAnnotationClick?.(p) : undefined}
+                      />
                     </g>
                   ))}
 
@@ -225,12 +232,12 @@ export default function MapCanvas({
                     {drawingPoints.length > 1 && (
                       <polyline
                         points={pointsToSvgString(
-                          activeDrawTool === 'shape' && drawingPoints.length >= 3
+                          (activeDrawTool === 'shape' || activeDrawTool === 'annotation') && drawingPoints.length >= 3
                             ? [...drawingPoints, drawingPoints[0]]
                             : drawingPoints
                         )}
-                        fill={activeDrawTool === 'shape' ? '#FF6C0A' : 'none'}
-                        fillOpacity={activeDrawTool === 'shape' ? 0.15 : 0}
+                        fill={activeDrawTool === 'shape' || activeDrawTool === 'annotation' ? '#FF6C0A' : 'none'}
+                        fillOpacity={activeDrawTool === 'shape' || activeDrawTool === 'annotation' ? 0.15 : 0}
                         stroke="#FF6C0A"
                         strokeWidth={3}
                         strokeDasharray="6 5"

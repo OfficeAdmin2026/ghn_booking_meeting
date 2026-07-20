@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { PhotoIcon } from '@heroicons/react/24/outline';
-import { roomsApi, bookingsApi, wayfindingApi, roomShapesApi, floorBackgroundsApi } from '../api';
+import { PhotoIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
+import { roomsApi, bookingsApi, wayfindingApi, roomShapesApi, floorBackgroundsApi, mapAnnotationsApi } from '../api';
 import { getFloorData, getFloorKey, normalizeLocation, DEFAULT_LOCATION, DEFAULT_FLOOR, DEFAULT_FILTERS } from '../data/officeMapData';
 import { isRoomOccupiedNow } from '../utils/roomStatus';
 import { polygonCentroid, pointsToSvgString } from '../utils/svgGeometry';
 import { useAuth } from '../contexts/AuthContext';
+import { POI_META } from '../components/map/poiMeta';
 import SearchBar from '../components/map/SearchBar';
 import FilterPanel from '../components/map/FilterPanel';
 import FloorSelector from '../components/map/FloorSelector';
@@ -14,6 +15,7 @@ import Legend from '../components/map/Legend';
 import MapCanvas from '../components/map/MapCanvas';
 import InfoPanel from '../components/map/InfoPanel';
 import UploadBackgroundModal from '../components/map/UploadBackgroundModal';
+import AnnotationToolbar from '../components/map/AnnotationToolbar';
 
 function dayRangeISO() {
   const start = new Date();
@@ -47,7 +49,7 @@ export default function OfficeMapPage() {
   const [savedPathsByRoomId, setSavedPathsByRoomId] = useState({});
   const [savedShapesByRoomId, setSavedShapesByRoomId] = useState({});
   const [backgroundsByFloorKey, setBackgroundsByFloorKey] = useState({});
-  const [activeDrawTool, setActiveDrawTool] = useState(null); // null | 'path' | 'shape'
+  const [activeDrawTool, setActiveDrawTool] = useState(null); // null | 'path' | 'shape' | 'annotation'
   const [drawingPoints, setDrawingPoints] = useState([]);
   const [savingPath, setSavingPath] = useState(false);
   const [savingShape, setSavingShape] = useState(false);
@@ -55,6 +57,12 @@ export default function OfficeMapPage() {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+
+  const [annotations, setAnnotations] = useState([]);
+  const [annotationToolbarOpen, setAnnotationToolbarOpen] = useState(false);
+  const [editingAnnotationId, setEditingAnnotationId] = useState(null);
+  const [draftAnnotation, setDraftAnnotation] = useState({ type: 'elevator', color: POI_META.elevator.color, label: '' });
+  const [savingAnnotation, setSavingAnnotation] = useState(false);
 
   const pendingDeepLink = useRef({
     roomId: searchParams.get('roomId'),
@@ -105,9 +113,17 @@ export default function OfficeMapPage() {
       .catch(() => {});
   }, []);
 
+  const fetchAnnotations = useCallback(() => {
+    mapAnnotationsApi
+      .getAll()
+      .then((res) => setAnnotations(res.data.data?.annotations || []))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => { fetchSavedPaths(); }, [fetchSavedPaths]);
   useEffect(() => { fetchSavedShapes(); }, [fetchSavedShapes]);
   useEffect(() => { fetchBackgrounds(); }, [fetchBackgrounds]);
+  useEffect(() => { fetchAnnotations(); }, [fetchAnnotations]);
 
   const roomsByCode = useMemo(() => {
     const map = {};
@@ -147,8 +163,29 @@ export default function OfficeMapPage() {
       : staticFloorData.background;
     const canvas = bgOverride ? { width: bgOverride.width, height: bgOverride.height } : staticFloorData.canvas;
 
-    return { ...staticFloorData, canvas, background, rooms: Object.values(roomsByCodeMap) };
-  }, [staticFloorData, savedShapesByRoomId, backgroundsByFloorKey, roomsById, location_, floor, floorKey]);
+    // Khu vực chung (thang máy, WC, pantry...) admin tự vẽ — luôn nối thêm vào
+    // POI tĩnh của tầng, đánh dấu custom:true để MapCanvas biết luôn hiển thị
+    // kể cả khi tầng đã có ảnh nền thật (POI tĩnh thì bị ẩn trong trường hợp đó).
+    const customPois = annotations
+      .filter((a) => normalizeLocation(a.location) === location_ && a.floor === floor)
+      .map((a) => ({
+        id: a.id,
+        type: a.type,
+        shape: a.shape,
+        label: a.label || undefined,
+        color: a.color || undefined,
+        custom: true,
+        ...(a.shape === 'point' ? { x: a.points[0].x, y: a.points[0].y } : { points: pointsToSvgString(a.points) }),
+      }));
+
+    return {
+      ...staticFloorData,
+      canvas,
+      background,
+      rooms: Object.values(roomsByCodeMap),
+      pois: [...staticFloorData.pois, ...customPois],
+    };
+  }, [staticFloorData, savedShapesByRoomId, backgroundsByFloorKey, roomsById, location_, floor, floorKey, annotations]);
 
   const floorRooms = useMemo(
     () => liveRooms.filter((r) => normalizeLocation(r.location) === location_ && r.floor === floor),
@@ -206,15 +243,17 @@ export default function OfficeMapPage() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault();
         searchInputRef.current?.focus();
-      } else if (e.key === 'Escape' && panelOpen) {
+      } else if (e.key === 'Escape' && (panelOpen || annotationToolbarOpen)) {
         setPanelOpen(false);
+        setAnnotationToolbarOpen(false);
+        setEditingAnnotationId(null);
         setActiveDrawTool(null);
         setDrawingPoints([]);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [panelOpen]);
+  }, [panelOpen, annotationToolbarOpen]);
 
   const statusByCode = useMemo(() => {
     const map = {};
@@ -235,12 +274,16 @@ export default function OfficeMapPage() {
     setFloor(nextFloor);
     setSearchParams({ location, floor: nextFloor }, { replace: true });
     setPanelOpen(false);
+    setAnnotationToolbarOpen(false);
+    setEditingAnnotationId(null);
     exitDrawMode();
   };
 
   const handleRoomClick = (code) => {
     setSelectedCode(code);
     setPanelOpen(true);
+    setAnnotationToolbarOpen(false);
+    setEditingAnnotationId(null);
     exitDrawMode();
   };
 
@@ -355,10 +398,103 @@ export default function OfficeMapPage() {
       }
       setSelectedCode(room.code);
       setPanelOpen(true);
+      setAnnotationToolbarOpen(false);
+      setEditingAnnotationId(null);
       setFocusRequest({ domId: `room-${room.code}`, nonce: Date.now() });
     } else {
       setFocusRequest({ domId: `poi-${result.id}`, nonce: Date.now() });
     }
+  };
+
+  const handleOpenAnnotationToolbar = () => {
+    setPanelOpen(false);
+    exitDrawMode();
+    setEditingAnnotationId(null);
+    setDraftAnnotation({ type: 'elevator', color: POI_META.elevator.color, label: '' });
+    setAnnotationToolbarOpen(true);
+  };
+
+  const handleSelectAnnotation = (poi) => {
+    const raw = annotations.find((a) => a.id === poi.id);
+    if (!raw) return;
+    setPanelOpen(false);
+    exitDrawMode();
+    setEditingAnnotationId(raw.id);
+    setDraftAnnotation({ type: raw.type, color: raw.color || POI_META[raw.type].color, label: raw.label || '' });
+    setAnnotationToolbarOpen(true);
+  };
+
+  const handleChangeDraftAnnotation = (partial) => setDraftAnnotation((d) => ({ ...d, ...partial }));
+
+  const handleStartDrawAnnotation = () => {
+    setDrawingPoints([]);
+    setActiveDrawTool('annotation');
+  };
+
+  const handleCancelAnnotationDraw = () => {
+    setActiveDrawTool(null);
+    setDrawingPoints([]);
+  };
+
+  const handleCloseAnnotationToolbar = () => {
+    setAnnotationToolbarOpen(false);
+    setEditingAnnotationId(null);
+    exitDrawMode();
+  };
+
+  const handleSaveAnnotation = () => {
+    if (drawingPoints.length !== 1 && drawingPoints.length < 3) return;
+    const shape = drawingPoints.length === 1 ? 'point' : 'polygon';
+    const payload = {
+      location: location_,
+      floor,
+      type: draftAnnotation.type,
+      shape,
+      points: drawingPoints,
+      color: draftAnnotation.color,
+      label: draftAnnotation.label || null,
+    };
+    setSavingAnnotation(true);
+    const request = editingAnnotationId
+      ? mapAnnotationsApi.update(editingAnnotationId, payload)
+      : mapAnnotationsApi.create(payload);
+    request
+      .then((res) => {
+        const saved = res.data.data?.annotation;
+        setAnnotations((prev) =>
+          editingAnnotationId ? prev.map((a) => (a.id === saved.id ? saved : a)) : [...prev, saved]
+        );
+        handleCloseAnnotationToolbar();
+      })
+      .catch(() => {})
+      .finally(() => setSavingAnnotation(false));
+  };
+
+  const handleSaveAnnotationMeta = () => {
+    if (!editingAnnotationId) return;
+    setSavingAnnotation(true);
+    mapAnnotationsApi
+      .update(editingAnnotationId, { type: draftAnnotation.type, color: draftAnnotation.color, label: draftAnnotation.label || null })
+      .then((res) => {
+        const saved = res.data.data?.annotation;
+        setAnnotations((prev) => prev.map((a) => (a.id === saved.id ? saved : a)));
+        handleCloseAnnotationToolbar();
+      })
+      .catch(() => {})
+      .finally(() => setSavingAnnotation(false));
+  };
+
+  const handleDeleteAnnotation = () => {
+    if (!editingAnnotationId) return;
+    setSavingAnnotation(true);
+    mapAnnotationsApi
+      .remove(editingAnnotationId)
+      .then(() => {
+        setAnnotations((prev) => prev.filter((a) => a.id !== editingAnnotationId));
+        handleCloseAnnotationToolbar();
+      })
+      .catch(() => {})
+      .finally(() => setSavingAnnotation(false));
   };
 
   const handleBook = (room) => {
@@ -399,6 +535,16 @@ export default function OfficeMapPage() {
                 <PhotoIcon className="w-3.5 h-3.5" /> Sơ đồ tầng
               </button>
             )}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleOpenAnnotationToolbar}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:border-ghn-orange hover:text-ghn-orange transition-colors"
+                title="Thêm khu vực chung (thang máy, WC, pantry...)"
+              >
+                <PlusCircleIcon className="w-3.5 h-3.5" /> Khu vực chung
+              </button>
+            )}
           </div>
           <FilterPanel filters={filters} onChange={setFilters} hasBackground={!!floorData?.background} />
         </div>
@@ -426,6 +572,8 @@ export default function OfficeMapPage() {
             activeDrawTool={activeDrawTool}
             drawingPoints={drawingPoints}
             onCanvasPoint={handleCanvasPoint}
+            isAdmin={isAdmin}
+            onAnnotationClick={handleSelectAnnotation}
           />
         )}
         <Legend hasBackground={!!floorData?.background} />
@@ -453,6 +601,27 @@ export default function OfficeMapPage() {
             onDeleteShape={handleDeleteShape}
             savingPath={savingPath}
             savingShape={savingShape}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {annotationToolbarOpen && (
+          <AnnotationToolbar
+            isEditing={!!editingAnnotationId}
+            draft={draftAnnotation}
+            onChangeDraft={handleChangeDraftAnnotation}
+            activeDrawTool={activeDrawTool}
+            drawingPoints={drawingPoints}
+            onStartDraw={handleStartDrawAnnotation}
+            onUndoPoint={handleUndoPoint}
+            onClearDraw={handleClearDraw}
+            onCancelDraw={handleCancelAnnotationDraw}
+            onSave={handleSaveAnnotation}
+            onSaveMeta={handleSaveAnnotationMeta}
+            onDelete={handleDeleteAnnotation}
+            onClose={handleCloseAnnotationToolbar}
+            saving={savingAnnotation}
           />
         )}
       </AnimatePresence>

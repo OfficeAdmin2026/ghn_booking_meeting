@@ -7,6 +7,7 @@ const AdminSetting = require('./AdminSetting');
 const WayfindingPath = require('./WayfindingPath');
 const RoomShape = require('./RoomShape');
 const FloorBackground = require('./FloorBackground');
+const MapAnnotation = require('./MapAnnotation');
 
 // Define associations
 Room.hasMany(RoomAmenity, { foreignKey: 'room_id', as: 'amenities' });
@@ -39,5 +40,6 @@ module.exports = {
   AdminSetting,
   WayfindingPath,
   RoomShape,
-  FloorBackground
+  FloorBackground,
+  MapAnnotation
 };

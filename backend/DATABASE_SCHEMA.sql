@@ -163,3 +163,19 @@ CREATE TABLE floor_backgrounds (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(location, floor)
 );
+
+-- Map Annotations (khu vực chung vẽ tay: thang máy, WC, pantry...)
+CREATE TABLE map_annotations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  location VARCHAR(255) NOT NULL,
+  floor VARCHAR(10) NOT NULL,
+  type VARCHAR(30) NOT NULL,
+  shape VARCHAR(10) NOT NULL,
+  points JSONB NOT NULL,
+  color VARCHAR(7),
+  label VARCHAR(255),
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_map_annotations_floor ON map_annotations(location, floor);

@@ -2,19 +2,22 @@ import { motion } from 'framer-motion';
 import { POI_META } from './poiMeta';
 import { poiCenter } from '../../utils/svgGeometry';
 
-export default function POIMarker({ type, shape, points, x, y, label, highlighted, onHover }) {
+export default function POIMarker({ type, shape, points, x, y, label, color: colorOverride, highlighted, onHover, onClick }) {
   const meta = POI_META[type];
   if (!meta) return null;
-  const { Icon, color } = meta;
+  const { Icon, color: defaultColor, label: defaultLabel } = meta;
+  const color = colorOverride || defaultColor;
+  const displayLabel = label || defaultLabel;
   const center = poiCenter({ shape, points, x, y });
 
   return (
     <g
       onMouseEnter={() => onHover?.(true)}
       onMouseLeave={() => onHover?.(false)}
-      className="cursor-default"
+      onClick={onClick}
+      className={onClick ? 'cursor-pointer' : 'cursor-default'}
     >
-      <title>{label}</title>
+      <title>{displayLabel}</title>
 
       {shape === 'polygon' && (
         <polygon
@@ -53,7 +56,7 @@ export default function POIMarker({ type, shape, points, x, y, label, highlighte
           textAnchor="middle"
           className="text-[10px] fill-gray-500 select-none pointer-events-none"
         >
-          {label}
+          {displayLabel}
         </text>
       )}
     </g>

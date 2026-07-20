@@ -85,6 +85,16 @@ export const roomShapesApi = {
   remove: (roomId) => api.delete(`/room-shapes/${roomId}`),
 };
 
+export const mapAnnotationsApi = {
+  getAll: () => api.get('/map-annotations'),
+
+  create: (data) => api.post('/map-annotations', data),
+
+  update: (id, data) => api.put(`/map-annotations/${id}`, data),
+
+  remove: (id) => api.delete(`/map-annotations/${id}`),
+};
+
 export const floorBackgroundsApi = {
   getAll: () => api.get('/floor-backgrounds'),
 
