@@ -166,21 +166,17 @@ export const officeMapData = {
       ],
     },
   },
-  'Rivera Park__3F': buildFloorLayout(
-    [
-      'RPARK-3F-001',
-      'RPARK-3F-002',
-      'RPARK-3F-003',
-      'RPARK-3F-004',
-      'RPARK-3F-005',
-      'RPARK-3F-006',
-      'RPARK-3F-007',
-      'RPARK-3F-008',
-      'RPARK-3F-010',
-    ],
-    3,
-    poisFor('rpark-3f')
-  ),
+  // Rivera Park / 3F: ảnh nền là sơ đồ thật (frontend/public/floor-plans/
+  // rivera-park-3f.png). Bản vẽ kỹ thuật này chỉ ghi nhãn chung "P. Họp 1/2",
+  // không khớp tên 9 phòng trong hệ thống đặt phòng — nên KHÔNG đặt sẵn
+  // khung phòng nào ở đây. Admin tự vẽ khung từng phòng trực tiếp trên web
+  // (nút "Vẽ khung phòng" trong InfoPanel) rồi hệ thống tự lưu vào DB.
+  'Rivera Park__3F': {
+    canvas: { width: 1280, height: 598 },
+    background: { src: '/floor-plans/rivera-park-3f.png', width: 1280, height: 598 },
+    rooms: [],
+    pois: [],
+  },
   Mipec__8F: buildFloorLayout(['MIPEC-8F-001', 'MIPEC-8F-002'], 2, poisFor('mipec-8f')),
 };
 
