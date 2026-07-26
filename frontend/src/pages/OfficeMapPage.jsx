@@ -45,8 +45,6 @@ export default function OfficeMapPage() {
   const [savingPath, setSavingPath] = useState(false);
   const [savingShape, setSavingShape] = useState(false);
 
-  const [deletingAllPaths, setDeletingAllPaths] = useState(false);
-  const [deletingAllShapes, setDeletingAllShapes] = useState(false);
 
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -437,12 +435,6 @@ export default function OfficeMapPage() {
           onFloorChange={handleFloorChange}
           isAdmin={isAdmin}
           onUploadModal={handleOpenUploadModal}
-          onDeleteAllPaths={handleDeleteAllPaths}
-          deletingAllPaths={deletingAllPaths}
-          hasAnyPath={Object.keys(savedPathsByRoomId).length > 0}
-          onDeleteAllShapes={handleDeleteAllShapes}
-          deletingAllShapes={deletingAllShapes}
-          hasAnyShape={Object.keys(savedShapesByRoomId).length > 0}
           savedShapesByRoomId={savedShapesByRoomId}
         />
         {roomsLoading ? (
