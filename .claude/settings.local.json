@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git clone *)"
+      "Bash(git clone *)",
+      "Bash(npm install *)",
+      "Bash(node -e ' *)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(npm run *)",
+      "Bash(git stash *)",
+      "Bash(cd .. && grep -rn \"huong-dan-su-dung\\\\|HUONG_DAN_SU_DUNG\" --include=\"*.js\" --include=\"*.jsx\" --include=\"*.json\" --include=\"*.html\" -l . 2>/dev/null | grep -v node_modules; echo \"---\"; grep -rln \"Sơ đồ tầng\\\\|so-do-tang\\\\|floor.*3.*jpg\\\\|tang-1.pdf\" --include=\"*.js\" --include=\"*.jsx\" . 2>/dev/null | grep -v node_modules; echo \"---docs contents---\"; ls docs/ 2>/dev/null; echo \"---is docs deployed via gh pages per CLAUDE.md---\")",
+      "Read(//Users/huyenntt/Documents/GHN/6.Web/**)"
     ]
   }
 }

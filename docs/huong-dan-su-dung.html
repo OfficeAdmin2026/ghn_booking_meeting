@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GHN Meeting Room Booking — Hướng dẫn sử dụng</title>
+<style>
+  :root {
+    --orange: #F97316; --orange-light: #FFF7ED; --green: #22C55E;
+    --red: #EF4444; --yellow: #EAB308; --blue: #3B82F6;
+    --gray: #6B7280; --bg: #F9FAFB; --card: #FFFFFF; --border: #E5E7EB;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: #111827; line-height: 1.6; }
+  .header { background: linear-gradient(135deg, #1F2937 0%, #374151 100%); color: white; padding: 48px 0; text-align: center; }
+  .header-inner { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+  .header-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--orange); color: white; padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+  .header h1 { font-size: 36px; font-weight: 800; margin-bottom: 12px; }
+  .header p { font-size: 16px; color: #D1D5DB; max-width: 600px; margin: 0 auto; }
+  .header-meta { display: flex; justify-content: center; gap: 32px; margin-top: 28px; flex-wrap: wrap; }
+  .header-meta-item .val { font-size: 28px; font-weight: 700; color: var(--orange); }
+  .header-meta-item .lbl { font-size: 12px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; }
+  .header-nav { margin-top: 24px; }
+  .header-nav a { color: #D1D5DB; font-size: 13px; text-decoration: none; border-bottom: 1px dashed #6B7280; }
+  .header-nav a:hover { color: white; }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+  h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  h2 .sn { background: var(--orange); color: white; width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .sub { color: var(--gray); font-size: 14px; margin-bottom: 24px; margin-left: 36px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .fi { font-size: 24px; margin-bottom: 10px; }
+  .ft { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .fd { font-size: 13px; color: var(--gray); line-height: 1.5; }
+  .rtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rtable th { background: #F3F4F6; padding: 10px 14px; text-align: left; font-weight: 600; border-bottom: 2px solid var(--border); }
+  .rtable td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .rtable tr:last-child td { border-bottom: none; }
+  .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+  .bo { background: #FFF7ED; color: #C2410C; }
+  .bp { background: #F5F3FF; color: #6D28D9; }
+  .bg { background: #F3F4F6; color: #374151; }
+  .bgreen { background: #ECFDF5; color: #065F46; }
+  .bblue { background: #EFF6FF; color: #1E40AF; }
+  .byellow { background: #FFFBEB; color: #92400E; }
+  .bred { background: #FEF2F2; color: #991B1B; }
+  .chk { color: var(--green); font-weight: 700; }
+  .crs { color: var(--red); font-weight: 700; }
+  .footer { background: #1F2937; color: #9CA3AF; text-align: center; padding: 32px; font-size: 13px; }
+  .footer strong { color: white; }
+  .footer a { color: #D1D5DB; }
+  code { background: #F3F4F6; padding: 1px 6px; border-radius: 4px; font-size: 12px; font-family: monospace; }
+  ul { list-style: none; }
+  ul li::before { content: '•'; color: var(--orange); font-weight: 700; margin-right: 8px; }
+  li { margin-bottom: 4px; font-size: 13px; }
+  .flow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0; }
+  .fs { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 500; }
+  .fa { color: var(--gray); font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-badge">📖 Hướng dẫn sử dụng</div>
+    <h1>GHN Meeting Room Booking</h1>
+    <p>Hướng dẫn sử dụng hệ thống đặt phòng họp nội bộ — dành cho toàn bộ nhân viên GHN</p>
+    <div class="header-meta">
+      <div class="header-meta-item"><div class="val">19</div><div class="lbl">Phòng họp</div></div>
+      <div class="header-meta-item"><div class="val">3</div><div class="lbl">Vai trò</div></div>
+      <div class="header-meta-item"><div class="val">2</div><div class="lbl">Văn phòng</div></div>
+      <div class="header-meta-item"><div class="val">15</div><div class="lbl">Phút / mốc kéo lịch</div></div>
+    </div>
+    <div class="header-nav"><a href="index.html">📊 Xem Project Report →</a></div>
+  </div>
+</div>
+
+<div class="container">
+
+<section>
+  <h2><span class="sn">1</span> Đăng nhập</h2>
+  <p class="sub">Không cần mật khẩu — xác thực qua email nội bộ</p>
+  <div class="card">
+    <ul>
+      <li>Truy cập hệ thống, nhập email công ty đuôi <code>@ghn.vn</code></li>
+      <li>Lần đầu đăng nhập: điền thêm <strong>Họ tên</strong> để hệ thống tự tạo tài khoản</li>
+      <li>Lần sau: chỉ cần nhập email, bấm <strong>Đăng nhập</strong></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2><span class="sn">2</span> Dành cho User</h2>
+  <p class="sub">Mọi nhân viên đăng nhập thành công đều có các tính năng dưới đây</p>
+  <div class="card" style="overflow:auto;">
+    <table class="rtable">
+      <thead>
+        <tr><th>Tính năng</th><th>Vị trí</th><th>Cách thực hiện</th><th>Lưu ý</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Chọn phòng</td><td>Cột trái, tab "🏢 Phòng"</td><td>Lọc theo địa điểm (Rivera Park / Mipec), tầng, hoặc gõ tên phòng</td><td>Phòng được nhớ sau khi F5</td></tr>
+        <tr><td>Tìm phòng trống</td><td>Tab "🏢 Phòng" → "Tìm phòng trống"</td><td>Nhập giờ bắt đầu/kết thúc, số người, địa điểm → <strong>🔍 Tìm phòng trống</strong></td><td>Bấm kết quả để mở form đặt ngay</td></tr>
+        <tr><td>Đặt phòng mới</td><td>Vùng lịch tuần</td><td>Giữ và kéo chuột từ giờ bắt đầu đến giờ kết thúc → điền tên cuộc họp → <strong>Xác nhận đặt phòng</strong></td><td>Mốc 15 phút; không đặt được giờ đã qua; không đè lịch khác; phòng <span class="badge bp">VIP</span> chỉ VIP/Admin đặt được; nếu đang đóng băng chỉ đặt được tuần hiện tại</td></tr>
+        <tr><td>Xem lịch của tôi</td><td>Tab "📅 Của tôi"</td><td>Lọc theo Tất cả / Sắp tới / Đã hủy / Đã xong</td><td></td></tr>
+        <tr><td>Chỉnh sửa lịch</td><td>Bấm vào ô lịch</td><td><strong>Chỉnh sửa</strong> → đổi ngày/giờ/tiêu đề/ghi chú → <strong>Lưu thay đổi</strong></td><td>Chỉ áp dụng cho lịch chưa diễn ra</td></tr>
+        <tr><td>Hủy lịch</td><td>Bấm vào ô lịch</td><td><strong>Hủy đặt phòng</strong> → xác nhận</td><td>Chỉ hủy được lịch <strong>Đang chờ</strong> hoặc <strong>Đã xác nhận</strong></td></tr>
+        <tr><td>Theo dõi đóng băng booking</td><td>Banner 🔒 trên lịch</td><td>Theo dõi banner để biết khi nào mở booking tuần tiếp</td><td>Khi đóng băng: không kéo tạo booking mới cho tuần tiếp</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:20px;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Trạng thái lịch đặt</h3>
+    <div class="card" style="overflow:auto;">
+      <table class="rtable">
+        <tbody>
+          <tr><td><span class="badge byellow">🟡 Đang chờ</span></td><td>Vừa tạo, chờ xác nhận</td></tr>
+          <tr><td><span class="badge bgreen">🟢 Đã xác nhận</span></td><td>Đã được duyệt</td></tr>
+          <tr><td><span class="badge bblue">🔵 Đang diễn ra</span></td><td>Phòng đang được sử dụng</td></tr>
+          <tr><td><span class="badge bg">✅ Hoàn thành</span></td><td>Cuộc họp đã kết thúc</td></tr>
+          <tr><td><span class="badge bred">❌ Đã hủy</span></td><td>Bị hủy bởi user hoặc admin</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="sn">3</span> Dành cho Admin</h2>
+  <p class="sub">Admin có đầy đủ tính năng User ở trên, cộng thêm các tính năng quản trị dưới đây</p>
+  <div class="card" style="overflow:auto;">
+    <table class="rtable">
+      <thead>
+        <tr><th>Tính năng</th><th>Vị trí</th><th>Cách thực hiện</th><th>Lưu ý</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Truy cập trang Admin</td><td>Nav "Admin"</td><td>Bấm vào — chỉ hiện với tài khoản Admin</td><td>Gồm 3 tab</td></tr>
+        <tr><td>Quản lý phòng</td><td>Tab "1. Quản lý phòng"</td><td><strong>+ Thêm phòng</strong> → điền tên, địa điểm, tầng, sức chứa, tiện nghi, bật/tắt VIP → <strong>Lưu</strong>. Sửa bằng ✏️, xóa bằng 🗑️</td><td></td></tr>
+        <tr><td>Phân quyền</td><td>Tab "2. Phân quyền"</td><td>Nhập email <code>@ghn.vn</code>, chọn vai trò (Admin/Vip) → <strong>Cấp quyền</strong>; đổi vai trò qua dropdown cạnh tên user</td><td>Nếu user chưa từng đăng nhập, hệ thống tự tạo tài khoản với vai trò đã chọn; Admin không tự đổi quyền của chính mình</td></tr>
+        <tr><td>Đóng băng đặt phòng</td><td>Tab "3. Đóng băng đặt phòng"</td><td>Bật/Tắt, chọn ngày trong tuần + giờ mở booking tuần tiếp (vd: Thứ Năm 14:00)</td><td>Admin luôn đặt được mọi tuần; lịch đặt trước giờ mở sẽ ẩn với user thường</td></tr>
+        <tr><td>Dashboard &amp; Analytics</td><td>Nav "Dashboard" / "Analytics"</td><td>Xem thống kê tổng số lịch/phòng/người dùng, biểu đồ sử dụng phòng theo thời gian</td><td></td></tr>
+        <tr><td>Hủy lịch người dùng khác</td><td>Bấm vào ô lịch bất kỳ</td><td><strong>Hủy (Admin)</strong> → điền lý do → xác nhận</td><td>Lý do được lưu lại, user xem được khi bấm vào ô lịch đã hủy đó trên calendar</td></tr>
+        <tr><td>Bảo mật</td><td>—</td><td>Đăng xuất sau khi dùng máy chung; không chia sẻ tài khoản Admin</td><td>Mọi thao tác Admin đều được ghi log</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2><span class="sn">4</span> Phân quyền 3 vai trò</h2>
+  <p class="sub">Quyền hạn khác nhau theo từng vai trò</p>
+  <div class="g3">
+    <div class="card" style="border-top:3px solid #6B7280;">
+      <div style="font-size:18px;margin-bottom:8px;">👤</div>
+      <div class="badge bg" style="margin-bottom:8px;">USER</div>
+      <div style="font-size:13px;color:#374151;margin-top:8px;">Nhân viên thông thường. Đăng nhập bằng email công ty, đặt phòng trong cửa sổ cho phép.</div>
+    </div>
+    <div class="card" style="border-top:3px solid #8B5CF6;">
+      <div style="font-size:18px;margin-bottom:8px;">⭐</div>
+      <div class="badge bp" style="margin-bottom:8px;">VIP</div>
+      <div style="font-size:13px;color:#374151;margin-top:8px;">Ban lãnh đạo (BOD). Được đặt thêm phòng VIP (Learning Center) ngoài các phòng thường.</div>
+    </div>
+    <div class="card" style="border-top:3px solid #F97316;">
+      <div style="font-size:18px;margin-bottom:8px;">🛡️</div>
+      <div class="badge bo" style="margin-bottom:8px;">ADMIN</div>
+      <div style="font-size:13px;color:#374151;margin-top:8px;">Quản trị viên. Đặt phòng mọi lúc (kể cả khi đóng băng), quản lý phòng/người dùng/cài đặt hệ thống.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div class="footer">
+  <strong>GHN Meeting Room Booking</strong> — Hướng dẫn sử dụng<br>
+  <span style="margin-top:4px;display:block;font-size:11px;opacity:.7;">Dành cho nội bộ GHN — Cần hỗ trợ? Liên hệ bộ phận IT nội bộ GHN</span>
+</div>
+</body>
+</html>
