@@ -50,12 +50,7 @@ export const officeMapData = {
   'Rivera Park__1F': {
     canvas: { width: 1600, height: 667 },
     background: { src: '/floor-plans/rivera-park-1f.png', width: 1600, height: 667 },
-    rooms: [
-      { code: 'RPARK-1F-004', points: '542,366 626,366 626,426 542,426', centroid: { x: 584, y: 396 } }, // Your Loads
-      { code: 'RPARK-1F-003', points: '542,426 626,426 626,494 542,494', centroid: { x: 584, y: 460 } }, // Our Roads
-      { code: 'RPARK-1F-001', points: '882,306 1025,306 1025,360 882,360', centroid: { x: 953, y: 333 } }, // Thành Thái
-      { code: 'RPARK-1F-002', points: '882,360 1040,360 1040,494 882,494', centroid: { x: 961, y: 427 } }, // Hưng Yên (phòng lớn, 40 người)
-    ],
+    rooms: [],
     pois: [],
     // Waypoint hành lang (đo theo vùng trắng/mở trên ảnh nền) — mũi tên chỉ
     // đường sẽ đi qua các node này thay vì cắt thẳng qua tường phòng.
