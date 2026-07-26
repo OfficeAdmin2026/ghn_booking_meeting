@@ -427,8 +427,8 @@ export default function OfficeMapPage() {
 
   return (
     <div className="h-full flex flex-col bg-white">
-      {/* Map area — thu hẹp phải khi InfoPanel (w-96=384px) mở để zoom không bị che */}
-      <div className={`relative flex-1 flex p-4 gap-3 overflow-hidden${panelOpen ? ' sm:pr-[400px]' : ''}`}>
+      {/* Map area — thu hẹp phải khi InfoPanel (w-48=192px) mở để zoom không bị che */}
+      <div className={`relative flex-1 flex p-4 gap-3 overflow-hidden${panelOpen ? ' sm:pr-[208px]' : ''}`}>
         <RoomSearchPanel
           rooms={liveRooms}
           floorRooms={floorRooms}
