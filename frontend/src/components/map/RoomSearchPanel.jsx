@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { MagnifyingGlassIcon, XMarkIcon, MapPinIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
-import { POI_META } from './poiMeta';
 import FloorSelector from './FloorSelector';
 
 export default function RoomSearchPanel({
@@ -11,7 +10,6 @@ export default function RoomSearchPanel({
   statusByCode,   // { [room.id]: 'available' | 'occupied' }
   selectedCode,
   onSelect,
-  hasBackground,
   inputRef,
   floor,
   location,
@@ -139,7 +137,7 @@ export default function RoomSearchPanel({
 
       {/* Legend */}
       <div className="border-t border-gray-100 p-3 shrink-0">
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mb-1">
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
           <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" /> Trống
           </div>
@@ -147,16 +145,6 @@ export default function RoomSearchPanel({
             <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" /> Đang họp
           </div>
         </div>
-        {!hasBackground && (
-          <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 border-t border-gray-50 mt-1">
-            {Object.entries(POI_META).map(([type, meta]) => (
-              <div key={type} className="flex items-center gap-1 text-xs text-gray-400">
-                <meta.Icon className="w-3 h-3 shrink-0" style={{ color: meta.color }} />
-                {meta.label}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

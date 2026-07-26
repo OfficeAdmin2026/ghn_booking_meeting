@@ -59,19 +59,6 @@ function buildFloorLayout(roomCodes, cols, poiList) {
   };
 }
 
-const STANDARD_POIS = [
-  { id: 'dept', type: 'department', shape: 'polygon', label: 'Phòng ban' },
-  { id: 'pantry', type: 'pantry', shape: 'polygon', label: 'Pantry' },
-  { id: 'toilet', type: 'toilet', shape: 'point', label: 'Toilet' },
-  { id: 'printer', type: 'printer', shape: 'point', label: 'Máy in' },
-  { id: 'elevator', type: 'elevator', shape: 'point', label: 'Thang máy' },
-  { id: 'exit', type: 'exit', shape: 'point', label: 'Lối thoát hiểm' },
-];
-
-/** Tạo danh sách POI có id duy nhất theo tầng (tránh trùng id giữa các tầng). */
-function poisFor(floorKey) {
-  return STANDARD_POIS.map((p) => ({ ...p, id: `${floorKey}-${p.id}` }));
-}
 
 export const FLOORS_BY_LOCATION = {
   'Rivera Park': ['G', '1F', '3F'],
@@ -111,7 +98,7 @@ export const officeMapData = {
   'Rivera Park__G': buildFloorLayout(
     ['RPARK-G-001', 'RPARK-G-002', 'RPARK-G-003'],
     3,
-    poisFor('rpark-g')
+    []
   ),
   // Rivera Park / 1F: ảnh nền là sơ đồ thật (frontend/public/floor-plans/
   // rivera-park-1f.png, cắt từ "sơ đồ tầng-1.pdf"). Toạ độ room/poi bên dưới
@@ -129,20 +116,7 @@ export const officeMapData = {
       { code: 'RPARK-1F-001', points: '882,306 1025,306 1025,360 882,360', centroid: { x: 953, y: 333 } }, // Thành Thái
       { code: 'RPARK-1F-002', points: '882,360 1040,360 1040,494 882,494', centroid: { x: 961, y: 427 } }, // Hưng Yên (phòng lớn, 40 người)
     ],
-    pois: [
-      { id: 'rpark-1f-toilet-1', type: 'toilet', shape: 'point', x: 286, y: 70, label: 'WC' },
-      { id: 'rpark-1f-toilet-2', type: 'toilet', shape: 'point', x: 1246, y: 126, label: 'WC' },
-      { id: 'rpark-1f-pantry-1', type: 'pantry', shape: 'point', x: 1036, y: 226, label: 'Khu vực Pantry' },
-      { id: 'rpark-1f-pantry-2', type: 'pantry', shape: 'point', x: 1110, y: 386, label: 'Khu vực Pantry' },
-      { id: 'rpark-1f-pantry-3', type: 'pantry', shape: 'point', x: 106, y: 586, label: 'Khu vực Pantry' },
-      { id: 'rpark-1f-elevator-1', type: 'elevator', shape: 'point', x: 442, y: 276, label: 'Thang máy' },
-      { id: 'rpark-1f-elevator-2', type: 'elevator', shape: 'point', x: 446, y: 388, label: 'Thang máy' },
-      { id: 'rpark-1f-elevator-3', type: 'elevator', shape: 'point', x: 446, y: 452, label: 'Thang máy' },
-      { id: 'rpark-1f-exit-1', type: 'exit', shape: 'point', x: 306, y: 276, label: 'Khu vực thang thoát hiểm' },
-      { id: 'rpark-1f-exit-2', type: 'exit', shape: 'point', x: 306, y: 426, label: 'Khu vực thang thoát hiểm' },
-      { id: 'rpark-1f-exit-3', type: 'exit', shape: 'point', x: 1284, y: 276, label: 'Khu vực thang thoát hiểm' },
-      { id: 'rpark-1f-exit-4', type: 'exit', shape: 'point', x: 1284, y: 426, label: 'Khu vực thang thoát hiểm' },
-    ],
+    pois: [],
     // Waypoint hành lang (đo theo vùng trắng/mở trên ảnh nền) — mũi tên chỉ
     // đường sẽ đi qua các node này thay vì cắt thẳng qua tường phòng.
     corridorGraph: {
@@ -177,7 +151,7 @@ export const officeMapData = {
     rooms: [],
     pois: [],
   },
-  Mipec__8F: buildFloorLayout(['MIPEC-8F-001', 'MIPEC-8F-002'], 2, poisFor('mipec-8f')),
+  Mipec__8F: buildFloorLayout(['MIPEC-8F-001', 'MIPEC-8F-002'], 2, []),
 };
 
 export function getFloorKey(location, floor) {

@@ -389,7 +389,6 @@ export default function OfficeMapPage() {
           statusByCode={statusByCode}
           selectedCode={selectedCode}
           onSelect={handleRoomSidebarSelect}
-          hasBackground={!!floorData?.background}
           inputRef={searchInputRef}
           floor={floor}
           location={location_}
