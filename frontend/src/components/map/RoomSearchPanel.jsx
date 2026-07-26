@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+
+const fmtFloor = (f) => (f ? f.replace(/F$/i, '') : f);
 import { MagnifyingGlassIcon, XMarkIcon, MapPinIcon, PhotoIcon, Square2StackIcon } from '@heroicons/react/24/outline';
 import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
@@ -82,7 +84,7 @@ export default function RoomSearchPanel({
         <p className="text-xs text-gray-400">
           {query
             ? `${displayRooms.length} kết quả`
-            : `Tầng ${floor} · ${floorRooms.length} phòng`}
+            : `Tầng ${fmtFloor(floor)} · ${floorRooms.length} phòng`}
         </p>
       </div>
 
@@ -119,7 +121,7 @@ export default function RoomSearchPanel({
                 </p>
                 <div className="mt-1.5">
                   <span className="inline-flex items-center gap-1 text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                    <MapPinIcon className="w-3 h-3" /> Tầng {room.floor}
+                    <MapPinIcon className="w-3 h-3" /> Tầng {fmtFloor(room.floor)}
                   </span>
                 </div>
               </div>

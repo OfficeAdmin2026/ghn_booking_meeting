@@ -2,6 +2,8 @@ import { FLOORS_BY_LOCATION, DEFAULT_LOCATION, DEFAULT_FLOOR } from '../../data/
 
 const LOCATIONS = Object.keys(FLOORS_BY_LOCATION);
 
+const fmtFloor = (f) => (f ? f.replace(/F$/i, '') : f);
+
 export default function FloorSelector({ location, floor, onChange }) {
   const floors = FLOORS_BY_LOCATION[location] || [];
 
@@ -43,7 +45,7 @@ export default function FloorSelector({ location, floor, onChange }) {
                 : 'bg-white text-gray-600 border-gray-200 hover:border-ghn-orange hover:text-ghn-orange'
             }`}
           >
-            Tầng {f}
+            Tầng {fmtFloor(f)}
           </button>
         ))}
       </div>
