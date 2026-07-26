@@ -14,7 +14,7 @@ import DirectionArrow from './DirectionArrow';
 import { nearestPoiOfType, screenPointToSvg, pointsToSvgString } from '../../utils/svgGeometry';
 import { findCorridorPath } from '../../utils/corridorPath';
 
-const ZOOM_STORAGE_PREFIX = 'ghn_office_map_zoom__';
+const ZOOM_STORAGE_PREFIX = 'ghn_office_map_zoom_v2__';
 
 function readSavedTransform(floorKey) {
   try {
@@ -107,6 +107,7 @@ export default function MapCanvas({
       <TransformWrapper
         key={floorKey}
         ref={transformRef}
+        wrapperClass="w-full h-full"
         initialScale={saved?.scale ?? 1}
         initialPositionX={saved?.positionX ?? 0}
         initialPositionY={saved?.positionY ?? 0}
