@@ -49,7 +49,6 @@ export const officeMapData = {
   // trong sơ đồ gốc không có overlay vì chưa tồn tại trong hệ thống đặt phòng.
   'Rivera Park__1F': {
     canvas: { width: 1600, height: 667 },
-    background: { src: '/floor-plans/rivera-park-1f.png', width: 1600, height: 667 },
     rooms: [],
     pois: [],
     // Waypoint hành lang (đo theo vùng trắng/mở trên ảnh nền) — mũi tên chỉ
@@ -82,7 +81,6 @@ export const officeMapData = {
   // (nút "Vẽ khung phòng" trong InfoPanel) rồi hệ thống tự lưu vào DB.
   'Rivera Park__3F': {
     canvas: { width: 1280, height: 598 },
-    background: { src: '/floor-plans/rivera-park-3f.png', width: 1280, height: 598 },
     rooms: [],
     pois: [],
   },
