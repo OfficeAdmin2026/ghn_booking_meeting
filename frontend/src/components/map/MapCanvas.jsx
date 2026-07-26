@@ -14,28 +14,6 @@ import DirectionArrow from './DirectionArrow';
 import { nearestPoiOfType, screenPointToSvg, pointsToSvgString } from '../../utils/svgGeometry';
 import { findCorridorPath } from '../../utils/corridorPath';
 
-const ZOOM_STORAGE_PREFIX = 'ghn_office_map_zoom_v2__';
-
-function readSavedTransform(floorKey) {
-  try {
-    const raw = sessionStorage.getItem(ZOOM_STORAGE_PREFIX + floorKey);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveTransform(floorKey, ref) {
-  if (!ref) return;
-  try {
-    sessionStorage.setItem(
-      ZOOM_STORAGE_PREFIX + floorKey,
-      JSON.stringify({ scale: ref.state.scale, positionX: ref.state.positionX, positionY: ref.state.positionY })
-    );
-  } catch {
-    // sessionStorage not available (private mode etc.) — silently skip, zoom just won't persist
-  }
-}
 
 export default function MapCanvas({
   floorKey,
@@ -100,7 +78,6 @@ export default function MapCanvas({
   }
 
   const { canvas, rooms, pois } = floorData;
-  const saved = readSavedTransform(floorKey);
 
   return (
     <div ref={wrapperRef} className="relative flex-1 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
@@ -108,15 +85,12 @@ export default function MapCanvas({
         key={floorKey}
         ref={transformRef}
         wrapperClass="w-full h-full"
-        initialScale={saved?.scale ?? 1}
-        initialPositionX={saved?.positionX ?? 0}
-        initialPositionY={saved?.positionY ?? 0}
+        initialScale={1}
+        initialPositionX={0}
+        initialPositionY={0}
         minScale={0.4}
         maxScale={4}
         limitToBounds={false}
-        onZoomStop={(ref) => saveTransform(floorKey, ref.instance)}
-        onPanningStop={(ref) => saveTransform(floorKey, ref.instance)}
-        onPinchStop={(ref) => saveTransform(floorKey, ref.instance)}
       >
         {(controls) => (
           <>
