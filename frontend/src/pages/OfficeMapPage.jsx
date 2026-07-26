@@ -411,6 +411,12 @@ export default function OfficeMapPage() {
     setFocusRequest({ domId: `room-${room.code}`, nonce: Date.now() });
   };
 
+  const handleMapRoomClick = (room) => {
+    setSelectedCode(room.code);
+    setPanelOpen(true);
+    setFocusRequest({ domId: `room-${room.code}`, nonce: Date.now() });
+  };
+
   const handleBook = (room) => {
     navigate('/', { state: { room } });
   };
@@ -453,6 +459,7 @@ export default function OfficeMapPage() {
             drawingPoints={drawingPoints}
             onCanvasPoint={handleCanvasPoint}
             onRectComplete={handleRectComplete}
+            onRoomClick={handleMapRoomClick}
             isAdmin={isAdmin}
           />
         )}

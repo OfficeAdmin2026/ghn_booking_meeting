@@ -32,6 +32,7 @@ export default function MapCanvas({
   drawingPoints,
   onCanvasPoint,
   onRectComplete,
+  onRoomClick,
   isAdmin,
   onAnnotationClick,
 }) {
@@ -41,6 +42,7 @@ export default function MapCanvas({
   const [fullscreen, setFullscreen] = useState(false);
   const [dragState, setDragState] = useState(null); // { start: {x,y}, current: {x,y} }
   const [cursorSvgPos, setCursorSvgPos] = useState(null);
+  const [hoveredCode, setHoveredCode] = useState(null);
 
   useEffect(() => {
     const onFsChange = () => setFullscreen(!!document.fullscreenElement);
@@ -242,18 +244,36 @@ export default function MapCanvas({
                   />
                 )}
 
-                {/* Invisible hit areas for room clicks (không hiện khung nhưng vẫn clickable) */}
+                {/* Room hit areas + hover highlight */}
                 {!activeDrawTool && rooms.map((r) => {
                   const room = roomsByCode[r.code];
                   if (!room) return null;
+                  const isHovered = hoveredCode === r.code;
+                  const isSelected = selectedCode === r.code;
                   return (
                     <g key={r.code} id={`room-${r.code}`}>
+                      <title>{room.name}</title>
+                      {/* Hover highlight — below the selected-room red animation */}
+                      {isHovered && !isSelected && (
+                        <polygon
+                          points={r.points}
+                          fill="#FF6C0A"
+                          fillOpacity={0.18}
+                          stroke="#FF6C0A"
+                          strokeWidth={2}
+                          strokeOpacity={0.5}
+                          className="pointer-events-none"
+                        />
+                      )}
+                      {/* Transparent hit area on top */}
                       <polygon
                         points={r.points}
                         fill="transparent"
                         stroke="none"
                         className="cursor-pointer"
-                        onClick={() => {}}
+                        onClick={(e) => { e.stopPropagation(); onRoomClick?.(room); }}
+                        onMouseEnter={() => setHoveredCode(r.code)}
+                        onMouseLeave={() => setHoveredCode(null)}
                       />
                     </g>
                   );
