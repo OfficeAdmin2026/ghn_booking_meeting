@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -48,9 +48,17 @@ export default function MapCanvas({
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
+  const directionPathRef = useRef(null);
+
   useEffect(() => {
     if (!focusRequest || !transformRef.current) return;
-    transformRef.current.zoomToElement(focusRequest.domId, 1.3, 600);
+    const path = directionPathRef.current;
+    if (path && path.length >= 2) {
+      // Zoom to fit the full direction path bbox instead of just the room
+      transformRef.current.zoomToElement('direction-path-focus', undefined, 600);
+    } else {
+      transformRef.current.zoomToElement(focusRequest.domId, 1.3, 600);
+    }
   }, [focusRequest]);
 
   const directionPath = useMemo(() => {
@@ -66,6 +74,9 @@ export default function MapCanvas({
     if (!from) return null;
     return findCorridorPath(floorData.corridorGraph, from, geometry.centroid);
   }, [floorData, showDirection, selectedCode, roomsByCode, savedPathsByRoomId]);
+
+  // Sync ref before effects fire so focusRequest effect reads the latest path
+  useLayoutEffect(() => { directionPathRef.current = directionPath; }, [directionPath]);
 
   // Rect drag handlers (shape drawing mode)
   const handleMouseDown = (e) => {
@@ -258,6 +269,25 @@ export default function MapCanvas({
                       />
                     </g>
                   ))}
+
+                {/* Invisible rect spanning full direction path bbox — used by focusRequest to zoom-to-fit */}
+                {!activeDrawTool && directionPath && directionPath.length >= 2 && (() => {
+                  const pad = 80;
+                  const xs = directionPath.map((p) => p.x);
+                  const ys = directionPath.map((p) => p.y);
+                  const x = Math.min(...xs) - pad;
+                  const y = Math.min(...ys) - pad;
+                  const w = Math.max(Math.max(...xs) - Math.min(...xs) + 2 * pad, 300);
+                  const h = Math.max(Math.max(...ys) - Math.min(...ys) + 2 * pad, 300);
+                  return (
+                    <rect
+                      id="direction-path-focus"
+                      x={x} y={y} width={w} height={h}
+                      fill="transparent" stroke="none"
+                      className="pointer-events-none"
+                    />
+                  );
+                })()}
 
                 <AnimatePresence>
                   {!activeDrawTool && directionPath && <DirectionArrow key={selectedCode} points={directionPath} />}
