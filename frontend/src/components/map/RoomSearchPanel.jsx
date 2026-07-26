@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { MagnifyingGlassIcon, XMarkIcon, MapPinIcon, PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, XMarkIcon, MapPinIcon, PhotoIcon, TrashIcon, Square2StackIcon } from '@heroicons/react/24/outline';
 import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
 import FloorSelector from './FloorSelector';
@@ -22,6 +22,7 @@ export default function RoomSearchPanel({
   onDeleteAllShapes,
   deletingAllShapes,
   hasAnyShape,
+  savedShapesByRoomId = {},
 }) {
   const [query, setQuery] = useState('');
 
@@ -151,13 +152,16 @@ export default function RoomSearchPanel({
                 </div>
               </div>
 
-              {/* Status dot */}
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${
-                  status === 'occupied' ? 'bg-red-500' : 'bg-green-500'
-                }`}
-                title={status === 'occupied' ? 'Đang họp' : 'Trống'}
-              />
+              {/* Indicators */}
+              <div className="flex flex-col items-center gap-1 shrink-0 mt-1">
+                <span
+                  className={`w-2 h-2 rounded-full ${status === 'occupied' ? 'bg-red-500' : 'bg-green-500'}`}
+                  title={status === 'occupied' ? 'Đang họp' : 'Trống'}
+                />
+                {isAdmin && savedShapesByRoomId[room.id] && (
+                  <Square2StackIcon className="w-3 h-3 text-ghn-orange" title="Đã có khung phòng" />
+                )}
+              </div>
             </button>
           );
         })}

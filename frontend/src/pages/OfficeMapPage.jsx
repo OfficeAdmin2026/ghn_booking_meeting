@@ -440,6 +440,7 @@ export default function OfficeMapPage() {
           onDeleteAllShapes={handleDeleteAllShapes}
           deletingAllShapes={deletingAllShapes}
           hasAnyShape={Object.keys(savedShapesByRoomId).length > 0}
+          savedShapesByRoomId={savedShapesByRoomId}
         />
         {roomsLoading ? (
           <div className="flex-1 rounded-xl border border-gray-200 bg-gray-50 animate-pulse" />
