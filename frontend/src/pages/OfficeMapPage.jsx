@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { PhotoIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon } from '@heroicons/react/24/outline';
 import { roomsApi, bookingsApi, wayfindingApi, roomShapesApi, floorBackgroundsApi, mapAnnotationsApi } from '../api';
 import { getFloorData, getFloorKey, normalizeLocation, DEFAULT_LOCATION, DEFAULT_FLOOR, DEFAULT_FILTERS } from '../data/officeMapData';
 import { isRoomOccupiedNow } from '../utils/roomStatus';
 import { polygonCentroid, pointsToSvgString } from '../utils/svgGeometry';
 import { useAuth } from '../contexts/AuthContext';
-import { POI_META } from '../components/map/poiMeta';
-import FilterPanel from '../components/map/FilterPanel';
 import FloorSelector from '../components/map/FloorSelector';
 import MapCanvas from '../components/map/MapCanvas';
 import RoomSearchPanel from '../components/map/RoomSearchPanel';
 import InfoPanel from '../components/map/InfoPanel';
 import UploadBackgroundModal from '../components/map/UploadBackgroundModal';
-import AnnotationToolbar from '../components/map/AnnotationToolbar';
 
 function dayRangeISO() {
   const start = new Date();
@@ -41,14 +38,13 @@ export default function OfficeMapPage() {
   const [selectedCode, setSelectedCode] = useState(null);
   const [hoveredCode, setHoveredCode] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [focusRequest, setFocusRequest] = useState(null);
   const [highlightedCode, setHighlightedCode] = useState(null);
 
   const [savedPathsByRoomId, setSavedPathsByRoomId] = useState({});
   const [savedShapesByRoomId, setSavedShapesByRoomId] = useState({});
   const [backgroundsByFloorKey, setBackgroundsByFloorKey] = useState({});
-  const [activeDrawTool, setActiveDrawTool] = useState(null); // null | 'path' | 'shape' | 'annotation'
+  const [activeDrawTool, setActiveDrawTool] = useState(null);
   const [drawingPoints, setDrawingPoints] = useState([]);
   const [savingPath, setSavingPath] = useState(false);
   const [savingShape, setSavingShape] = useState(false);
@@ -58,17 +54,12 @@ export default function OfficeMapPage() {
   const [uploadError, setUploadError] = useState('');
 
   const [annotations, setAnnotations] = useState([]);
-  const [annotationToolbarOpen, setAnnotationToolbarOpen] = useState(false);
-  const [editingAnnotationId, setEditingAnnotationId] = useState(null);
-  const [draftAnnotation, setDraftAnnotation] = useState({ type: 'elevator', color: POI_META.elevator.color, label: '' });
-  const [savingAnnotation, setSavingAnnotation] = useState(false);
 
   const pendingDeepLink = useRef({
     roomId: searchParams.get('roomId'),
     highlight: searchParams.get('highlight') === '1',
   });
 
-  // Fetch phòng 1 lần
   useEffect(() => {
     roomsApi
       .getAll()
@@ -137,9 +128,6 @@ export default function OfficeMapPage() {
   }, [liveRooms]);
 
   const floorKey = getFloorKey(location_, floor);
-
-  // Dữ liệu tĩnh trong officeMapData.js — nền tảng ban đầu, sẽ bị ghi đè bởi
-  // khung phòng (room_shapes) và ảnh nền (floor_backgrounds) admin đã lưu trong DB.
   const staticFloorData = useMemo(() => getFloorData(location_, floor), [location_, floor]);
 
   const floorData = useMemo(() => {
@@ -150,7 +138,6 @@ export default function OfficeMapPage() {
     Object.entries(savedShapesByRoomId).forEach(([roomId, points]) => {
       const liveRoom = roomsById[roomId];
       if (!liveRoom) return;
-      // chỉ áp dụng khung đã vẽ cho đúng phòng thuộc tầng đang xem
       if (normalizeLocation(liveRoom.location) !== location_ || liveRoom.floor !== floor) return;
       const svgPoints = pointsToSvgString(points);
       roomsByCodeMap[liveRoom.code] = { code: liveRoom.code, points: svgPoints, centroid: polygonCentroid(svgPoints) };
@@ -162,9 +149,6 @@ export default function OfficeMapPage() {
       : staticFloorData.background;
     const canvas = bgOverride ? { width: bgOverride.width, height: bgOverride.height } : staticFloorData.canvas;
 
-    // Khu vực chung (thang máy, WC, pantry...) admin tự vẽ — luôn nối thêm vào
-    // POI tĩnh của tầng, đánh dấu custom:true để MapCanvas biết luôn hiển thị
-    // kể cả khi tầng đã có ảnh nền thật (POI tĩnh thì bị ẩn trong trường hợp đó).
     const customPois = annotations
       .filter((a) => normalizeLocation(a.location) === location_ && a.floor === floor)
       .map((a) => ({
@@ -206,20 +190,17 @@ export default function OfficeMapPage() {
 
   useEffect(() => { fetchFloorBookings(); }, [fetchFloorBookings]);
 
-  // Làm mới khi quay lại tab (bắt các booking được tạo ở nơi khác)
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === 'visible') fetchFloorBookings(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [fetchFloorBookings]);
 
-  // Tick 30s để tính lại trạng thái trống/họp theo giờ hiện tại (không fetch lại mạng)
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(id);
   }, []);
 
-  // Xử lý deep-link ?roomId=&highlight=1 sau khi có dữ liệu phòng
   useEffect(() => {
     const pending = pendingDeepLink.current;
     if (!pending.roomId || liveRooms.length === 0) return;
@@ -236,23 +217,21 @@ export default function OfficeMapPage() {
     pendingDeepLink.current = { roomId: null, highlight: false };
   }, [liveRooms]);
 
-  // Ctrl/Cmd+F focus ô tìm kiếm, Esc đóng InfoPanel
+  // Ctrl/Cmd+F → focus ô tìm kiếm trong sidebar; Esc → đóng InfoPanel
   useEffect(() => {
     const onKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault();
         searchInputRef.current?.focus();
-      } else if (e.key === 'Escape' && (panelOpen || annotationToolbarOpen)) {
+      } else if (e.key === 'Escape' && panelOpen) {
         setPanelOpen(false);
-        setAnnotationToolbarOpen(false);
-        setEditingAnnotationId(null);
         setActiveDrawTool(null);
         setDrawingPoints([]);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [panelOpen, annotationToolbarOpen]);
+  }, [panelOpen]);
 
   const statusByCode = useMemo(() => {
     const map = {};
@@ -273,16 +252,12 @@ export default function OfficeMapPage() {
     setFloor(nextFloor);
     setSearchParams({ location, floor: nextFloor }, { replace: true });
     setPanelOpen(false);
-    setAnnotationToolbarOpen(false);
-    setEditingAnnotationId(null);
     exitDrawMode();
   };
 
   const handleRoomClick = (code) => {
     setSelectedCode(code);
     setPanelOpen(true);
-    setAnnotationToolbarOpen(false);
-    setEditingAnnotationId(null);
     exitDrawMode();
   };
 
@@ -395,100 +370,7 @@ export default function OfficeMapPage() {
     }
     setSelectedCode(room.code);
     setPanelOpen(true);
-    setAnnotationToolbarOpen(false);
-    setEditingAnnotationId(null);
     setFocusRequest({ domId: `room-${room.code}`, nonce: Date.now() });
-  };
-
-  const handleOpenAnnotationToolbar = () => {
-    setPanelOpen(false);
-    exitDrawMode();
-    setEditingAnnotationId(null);
-    setDraftAnnotation({ type: 'elevator', color: POI_META.elevator.color, label: '' });
-    setAnnotationToolbarOpen(true);
-  };
-
-  const handleSelectAnnotation = (poi) => {
-    const raw = annotations.find((a) => a.id === poi.id);
-    if (!raw) return;
-    setPanelOpen(false);
-    exitDrawMode();
-    setEditingAnnotationId(raw.id);
-    setDraftAnnotation({ type: raw.type, color: raw.color || POI_META[raw.type].color, label: raw.label || '' });
-    setAnnotationToolbarOpen(true);
-  };
-
-  const handleChangeDraftAnnotation = (partial) => setDraftAnnotation((d) => ({ ...d, ...partial }));
-
-  const handleStartDrawAnnotation = () => {
-    setDrawingPoints([]);
-    setActiveDrawTool('annotation');
-  };
-
-  const handleCancelAnnotationDraw = () => {
-    setActiveDrawTool(null);
-    setDrawingPoints([]);
-  };
-
-  const handleCloseAnnotationToolbar = () => {
-    setAnnotationToolbarOpen(false);
-    setEditingAnnotationId(null);
-    exitDrawMode();
-  };
-
-  const handleSaveAnnotation = () => {
-    if (drawingPoints.length !== 1 && drawingPoints.length < 3) return;
-    const shape = drawingPoints.length === 1 ? 'point' : 'polygon';
-    const payload = {
-      location: location_,
-      floor,
-      type: draftAnnotation.type,
-      shape,
-      points: drawingPoints,
-      color: draftAnnotation.color,
-      label: draftAnnotation.label || null,
-    };
-    setSavingAnnotation(true);
-    const request = editingAnnotationId
-      ? mapAnnotationsApi.update(editingAnnotationId, payload)
-      : mapAnnotationsApi.create(payload);
-    request
-      .then((res) => {
-        const saved = res.data.data?.annotation;
-        setAnnotations((prev) =>
-          editingAnnotationId ? prev.map((a) => (a.id === saved.id ? saved : a)) : [...prev, saved]
-        );
-        handleCloseAnnotationToolbar();
-      })
-      .catch(() => {})
-      .finally(() => setSavingAnnotation(false));
-  };
-
-  const handleSaveAnnotationMeta = () => {
-    if (!editingAnnotationId) return;
-    setSavingAnnotation(true);
-    mapAnnotationsApi
-      .update(editingAnnotationId, { type: draftAnnotation.type, color: draftAnnotation.color, label: draftAnnotation.label || null })
-      .then((res) => {
-        const saved = res.data.data?.annotation;
-        setAnnotations((prev) => prev.map((a) => (a.id === saved.id ? saved : a)));
-        handleCloseAnnotationToolbar();
-      })
-      .catch(() => {})
-      .finally(() => setSavingAnnotation(false));
-  };
-
-  const handleDeleteAnnotation = () => {
-    if (!editingAnnotationId) return;
-    setSavingAnnotation(true);
-    mapAnnotationsApi
-      .remove(editingAnnotationId)
-      .then(() => {
-        setAnnotations((prev) => prev.filter((a) => a.id !== editingAnnotationId));
-        handleCloseAnnotationToolbar();
-      })
-      .catch(() => {})
-      .finally(() => setSavingAnnotation(false));
   };
 
   const handleBook = (room) => {
@@ -502,15 +384,12 @@ export default function OfficeMapPage() {
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-200 px-4 sm:px-6 py-3 space-y-3">
+      <div className="flex-shrink-0 border-b border-gray-200 px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-lg font-bold text-gray-900">Bản đồ văn phòng</h1>
             <p className="text-xs text-gray-500">Xem vị trí phòng họp, phòng ban và tiện ích trong toà nhà</p>
           </div>
-        </div>
-
-        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2 flex-wrap">
             <FloorSelector location={location_} floor={floor} onChange={handleFloorChange} />
             {isAdmin && (
@@ -523,18 +402,7 @@ export default function OfficeMapPage() {
                 <PhotoIcon className="w-3.5 h-3.5" /> Sơ đồ tầng
               </button>
             )}
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={handleOpenAnnotationToolbar}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:border-ghn-orange hover:text-ghn-orange transition-colors"
-                title="Thêm khu vực chung (thang máy, WC, pantry...)"
-              >
-                <PlusCircleIcon className="w-3.5 h-3.5" /> Khu vực chung
-              </button>
-            )}
           </div>
-          <FilterPanel filters={filters} onChange={setFilters} hasBackground={!!floorData?.background} />
         </div>
       </div>
 
@@ -548,6 +416,7 @@ export default function OfficeMapPage() {
           onSelect={handleRoomSidebarSelect}
           hasBackground={!!floorData?.background}
           inputRef={searchInputRef}
+          floor={floor}
         />
         {roomsLoading ? (
           <div className="flex-1 rounded-xl border border-gray-200 bg-gray-50 animate-pulse" />
@@ -562,7 +431,7 @@ export default function OfficeMapPage() {
             hoveredCode={hoveredCode}
             onRoomHover={setHoveredCode}
             onRoomClick={handleRoomClick}
-            filters={filters}
+            filters={DEFAULT_FILTERS}
             focusRequest={focusRequest}
             showDirection={panelOpen}
             savedPathsByRoomId={savedPathsByRoomId}
@@ -570,7 +439,6 @@ export default function OfficeMapPage() {
             drawingPoints={drawingPoints}
             onCanvasPoint={handleCanvasPoint}
             isAdmin={isAdmin}
-            onAnnotationClick={handleSelectAnnotation}
           />
         )}
       </div>
@@ -597,27 +465,6 @@ export default function OfficeMapPage() {
             onDeleteShape={handleDeleteShape}
             savingPath={savingPath}
             savingShape={savingShape}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {annotationToolbarOpen && (
-          <AnnotationToolbar
-            isEditing={!!editingAnnotationId}
-            draft={draftAnnotation}
-            onChangeDraft={handleChangeDraftAnnotation}
-            activeDrawTool={activeDrawTool}
-            drawingPoints={drawingPoints}
-            onStartDraw={handleStartDrawAnnotation}
-            onUndoPoint={handleUndoPoint}
-            onClearDraw={handleClearDraw}
-            onCancelDraw={handleCancelAnnotationDraw}
-            onSave={handleSaveAnnotation}
-            onSaveMeta={handleSaveAnnotationMeta}
-            onDelete={handleDeleteAnnotation}
-            onClose={handleCloseAnnotationToolbar}
-            saving={savingAnnotation}
           />
         )}
       </AnimatePresence>
