@@ -8,11 +8,10 @@ import { isRoomOccupiedNow } from '../utils/roomStatus';
 import { polygonCentroid, pointsToSvgString } from '../utils/svgGeometry';
 import { useAuth } from '../contexts/AuthContext';
 import { POI_META } from '../components/map/poiMeta';
-import SearchBar from '../components/map/SearchBar';
 import FilterPanel from '../components/map/FilterPanel';
 import FloorSelector from '../components/map/FloorSelector';
-import Legend from '../components/map/Legend';
 import MapCanvas from '../components/map/MapCanvas';
+import RoomSearchPanel from '../components/map/RoomSearchPanel';
 import InfoPanel from '../components/map/InfoPanel';
 import UploadBackgroundModal from '../components/map/UploadBackgroundModal';
 import AnnotationToolbar from '../components/map/AnnotationToolbar';
@@ -387,23 +386,18 @@ export default function OfficeMapPage() {
       .finally(() => setUploading(false));
   };
 
-  const handleSearchSelect = (result) => {
-    if (result.kind === 'room') {
-      const room = result.room;
-      const roomLocation = normalizeLocation(room.location);
-      if (roomLocation !== location_ || room.floor !== floor) {
-        setLocation_(roomLocation);
-        setFloor(room.floor);
-        setSearchParams({ location: roomLocation, floor: room.floor }, { replace: true });
-      }
-      setSelectedCode(room.code);
-      setPanelOpen(true);
-      setAnnotationToolbarOpen(false);
-      setEditingAnnotationId(null);
-      setFocusRequest({ domId: `room-${room.code}`, nonce: Date.now() });
-    } else {
-      setFocusRequest({ domId: `poi-${result.id}`, nonce: Date.now() });
+  const handleRoomSidebarSelect = (room) => {
+    const roomLocation = normalizeLocation(room.location);
+    if (roomLocation !== location_ || room.floor !== floor) {
+      setLocation_(roomLocation);
+      setFloor(room.floor);
+      setSearchParams({ location: roomLocation, floor: room.floor }, { replace: true });
     }
+    setSelectedCode(room.code);
+    setPanelOpen(true);
+    setAnnotationToolbarOpen(false);
+    setEditingAnnotationId(null);
+    setFocusRequest({ domId: `room-${room.code}`, nonce: Date.now() });
   };
 
   const handleOpenAnnotationToolbar = () => {
@@ -509,17 +503,11 @@ export default function OfficeMapPage() {
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
       <div className="flex-shrink-0 border-b border-gray-200 px-4 sm:px-6 py-3 space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-lg font-bold text-gray-900">Bản đồ văn phòng</h1>
             <p className="text-xs text-gray-500">Xem vị trí phòng họp, phòng ban và tiện ích trong toà nhà</p>
           </div>
-          <SearchBar
-            rooms={liveRooms}
-            pois={floorData?.background ? [] : floorData?.pois || []}
-            onSelect={handleSearchSelect}
-            inputRef={searchInputRef}
-          />
         </div>
 
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -552,6 +540,15 @@ export default function OfficeMapPage() {
 
       {/* Map area */}
       <div className="relative flex-1 flex p-4 gap-3 overflow-hidden">
+        <RoomSearchPanel
+          rooms={liveRooms}
+          floorRooms={floorRooms}
+          statusByCode={statusByCode}
+          selectedCode={selectedCode}
+          onSelect={handleRoomSidebarSelect}
+          hasBackground={!!floorData?.background}
+          inputRef={searchInputRef}
+        />
         {roomsLoading ? (
           <div className="flex-1 rounded-xl border border-gray-200 bg-gray-50 animate-pulse" />
         ) : (
@@ -576,7 +573,6 @@ export default function OfficeMapPage() {
             onAnnotationClick={handleSelectAnnotation}
           />
         )}
-        <Legend hasBackground={!!floorData?.background} />
       </div>
 
       <AnimatePresence>
