@@ -165,7 +165,6 @@ export default function MapCanvas({
                 ref={svgRef}
                 viewBox={`0 0 ${canvas.width} ${canvas.height}`}
                 className={`w-full h-full ${activeDrawTool ? 'cursor-crosshair' : ''}`}
-                style={{ minWidth: canvas.width, minHeight: canvas.height }}
                 onClick={handleSvgClick}
               >
                 <defs>
