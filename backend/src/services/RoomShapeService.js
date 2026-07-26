@@ -40,6 +40,10 @@ class RoomShapeService {
     await existing.destroy();
     return true;
   }
+
+  static async removeAll() {
+    return await RoomShape.destroy({ where: {} });
+  }
 }
 
 module.exports = RoomShapeService;

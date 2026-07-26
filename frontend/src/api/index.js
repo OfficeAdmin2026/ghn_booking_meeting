@@ -85,6 +85,8 @@ export const roomShapesApi = {
   save: (roomId, points) => api.put(`/room-shapes/${roomId}`, { points }),
 
   remove: (roomId) => api.delete(`/room-shapes/${roomId}`),
+
+  removeAll: () => api.delete('/room-shapes'),
 };
 
 export const mapAnnotationsApi = {

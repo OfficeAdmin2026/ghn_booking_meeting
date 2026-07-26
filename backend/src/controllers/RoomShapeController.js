@@ -46,6 +46,19 @@ class RoomShapeController {
       res.status(500).json({ error: { status: 500, message: error.message } });
     }
   }
+
+  /**
+   * DELETE /api/room-shapes (admin only) — xoá tất cả
+   */
+  static async removeAll(req, res) {
+    try {
+      const count = await RoomShapeService.removeAll();
+      res.json({ status: 'success', message: `Đã xoá ${count} khung phòng` });
+    } catch (error) {
+      console.error('Remove all room shapes error:', error);
+      res.status(500).json({ error: { status: 500, message: error.message } });
+    }
+  }
 }
 
 module.exports = RoomShapeController;

@@ -48,6 +48,7 @@ export default function OfficeMapPage() {
   const [savingShape, setSavingShape] = useState(false);
 
   const [deletingAllPaths, setDeletingAllPaths] = useState(false);
+  const [deletingAllShapes, setDeletingAllShapes] = useState(false);
 
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -356,6 +357,16 @@ export default function OfficeMapPage() {
       .finally(() => setDeletingAllPaths(false));
   };
 
+  const handleDeleteAllShapes = () => {
+    if (!window.confirm('Xoá tất cả khung phòng hiện tại? Hành động này không thể hoàn tác.')) return;
+    setDeletingAllShapes(true);
+    roomShapesApi
+      .removeAll()
+      .then(() => setSavedShapesByRoomId({}))
+      .catch(() => {})
+      .finally(() => setDeletingAllShapes(false));
+  };
+
   const handleOpenUploadModal = () => {
     setUploadError('');
     setUploadModalOpen(true);
@@ -426,6 +437,9 @@ export default function OfficeMapPage() {
           onDeleteAllPaths={handleDeleteAllPaths}
           deletingAllPaths={deletingAllPaths}
           hasAnyPath={Object.keys(savedPathsByRoomId).length > 0}
+          onDeleteAllShapes={handleDeleteAllShapes}
+          deletingAllShapes={deletingAllShapes}
+          hasAnyShape={Object.keys(savedShapesByRoomId).length > 0}
         />
         {roomsLoading ? (
           <div className="flex-1 rounded-xl border border-gray-200 bg-gray-50 animate-pulse" />

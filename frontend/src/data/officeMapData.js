@@ -1,63 +1,3 @@
-/**
- * Dữ liệu hình học mẫu cho Bản đồ văn phòng (SVG placeholder).
- *
- * Đây KHÔNG phải bản vẽ mặt bằng thật — chỉ là layout dạng lưới để module
- * hoạt động được ngay. Mỗi phòng chỉ lưu `code` (khớp với `room.code` từ
- * `/api/rooms`) + toạ độ SVG; dữ liệu "sống" (tên, sức chứa, tiện ích...)
- * được lấy từ API và ghép vào theo `code` ở OfficeMapPage.
- *
- * Khi có bản vẽ mặt bằng thật: chỉ cần thay `points`/`canvas`/`centroid`
- * bên dưới (hoặc tạo hàm build khác) — không cần đổi bất kỳ component nào.
- */
-
-const CELL_W = 200;
-const CELL_H = 140;
-const GAP = 24;
-const ORIGIN_X = 40;
-const ORIGIN_Y = 40;
-const POI_W = 160;
-const POI_H = 100;
-const POI_ROW_GAP = 120;
-
-/** Sinh layout dạng lưới cho danh sách mã phòng + danh sách POI của 1 tầng. */
-function buildFloorLayout(roomCodes, cols, poiList) {
-  const rooms = roomCodes.map((code, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = ORIGIN_X + col * (CELL_W + GAP);
-    const y = ORIGIN_Y + row * (CELL_H + GAP);
-    return {
-      code,
-      points: `${x},${y} ${x + CELL_W},${y} ${x + CELL_W},${y + CELL_H} ${x},${y + CELL_H}`,
-      centroid: { x: x + CELL_W / 2, y: y + CELL_H / 2 },
-    };
-  });
-
-  const rows = Math.max(1, Math.ceil(roomCodes.length / cols));
-  const gridWidth = ORIGIN_X + cols * (CELL_W + GAP);
-  const gridHeight = ORIGIN_Y + rows * (CELL_H + GAP);
-
-  const poiOriginX = gridWidth + 40;
-  const pois = poiList.map((poi, i) => {
-    const y = ORIGIN_Y + i * POI_ROW_GAP;
-    if (poi.shape === 'point') {
-      return { ...poi, x: poiOriginX + POI_W / 2, y: y + POI_H / 2 };
-    }
-    return {
-      ...poi,
-      points: `${poiOriginX},${y} ${poiOriginX + POI_W},${y} ${poiOriginX + POI_W},${y + POI_H} ${poiOriginX},${y + POI_H}`,
-    };
-  });
-
-  return {
-    canvas: {
-      width: poiOriginX + POI_W + 40,
-      height: Math.max(gridHeight, ORIGIN_Y + poiList.length * POI_ROW_GAP + POI_H + 40),
-    },
-    rooms,
-    pois,
-  };
-}
 
 
 export const FLOORS_BY_LOCATION = {
@@ -95,11 +35,11 @@ export const FILTER_OPTIONS = [
 export const DEFAULT_FILTERS = FILTER_OPTIONS.reduce((acc, o) => ({ ...acc, [o.key]: true }), {});
 
 export const officeMapData = {
-  'Rivera Park__G': buildFloorLayout(
-    ['RPARK-G-001', 'RPARK-G-002', 'RPARK-G-003'],
-    3,
-    []
-  ),
+  'Rivera Park__G': {
+    canvas: { width: 1200, height: 700 },
+    rooms: [],
+    pois: [],
+  },
   // Rivera Park / 1F: ảnh nền là sơ đồ thật (frontend/public/floor-plans/
   // rivera-park-1f.png, cắt từ "sơ đồ tầng-1.pdf"). Toạ độ room/poi bên dưới
   // được đo trực tiếp trên ảnh 1600x667 này nên khớp đúng vị trí thật — chỉ
@@ -151,7 +91,11 @@ export const officeMapData = {
     rooms: [],
     pois: [],
   },
-  Mipec__8F: buildFloorLayout(['MIPEC-8F-001', 'MIPEC-8F-002'], 2, []),
+  Mipec__8F: {
+    canvas: { width: 1200, height: 700 },
+    rooms: [],
+    pois: [],
+  },
 };
 
 export function getFloorKey(location, floor) {

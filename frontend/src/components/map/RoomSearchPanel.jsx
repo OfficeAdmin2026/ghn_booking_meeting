@@ -19,6 +19,9 @@ export default function RoomSearchPanel({
   onDeleteAllPaths,
   deletingAllPaths,
   hasAnyPath,
+  onDeleteAllShapes,
+  deletingAllShapes,
+  hasAnyShape,
 }) {
   const [query, setQuery] = useState('');
 
@@ -61,6 +64,16 @@ export default function RoomSearchPanel({
                 className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
               >
                 <TrashIcon className="w-3.5 h-3.5" /> {deletingAllPaths ? 'Đang xoá...' : 'Xoá tất cả chỉ dẫn'}
+              </button>
+            )}
+            {hasAnyShape && (
+              <button
+                type="button"
+                onClick={onDeleteAllShapes}
+                disabled={deletingAllShapes}
+                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
+              >
+                <TrashIcon className="w-3.5 h-3.5" /> {deletingAllShapes ? 'Đang xoá...' : 'Xoá tất cả khung phòng'}
               </button>
             )}
           </div>
