@@ -75,6 +75,8 @@ export const wayfindingApi = {
   save: (roomId, points) => api.put(`/wayfinding-paths/${roomId}`, { points }),
 
   remove: (roomId) => api.delete(`/wayfinding-paths/${roomId}`),
+
+  removeAll: () => api.delete('/wayfinding-paths'),
 };
 
 export const roomShapesApi = {

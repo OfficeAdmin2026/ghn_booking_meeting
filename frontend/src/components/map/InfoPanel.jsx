@@ -46,6 +46,7 @@ export default function InfoPanel({
   onClearDraw,
   onCancelDraw,
   onSavePath,
+  onDeletePath,
   onSaveShape,
   onDeleteShape,
   savingPath,
@@ -152,12 +153,24 @@ export default function InfoPanel({
           <div className="border-t border-gray-100 pt-4">
             {!activeDrawTool ? (
               <div className="space-y-2">
-                <button
-                  onClick={onStartDrawPath}
-                  className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium text-ghn-blue bg-ghn-blue-light hover:bg-blue-100 rounded-lg px-4 py-2 transition-colors"
-                >
-                  <PencilIcon className="w-4 h-4" /> {hasCustomPath ? 'Vẽ lại đường chỉ dẫn' : 'Vẽ đường chỉ dẫn'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={onStartDrawPath}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-medium text-ghn-blue bg-ghn-blue-light hover:bg-blue-100 rounded-lg px-4 py-2 transition-colors"
+                  >
+                    <PencilIcon className="w-4 h-4" /> {hasCustomPath ? 'Vẽ lại' : 'Vẽ đường chỉ dẫn'}
+                  </button>
+                  {hasCustomPath && (
+                    <button
+                      onClick={onDeletePath}
+                      disabled={savingPath}
+                      title="Xoá đường chỉ dẫn"
+                      className="shrink-0 px-3 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-40 transition-colors"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={onStartDrawShape}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { MagnifyingGlassIcon, XMarkIcon, MapPinIcon, PhotoIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, XMarkIcon, MapPinIcon, PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
 import FloorSelector from './FloorSelector';
@@ -16,6 +16,9 @@ export default function RoomSearchPanel({
   onFloorChange,
   isAdmin,
   onUploadModal,
+  onDeleteAllPaths,
+  deletingAllPaths,
+  hasAnyPath,
 }) {
   const [query, setQuery] = useState('');
 
@@ -42,13 +45,25 @@ export default function RoomSearchPanel({
       <div className="p-3 border-b border-gray-100 space-y-2">
         <FloorSelector location={location} floor={floor} onChange={onFloorChange} />
         {isAdmin && (
-          <button
-            type="button"
-            onClick={onUploadModal}
-            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:border-ghn-orange hover:text-ghn-orange transition-colors"
-          >
-            <PhotoIcon className="w-3.5 h-3.5" /> Cập nhật sơ đồ tầng
-          </button>
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={onUploadModal}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:border-ghn-orange hover:text-ghn-orange transition-colors"
+            >
+              <PhotoIcon className="w-3.5 h-3.5" /> Cập nhật sơ đồ tầng
+            </button>
+            {hasAnyPath && (
+              <button
+                type="button"
+                onClick={onDeleteAllPaths}
+                disabled={deletingAllPaths}
+                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
+              >
+                <TrashIcon className="w-3.5 h-3.5" /> {deletingAllPaths ? 'Đang xoá...' : 'Xoá tất cả chỉ dẫn'}
+              </button>
+            )}
+          </div>
         )}
       </div>
 

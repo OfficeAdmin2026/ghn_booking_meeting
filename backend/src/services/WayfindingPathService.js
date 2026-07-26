@@ -40,6 +40,10 @@ class WayfindingPathService {
     await existing.destroy();
     return true;
   }
+
+  static async removeAll() {
+    return await WayfindingPath.destroy({ where: {} });
+  }
 }
 
 module.exports = WayfindingPathService;

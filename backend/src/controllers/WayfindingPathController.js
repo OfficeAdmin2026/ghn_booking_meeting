@@ -46,6 +46,19 @@ class WayfindingPathController {
       res.status(500).json({ error: { status: 500, message: error.message } });
     }
   }
+
+  /**
+   * DELETE /api/wayfinding-paths (admin only) — xoá tất cả
+   */
+  static async removeAll(req, res) {
+    try {
+      const count = await WayfindingPathService.removeAll();
+      res.json({ status: 'success', message: `Đã xoá ${count} đường chỉ dẫn` });
+    } catch (error) {
+      console.error('Remove all wayfinding paths error:', error);
+      res.status(500).json({ error: { status: 500, message: error.message } });
+    }
+  }
 }
 
 module.exports = WayfindingPathController;

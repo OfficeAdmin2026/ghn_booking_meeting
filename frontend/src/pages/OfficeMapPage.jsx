@@ -47,6 +47,8 @@ export default function OfficeMapPage() {
   const [savingPath, setSavingPath] = useState(false);
   const [savingShape, setSavingShape] = useState(false);
 
+  const [deletingAllPaths, setDeletingAllPaths] = useState(false);
+
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
@@ -312,6 +314,22 @@ export default function OfficeMapPage() {
       .finally(() => setSavingShape(false));
   };
 
+  const handleDeletePath = () => {
+    if (!selectedRoom) return;
+    setSavingPath(true);
+    wayfindingApi
+      .remove(selectedRoom.id)
+      .then(() => {
+        setSavedPathsByRoomId((m) => {
+          const next = { ...m };
+          delete next[selectedRoom.id];
+          return next;
+        });
+      })
+      .catch(() => {})
+      .finally(() => setSavingPath(false));
+  };
+
   const handleDeleteShape = () => {
     if (!selectedRoom) return;
     setSavingShape(true);
@@ -326,6 +344,16 @@ export default function OfficeMapPage() {
       })
       .catch(() => {})
       .finally(() => setSavingShape(false));
+  };
+
+  const handleDeleteAllPaths = () => {
+    if (!window.confirm('Xoá tất cả đường chỉ dẫn hiện tại? Hành động này không thể hoàn tác.')) return;
+    setDeletingAllPaths(true);
+    wayfindingApi
+      .removeAll()
+      .then(() => setSavedPathsByRoomId({}))
+      .catch(() => {})
+      .finally(() => setDeletingAllPaths(false));
   };
 
   const handleOpenUploadModal = () => {
@@ -395,6 +423,9 @@ export default function OfficeMapPage() {
           onFloorChange={handleFloorChange}
           isAdmin={isAdmin}
           onUploadModal={handleOpenUploadModal}
+          onDeleteAllPaths={handleDeleteAllPaths}
+          deletingAllPaths={deletingAllPaths}
+          hasAnyPath={Object.keys(savedPathsByRoomId).length > 0}
         />
         {roomsLoading ? (
           <div className="flex-1 rounded-xl border border-gray-200 bg-gray-50 animate-pulse" />
@@ -439,6 +470,7 @@ export default function OfficeMapPage() {
             onClearDraw={handleClearDraw}
             onCancelDraw={handleCancelDraw}
             onSavePath={handleSavePath}
+            onDeletePath={handleDeletePath}
             onSaveShape={handleSaveShape}
             onDeleteShape={handleDeleteShape}
             savingPath={savingPath}

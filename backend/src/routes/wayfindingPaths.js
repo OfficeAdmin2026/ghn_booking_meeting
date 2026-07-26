@@ -9,7 +9,10 @@ router.get('/', authMiddleware, WayfindingPathController.list);
 // PUT /api/wayfinding-paths/:roomId - chỉ admin lưu/ghi đè
 router.put('/:roomId', authMiddleware, adminMiddleware, WayfindingPathController.save);
 
-// DELETE /api/wayfinding-paths/:roomId - chỉ admin xoá
+// DELETE /api/wayfinding-paths - chỉ admin xoá tất cả (phải đặt trước /:roomId để không bị hiểu lầm)
+router.delete('/', authMiddleware, adminMiddleware, WayfindingPathController.removeAll);
+
+// DELETE /api/wayfinding-paths/:roomId - chỉ admin xoá từng phòng
 router.delete('/:roomId', authMiddleware, adminMiddleware, WayfindingPathController.remove);
 
 module.exports = router;
