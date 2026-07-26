@@ -1,19 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   MagnifyingGlassPlusIcon,
   MagnifyingGlassMinusIcon,
   ArrowsPointingOutIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
-import Room from './Room';
 import POIMarker from './POIMarker';
 import MiniMap from './MiniMap';
 import DirectionArrow from './DirectionArrow';
 import { nearestPoiOfType, screenPointToSvg, pointsToSvgString } from '../../utils/svgGeometry';
 import { findCorridorPath } from '../../utils/corridorPath';
-
 
 export default function MapCanvas({
   floorKey,
@@ -21,17 +19,13 @@ export default function MapCanvas({
   roomsByCode,
   statusByCode,
   selectedCode,
-  highlightedCode,
-  hoveredCode,
-  onRoomHover,
-  onRoomClick,
-  filters,
   focusRequest,
   showDirection,
   savedPathsByRoomId,
   activeDrawTool,
   drawingPoints,
   onCanvasPoint,
+  onRectComplete,
   isAdmin,
   onAnnotationClick,
 }) {
@@ -39,6 +33,7 @@ export default function MapCanvas({
   const wrapperRef = useRef(null);
   const svgRef = useRef(null);
   const [fullscreen, setFullscreen] = useState(false);
+  const [dragState, setDragState] = useState(null); // { start: {x,y}, current: {x,y} }
 
   useEffect(() => {
     const onFsChange = () => setFullscreen(!!document.fullscreenElement);
@@ -51,8 +46,6 @@ export default function MapCanvas({
     transformRef.current.zoomToElement(focusRequest.domId, 1.3, 600);
   }, [focusRequest]);
 
-  // Mũi tên chỉ đường: ưu tiên đường admin đã vẽ tay và lưu (chính xác nhất);
-  // nếu phòng chưa có, fallback về đường tự tính qua corridorGraph của tầng.
   const directionPath = useMemo(() => {
     if (!floorData || !showDirection || !selectedCode) return null;
     const room = roomsByCode[selectedCode];
@@ -67,8 +60,44 @@ export default function MapCanvas({
     return findCorridorPath(floorData.corridorGraph, from, geometry.centroid);
   }, [floorData, showDirection, selectedCode, roomsByCode, savedPathsByRoomId]);
 
+  // Rect drag handlers (shape drawing mode)
+  const handleMouseDown = (e) => {
+    if (activeDrawTool !== 'shape' || !svgRef.current) return;
+    e.stopPropagation();
+    const point = screenPointToSvg(svgRef.current, e.clientX, e.clientY);
+    setDragState({ start: point, current: point });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragState || !svgRef.current) return;
+    const point = screenPointToSvg(svgRef.current, e.clientX, e.clientY);
+    setDragState((s) => s ? { ...s, current: point } : null);
+  };
+
+  const handleMouseUp = (e) => {
+    if (!dragState || !svgRef.current) return;
+    const point = screenPointToSvg(svgRef.current, e.clientX, e.clientY);
+    const { start } = dragState;
+    setDragState(null);
+
+    const x1 = Math.min(start.x, point.x);
+    const y1 = Math.min(start.y, point.y);
+    const x2 = Math.max(start.x, point.x);
+    const y2 = Math.max(start.y, point.y);
+
+    if (x2 - x1 > 10 && y2 - y1 > 10) {
+      onRectComplete?.([
+        { x: x1, y: y1 },
+        { x: x2, y: y1 },
+        { x: x2, y: y2 },
+        { x: x1, y: y2 },
+      ]);
+    }
+  };
+
+  // Click handler only for path mode
   const handleSvgClick = (e) => {
-    if (!activeDrawTool || !svgRef.current) return;
+    if (activeDrawTool !== 'path' || !svgRef.current) return;
     const point = screenPointToSvg(svgRef.current, e.clientX, e.clientY);
     onCanvasPoint?.(point);
   };
@@ -78,6 +107,11 @@ export default function MapCanvas({
   }
 
   const { canvas, rooms, pois } = floorData;
+
+  // Room geometry for the direction target (need centroid for focusRequest id)
+  const directionTargetGeometry = showDirection && selectedCode
+    ? rooms.find((r) => r.code === selectedCode)
+    : null;
 
   return (
     <div ref={wrapperRef} className="relative flex-1 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
@@ -141,6 +175,9 @@ export default function MapCanvas({
                 viewBox={`0 0 ${canvas.width} ${canvas.height}`}
                 className={`w-full h-full ${activeDrawTool ? 'cursor-crosshair' : ''}`}
                 onClick={handleSvgClick}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
               >
                 <defs>
                   <marker id="direction-arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
@@ -159,35 +196,39 @@ export default function MapCanvas({
                   />
                 )}
 
-                {filters.room &&
-                  rooms.map((r) => {
-                    const room = roomsByCode[r.code];
-                    if (!room) return null;
-                    // Đang vẽ lại khung của chính phòng này — ẩn khung cũ để nhìn rõ ảnh nền bên dưới mà đồ theo
-                    if (activeDrawTool === 'shape' && selectedCode === r.code) return null;
-                    return (
-                      <g key={r.code} id={`room-${r.code}`}>
-                        <Room
-                          code={r.code}
-                          points={r.points}
-                          centroid={r.centroid}
-                          label={room.name}
-                          status={statusByCode[room.id] || 'available'}
-                          selected={selectedCode === r.code}
-                          highlighted={highlightedCode === r.code}
-                          hovered={hoveredCode === r.code}
-                          onHover={onRoomHover}
-                          onClick={activeDrawTool ? undefined : onRoomClick}
-                          hideLabel={!!floorData.background}
-                        />
-                      </g>
-                    );
-                  })}
+                {/* Khung phòng: chỉ hiện khi đang xem chỉ dẫn đến phòng đó — đỏ nhạt + nhấp nháy */}
+                {directionTargetGeometry && !activeDrawTool && (
+                  <motion.polygon
+                    key={selectedCode}
+                    points={directionTargetGeometry.points}
+                    fill="#FEE2E2"
+                    stroke="#DC2626"
+                    strokeWidth={3}
+                    animate={{ fillOpacity: [0.7, 0.2, 0.7] }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                    className="pointer-events-none"
+                  />
+                )}
 
-                {/* Tầng đã có ảnh sơ đồ thật thì icon/note POI tĩnh đã có sẵn trong ảnh, không vẽ chồng nữa —
-                    riêng khu vực chung do admin tự vẽ (custom) luôn hiển thị vì đó chính là mục đích tính năng này */}
+                {/* Invisible hit areas for room clicks (không hiện khung nhưng vẫn clickable) */}
+                {!activeDrawTool && rooms.map((r) => {
+                  const room = roomsByCode[r.code];
+                  if (!room) return null;
+                  return (
+                    <g key={r.code} id={`room-${r.code}`}>
+                      <polygon
+                        points={r.points}
+                        fill="transparent"
+                        stroke="none"
+                        className="cursor-pointer"
+                        onClick={() => {}}
+                      />
+                    </g>
+                  );
+                })}
+
                 {pois
-                  .filter((p) => filters[p.type] && (p.custom || !floorData.background))
+                  .filter((p) => p.custom || !floorData.background)
                   .map((p) => (
                     <g key={p.id} id={`poi-${p.id}`}>
                       <POIMarker
@@ -201,17 +242,29 @@ export default function MapCanvas({
                   {!activeDrawTool && directionPath && <DirectionArrow key={selectedCode} points={directionPath} />}
                 </AnimatePresence>
 
-                {activeDrawTool && drawingPoints?.length > 0 && (
+                {/* Drag preview: hình chữ nhật đang kéo (shape mode) */}
+                {activeDrawTool === 'shape' && dragState && (
+                  <rect
+                    x={Math.min(dragState.start.x, dragState.current.x)}
+                    y={Math.min(dragState.start.y, dragState.current.y)}
+                    width={Math.abs(dragState.current.x - dragState.start.x)}
+                    height={Math.abs(dragState.current.y - dragState.start.y)}
+                    fill="#FF6C0A"
+                    fillOpacity={0.15}
+                    stroke="#FF6C0A"
+                    strokeWidth={2}
+                    strokeDasharray="6 5"
+                    className="pointer-events-none"
+                  />
+                )}
+
+                {/* Path drawing: click-by-click points */}
+                {activeDrawTool === 'path' && drawingPoints?.length > 0 && (
                   <g className="pointer-events-none">
                     {drawingPoints.length > 1 && (
                       <polyline
-                        points={pointsToSvgString(
-                          (activeDrawTool === 'shape' || activeDrawTool === 'annotation') && drawingPoints.length >= 3
-                            ? [...drawingPoints, drawingPoints[0]]
-                            : drawingPoints
-                        )}
-                        fill={activeDrawTool === 'shape' || activeDrawTool === 'annotation' ? '#FF6C0A' : 'none'}
-                        fillOpacity={activeDrawTool === 'shape' || activeDrawTool === 'annotation' ? 0.15 : 0}
+                        points={pointsToSvgString(drawingPoints)}
+                        fill="none"
                         stroke="#FF6C0A"
                         strokeWidth={3}
                         strokeDasharray="6 5"

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { roomsApi, bookingsApi, wayfindingApi, roomShapesApi, floorBackgroundsApi, mapAnnotationsApi } from '../api';
-import { getFloorData, getFloorKey, normalizeLocation, DEFAULT_LOCATION, DEFAULT_FLOOR, DEFAULT_FILTERS } from '../data/officeMapData';
+import { getFloorData, getFloorKey, normalizeLocation, DEFAULT_LOCATION, DEFAULT_FLOOR } from '../data/officeMapData';
 import { isRoomOccupiedNow } from '../utils/roomStatus';
 import { polygonCentroid, pointsToSvgString } from '../utils/svgGeometry';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,10 +34,8 @@ export default function OfficeMapPage() {
   const [now, setNow] = useState(() => new Date());
 
   const [selectedCode, setSelectedCode] = useState(null);
-  const [hoveredCode, setHoveredCode] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [focusRequest, setFocusRequest] = useState(null);
-  const [highlightedCode, setHighlightedCode] = useState(null);
 
   const [savedPathsByRoomId, setSavedPathsByRoomId] = useState({});
   const [savedShapesByRoomId, setSavedShapesByRoomId] = useState({});
@@ -211,8 +209,6 @@ export default function OfficeMapPage() {
       setPanelOpen(true);
       if (pending.highlight) {
         setFocusRequest({ domId: `room-${room.code}`, nonce: Date.now() });
-        setHighlightedCode(room.code);
-        setTimeout(() => setHighlightedCode(null), 4000);
       }
     }
     pendingDeepLink.current = { roomId: null, highlight: false };
@@ -253,12 +249,6 @@ export default function OfficeMapPage() {
     setFloor(nextFloor);
     setSearchParams({ location, floor: nextFloor }, { replace: true });
     setPanelOpen(false);
-    exitDrawMode();
-  };
-
-  const handleRoomClick = (code) => {
-    setSelectedCode(code);
-    setPanelOpen(true);
     exitDrawMode();
   };
 
@@ -309,6 +299,19 @@ export default function OfficeMapPage() {
       .save(selectedRoom.id, drawingPoints)
       .then(() => {
         setSavedShapesByRoomId((m) => ({ ...m, [selectedRoom.id]: drawingPoints }));
+        exitDrawMode();
+      })
+      .catch(() => {})
+      .finally(() => setSavingShape(false));
+  };
+
+  const handleRectComplete = (points) => {
+    if (!selectedRoom) return;
+    setSavingShape(true);
+    roomShapesApi
+      .save(selectedRoom.id, points)
+      .then(() => {
+        setSavedShapesByRoomId((m) => ({ ...m, [selectedRoom.id]: points }));
         exitDrawMode();
       })
       .catch(() => {})
@@ -451,17 +454,13 @@ export default function OfficeMapPage() {
             roomsByCode={roomsByCode}
             statusByCode={statusByCode}
             selectedCode={selectedCode}
-            highlightedCode={highlightedCode}
-            hoveredCode={hoveredCode}
-            onRoomHover={setHoveredCode}
-            onRoomClick={handleRoomClick}
-            filters={DEFAULT_FILTERS}
             focusRequest={focusRequest}
             showDirection={panelOpen}
             savedPathsByRoomId={savedPathsByRoomId}
             activeDrawTool={activeDrawTool}
             drawingPoints={drawingPoints}
             onCanvasPoint={handleCanvasPoint}
+            onRectComplete={handleRectComplete}
             isAdmin={isAdmin}
           />
         )}
@@ -486,7 +485,6 @@ export default function OfficeMapPage() {
             onCancelDraw={handleCancelDraw}
             onSavePath={handleSavePath}
             onDeletePath={handleDeletePath}
-            onSaveShape={handleSaveShape}
             onDeleteShape={handleDeleteShape}
             savingPath={savingPath}
             savingShape={savingShape}

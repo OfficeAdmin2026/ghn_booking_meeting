@@ -47,7 +47,6 @@ export default function InfoPanel({
   onCancelDraw,
   onSavePath,
   onDeletePath,
-  onSaveShape,
   onDeleteShape,
   savingPath,
   savingShape,
@@ -190,12 +189,22 @@ export default function InfoPanel({
                   )}
                 </div>
               </div>
+            ) : activeDrawTool === 'shape' ? (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500">
+                  Kéo chuột trên bản đồ để vẽ khung phòng hình chữ nhật. Khung sẽ được lưu tự động.
+                </p>
+                <button
+                  onClick={onCancelDraw}
+                  className="w-full text-xs font-medium text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+                >
+                  Huỷ
+                </button>
+              </div>
             ) : (
               <div className="space-y-2">
                 <p className="text-xs text-gray-500">
-                  {activeDrawTool === 'shape'
-                    ? `Nhấp vào bản đồ để vẽ khung phòng (cần ít nhất 3 điểm — ${drawingPoints?.length || 0} điểm đã thêm).`
-                    : `Nhấp vào bản đồ để thêm điểm (${drawingPoints?.length || 0} điểm đã thêm).`}
+                  Nhấp vào bản đồ để thêm điểm ({drawingPoints?.length || 0} điểm đã thêm).
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -221,15 +230,12 @@ export default function InfoPanel({
                     Huỷ
                   </button>
                   <button
-                    onClick={activeDrawTool === 'shape' ? onSaveShape : onSavePath}
-                    disabled={
-                      (drawingPoints?.length || 0) < (activeDrawTool === 'shape' ? 3 : 2) ||
-                      (activeDrawTool === 'shape' ? savingShape : savingPath)
-                    }
+                    onClick={onSavePath}
+                    disabled={(drawingPoints?.length || 0) < 2 || savingPath}
                     className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-semibold text-white bg-ghn-orange rounded-lg px-3 py-1.5 hover:bg-ghn-orange-dark disabled:opacity-40 transition-colors"
                   >
                     <CheckIcon className="w-3.5 h-3.5" />{' '}
-                    {(activeDrawTool === 'shape' ? savingShape : savingPath) ? 'Đang lưu...' : 'Lưu'}
+                    {savingPath ? 'Đang lưu...' : 'Lưu'}
                   </button>
                 </div>
               </div>
