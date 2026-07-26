@@ -13,6 +13,12 @@ import DirectionArrow from './DirectionArrow';
 import { nearestPoiOfType, screenPointToSvg, pointsToSvgString } from '../../utils/svgGeometry';
 import { findCorridorPath } from '../../utils/corridorPath';
 
+function orthoSnap(prev, curr) {
+  const dx = Math.abs(curr.x - prev.x);
+  const dy = Math.abs(curr.y - prev.y);
+  return dx >= dy ? { x: curr.x, y: prev.y } : { x: prev.x, y: curr.y };
+}
+
 export default function MapCanvas({
   floorKey,
   floorData,
@@ -34,6 +40,7 @@ export default function MapCanvas({
   const svgRef = useRef(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [dragState, setDragState] = useState(null); // { start: {x,y}, current: {x,y} }
+  const [cursorSvgPos, setCursorSvgPos] = useState(null);
 
   useEffect(() => {
     const onFsChange = () => setFullscreen(!!document.fullscreenElement);
@@ -69,9 +76,10 @@ export default function MapCanvas({
   };
 
   const handleMouseMove = (e) => {
-    if (!dragState || !svgRef.current) return;
+    if (!svgRef.current) return;
     const point = screenPointToSvg(svgRef.current, e.clientX, e.clientY);
-    setDragState((s) => s ? { ...s, current: point } : null);
+    if (dragState) setDragState((s) => s ? { ...s, current: point } : null);
+    if (activeDrawTool === 'path') setCursorSvgPos(point);
   };
 
   const handleMouseUp = (e) => {
@@ -98,7 +106,9 @@ export default function MapCanvas({
   // Click handler only for path mode
   const handleSvgClick = (e) => {
     if (activeDrawTool !== 'path' || !svgRef.current) return;
-    const point = screenPointToSvg(svgRef.current, e.clientX, e.clientY);
+    const raw = screenPointToSvg(svgRef.current, e.clientX, e.clientY);
+    const lastPt = drawingPoints?.length > 0 ? drawingPoints[drawingPoints.length - 1] : null;
+    const point = lastPt ? orthoSnap(lastPt, raw) : raw;
     onCanvasPoint?.(point);
   };
 
@@ -128,6 +138,16 @@ export default function MapCanvas({
       >
         {(controls) => (
           <>
+            {/* Orthogonal snap badge */}
+            {activeDrawTool === 'path' && (
+              <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-white/90 border border-ghn-orange/40 text-ghn-orange text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm pointer-events-none select-none">
+                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                  <path d="M2 14 L2 2 L14 2" />
+                </svg>
+                Vuông góc
+              </div>
+            )}
+
             {/* Toolbar */}
             <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
               <button
@@ -178,6 +198,7 @@ export default function MapCanvas({
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
+                onMouseLeave={() => setCursorSvgPos(null)}
               >
                 <defs>
                   <marker id="direction-arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
@@ -275,6 +296,43 @@ export default function MapCanvas({
                     ))}
                   </g>
                 )}
+
+                {/* Ghost preview: snapped position while hovering */}
+                {activeDrawTool === 'path' && cursorSvgPos && drawingPoints?.length > 0 && (() => {
+                  const last = drawingPoints[drawingPoints.length - 1];
+                  const snapped = orthoSnap(last, cursorSvgPos);
+                  const isHoriz = snapped.y === last.y;
+                  return (
+                    <g className="pointer-events-none">
+                      <line
+                        x1={last.x} y1={last.y}
+                        x2={snapped.x} y2={snapped.y}
+                        stroke="#FF6C0A"
+                        strokeWidth={2}
+                        strokeOpacity={0.45}
+                        strokeDasharray="5 4"
+                      />
+                      {/* right-angle indicator */}
+                      {(() => {
+                        const size = 12;
+                        const sx = isHoriz ? (snapped.x > last.x ? last.x + size : last.x - size) : last.x;
+                        const sy = isHoriz ? last.y : (snapped.y > last.y ? last.y + size : last.y - size);
+                        const cx = isHoriz ? sx : last.x + (snapped.x > last.x ? size : -size);
+                        const cy = isHoriz ? last.y + (snapped.y > last.y ? size : -size) : sy;
+                        return (
+                          <path
+                            d={`M ${sx} ${last.y} L ${cx} ${cy} L ${last.x} ${sy}`}
+                            fill="none"
+                            stroke="#FF6C0A"
+                            strokeWidth={1.5}
+                            strokeOpacity={0.5}
+                          />
+                        );
+                      })()}
+                      <circle cx={snapped.x} cy={snapped.y} r={5} fill="#FF6C0A" fillOpacity={0.4} stroke="white" strokeWidth={1.5} strokeOpacity={0.6} />
+                    </g>
+                  );
+                })()}
               </svg>
             </TransformComponent>
           </>

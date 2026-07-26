@@ -204,7 +204,7 @@ export default function InfoPanel({
             ) : (
               <div className="space-y-2">
                 <p className="text-xs text-gray-500">
-                  Nhấp vào bản đồ để thêm điểm ({drawingPoints?.length || 0} điểm đã thêm).
+                  Nhấp vào bản đồ để thêm điểm ({drawingPoints?.length || 0} điểm đã thêm). Điểm tự căn vuông góc 90° với điểm trước.
                 </p>
                 <div className="flex gap-2">
                   <button
