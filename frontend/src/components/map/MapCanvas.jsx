@@ -290,11 +290,19 @@ export default function MapCanvas({
                     </g>
                   ))}
 
-                {/* Invisible rect spanning full direction path bbox — used by focusRequest to zoom-to-fit */}
+                {/* Invisible rect spanning full direction path + room polygon bbox — used by focusRequest to zoom-to-fit */}
                 {!activeDrawTool && directionPath && directionPath.length >= 2 && (() => {
                   const pad = 80;
-                  const xs = directionPath.map((p) => p.x);
-                  const ys = directionPath.map((p) => p.y);
+                  // Parse room polygon vertices so the full room shape is visible, not just its centroid
+                  const roomPts = directionTargetGeometry?.points
+                    ? directionTargetGeometry.points.trim().split(/\s+/).map((pair) => {
+                        const [x, y] = pair.split(',').map(Number);
+                        return { x, y };
+                      }).filter((p) => !isNaN(p.x) && !isNaN(p.y))
+                    : [];
+                  const allPts = [...directionPath, ...roomPts];
+                  const xs = allPts.map((p) => p.x);
+                  const ys = allPts.map((p) => p.y);
                   const x = Math.min(...xs) - pad;
                   const y = Math.min(...ys) - pad;
                   const w = Math.max(Math.max(...xs) - Math.min(...xs) + 2 * pad, 300);
