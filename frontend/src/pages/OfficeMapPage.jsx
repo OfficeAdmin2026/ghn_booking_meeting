@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { PhotoIcon } from '@heroicons/react/24/outline';
 import { roomsApi, bookingsApi, wayfindingApi, roomShapesApi, floorBackgroundsApi, mapAnnotationsApi } from '../api';
 import { getFloorData, getFloorKey, normalizeLocation, DEFAULT_LOCATION, DEFAULT_FLOOR, DEFAULT_FILTERS } from '../data/officeMapData';
 import { isRoomOccupiedNow } from '../utils/roomStatus';
 import { polygonCentroid, pointsToSvgString } from '../utils/svgGeometry';
 import { useAuth } from '../contexts/AuthContext';
-import FloorSelector from '../components/map/FloorSelector';
 import MapCanvas from '../components/map/MapCanvas';
 import RoomSearchPanel from '../components/map/RoomSearchPanel';
 import InfoPanel from '../components/map/InfoPanel';
@@ -383,29 +381,6 @@ export default function OfficeMapPage() {
 
   return (
     <div className="h-full flex flex-col bg-white">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-200 px-4 sm:px-6 py-3">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Bản đồ văn phòng</h1>
-            <p className="text-xs text-gray-500">Xem vị trí phòng họp, phòng ban và tiện ích trong toà nhà</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <FloorSelector location={location_} floor={floor} onChange={handleFloorChange} />
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={handleOpenUploadModal}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:border-ghn-orange hover:text-ghn-orange transition-colors"
-                title="Cập nhật sơ đồ tầng"
-              >
-                <PhotoIcon className="w-3.5 h-3.5" /> Sơ đồ tầng
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Map area */}
       <div className="relative flex-1 flex p-4 gap-3 overflow-hidden">
         <RoomSearchPanel
@@ -417,6 +392,10 @@ export default function OfficeMapPage() {
           hasBackground={!!floorData?.background}
           inputRef={searchInputRef}
           floor={floor}
+          location={location_}
+          onFloorChange={handleFloorChange}
+          isAdmin={isAdmin}
+          onUploadModal={handleOpenUploadModal}
         />
         {roomsLoading ? (
           <div className="flex-1 rounded-xl border border-gray-200 bg-gray-50 animate-pulse" />
