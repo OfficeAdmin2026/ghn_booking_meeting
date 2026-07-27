@@ -239,6 +239,7 @@ export default function CarWeekCalendar({ bookings, isAdmin, onWeekChange, onCre
                   return (
                     <div
                       key={b.id}
+                      onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => { if (isAdmin) { e.stopPropagation(); onEditBooking?.(b); } }}
                       className={`absolute inset-x-0.5 rounded-md px-1.5 py-0.5 overflow-hidden border ${
                         hasDetails
