@@ -91,6 +91,27 @@ router.put('/car-rules', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/admin/car-contact-note - All authenticated users can read
+router.get('/car-contact-note', authMiddleware, async (req, res) => {
+  try {
+    const settings = await AdminSettingService.getAll();
+    res.json({ status: 'success', data: { note: settings.car_booking_contact_note ?? '' } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// PUT /api/admin/car-contact-note - Admin only
+router.put('/car-contact-note', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { note } = req.body;
+    await AdminSettingService.updateSettings({ car_booking_contact_note: note ?? '' });
+    res.json({ status: 'success', data: { note: note ?? '' } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
 // GET /api/admin/bookings - List all bookings
 router.get('/bookings', authMiddleware, adminMiddleware, BookingController.getAdminBookings);
 

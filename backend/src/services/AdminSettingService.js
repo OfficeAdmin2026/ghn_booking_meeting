@@ -6,6 +6,7 @@ const DEFAULTS = {
   booking_freeze_weekly_time: '14:00', // HH:mm
   car_booking_details_visible: 'false',
   car_booking_rules: '',
+  car_booking_contact_note: 'Thấy khung giờ trống? Nhắn Admin để đặt xe.',
 };
 
 class AdminSettingService {
@@ -108,6 +109,7 @@ class AdminSettingService {
       'meeting_room_rules',
       'car_booking_details_visible',
       'car_booking_rules',
+      'car_booking_contact_note',
     ];
     for (const [key, value] of Object.entries(data)) {
       if (!ALLOWED_KEYS.includes(key)) continue;

@@ -10,6 +10,7 @@ import {
   PlusIcon,
   PencilIcon,
   Square2StackIcon,
+  CheckIcon,
 } from '@heroicons/react/24/outline';
 
 export default function CarsPage() {
@@ -28,6 +29,11 @@ export default function CarsPage() {
   const [carFormOpen, setCarFormOpen] = useState(false);
   const [editingCar, setEditingCar] = useState(null);
   const [bookingModal, setBookingModal] = useState(null); // { mode: 'create'|'edit', ...slotOrBooking }
+
+  const [contactNote, setContactNote] = useState('');
+  const [noteEditing, setNoteEditing] = useState(false);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [noteSaving, setNoteSaving] = useState(false);
 
   const fetchCars = useCallback(() => {
     setCarsLoading(true);
@@ -53,6 +59,12 @@ export default function CarsPage() {
     }
   }, [isAdmin]);
 
+  useEffect(() => {
+    adminApi.getCarContactNote()
+      .then((res) => setContactNote(res.data.data?.note || ''))
+      .catch(() => {});
+  }, []);
+
   const fetchBookings = useCallback(() => {
     if (!selectedCarId || !weekRange) return;
     carBookingsApi.getBookings(selectedCarId, weekRange.start, weekRange.end)
@@ -73,6 +85,15 @@ export default function CarsPage() {
       .then(() => { setDetailsVisible(next); fetchBookings(); })
       .catch(() => {})
       .finally(() => setSavingVisibility(false));
+  };
+
+  const handleEditNote = () => { setNoteDraft(contactNote); setNoteEditing(true); };
+  const handleSaveNote = () => {
+    setNoteSaving(true);
+    adminApi.updateCarContactNote(noteDraft)
+      .then(() => { setContactNote(noteDraft); setNoteEditing(false); })
+      .catch(() => {})
+      .finally(() => setNoteSaving(false));
   };
 
   const selectedCar = cars.find((c) => c.id === selectedCarId) || null;
@@ -145,11 +166,40 @@ export default function CarsPage() {
               </label>
             )}
 
-            {!isAdmin && (
-              <p className="mt-3 pt-3 border-t border-gray-100 text-[11px] text-gray-400 leading-relaxed">
-                Thấy khung giờ trống? Nhắn Admin để đặt xe.
-              </p>
-            )}
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              {noteEditing ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={noteDraft}
+                    onChange={(e) => setNoteDraft(e.target.value)}
+                    rows={2}
+                    className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 resize-none focus:outline-none focus:border-ghn-orange"
+                    placeholder="VD: Thấy khung giờ trống? Nhắn Admin để đặt xe."
+                  />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={handleSaveNote} disabled={noteSaving}
+                      className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-semibold text-white bg-ghn-orange rounded-lg px-2 py-1 hover:bg-ghn-orange-dark disabled:opacity-40 transition-colors">
+                      <CheckIcon className="w-3.5 h-3.5" /> {noteSaving ? 'Đang lưu...' : 'Lưu'}
+                    </button>
+                    <button type="button" onClick={() => setNoteEditing(false)}
+                      className="flex-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50 transition-colors">
+                      Huỷ
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-1.5">
+                  <p className="flex-1 text-[11px] text-gray-400 leading-relaxed">
+                    {contactNote || (isAdmin ? 'Chưa có ghi chú — bấm bút để thêm.' : '')}
+                  </p>
+                  {isAdmin && (
+                    <button type="button" onClick={handleEditNote} className="shrink-0 text-gray-300 hover:text-ghn-orange transition-colors">
+                      <PencilIcon className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <CarRulesPanel />

@@ -60,6 +60,10 @@ export const adminApi = {
 
   updateCarRules: (rules) => api.put('/admin/car-rules', { rules }),
 
+  getCarContactNote: () => api.get('/admin/car-contact-note'),
+
+  updateCarContactNote: (note) => api.put('/admin/car-contact-note', { note }),
+
   getUsers: (params) => api.get('/admin/users', { params }),
 
   findUserByEmail: (email) => api.post('/admin/users/by-email', { email }),
