@@ -39,6 +39,8 @@ CarBooking.belongsTo(Car, { foreignKey: 'car_id' });
 User.hasMany(CarBooking, { foreignKey: 'created_by', as: 'carBookings' });
 CarBooking.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 
+CarBooking.belongsTo(User, { foreignKey: 'requester_user_id', as: 'requester' });
+
 module.exports = {
   User,
   Room,

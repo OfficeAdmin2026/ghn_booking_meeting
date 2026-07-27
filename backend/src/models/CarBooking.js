@@ -23,10 +23,19 @@ const CarBooking = sequelize.define('car_bookings', {
       key: 'id'
     }
   },
+  requester_user_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    comment: 'Nhân viên thực tế sử dụng xe (admin chọn lúc đặt hộ)'
+  },
   title: {
     type: DataTypes.STRING,
     allowNull: false,
-    comment: 'Mục đích / người yêu cầu, do admin nhập'
+    comment: 'Mục đích chuyến đi, do admin nhập'
   },
   start_time: {
     type: DataTypes.DATE,

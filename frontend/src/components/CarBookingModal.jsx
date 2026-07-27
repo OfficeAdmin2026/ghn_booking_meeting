@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { carBookingsApi } from '../api';
-import { XMarkIcon, ClockIcon, ExclamationTriangleIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { useEffect, useRef, useState } from 'react';
+import { carBookingsApi, adminApi } from '../api';
+import { XMarkIcon, ClockIcon, ExclamationTriangleIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 function toVNTimeStr(isoStr) {
   return new Date(isoStr).toLocaleTimeString('vi-VN', {
@@ -24,6 +24,83 @@ function fmtTime(isoStr) {
   });
 }
 
+/** Ô tìm & chọn người sử dụng xe (autocomplete theo tên/MSNV/email) */
+function RequesterPicker({ selected, onSelect, onClear }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (query.trim().length < 2) { setResults([]); return; }
+    setSearching(true);
+    debounceRef.current = setTimeout(() => {
+      adminApi.searchUsers(query.trim())
+        .then((res) => setResults(res.data.data?.users || []))
+        .catch(() => setResults([]))
+        .finally(() => setSearching(false));
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [query]);
+
+  if (selected) {
+    return (
+      <div className="flex items-center justify-between gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-800 truncate">{selected.full_name}</p>
+          <p className="text-xs text-gray-400">
+            {[selected.employee_id, selected.department].filter(Boolean).join(' • ') || '—'}
+          </p>
+        </div>
+        <button type="button" onClick={onClear} className="shrink-0 text-gray-400 hover:text-red-500 transition-colors">
+          <XMarkIcon className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          placeholder="Tìm theo tên, MSNV hoặc email..."
+          className="input-field pl-9"
+        />
+      </div>
+      {open && query.trim().length >= 2 && (
+        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+          {searching ? (
+            <p className="px-3 py-2 text-xs text-gray-400">Đang tìm...</p>
+          ) : results.length === 0 ? (
+            <p className="px-3 py-2 text-xs text-gray-400">Không tìm thấy người dùng</p>
+          ) : (
+            results.map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => { onSelect(u); setQuery(''); setResults([]); setOpen(false); }}
+                className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+              >
+                <p className="text-sm font-medium text-gray-800">{u.full_name}</p>
+                <p className="text-xs text-gray-400">
+                  {[u.employee_id, u.department, u.email].filter(Boolean).join(' • ')}
+                </p>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CarBookingModal({ car, booking, startTime, endTime, onClose, onSaved }) {
   const isEdit = !!booking;
   const initialStart = booking ? booking.start_time : startTime;
@@ -38,6 +115,7 @@ export default function CarBookingModal({ car, booking, startTime, endTime, onCl
   const [endInput, setEndInput] = useState(() => toVNTimeStr(initialEnd));
   const [title, setTitle] = useState(booking?.title || '');
   const [notes, setNotes] = useState(booking?.notes || '');
+  const [requester, setRequester] = useState(booking?.requester || null);
   const [cancelMessage, setCancelMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -63,6 +141,7 @@ export default function CarBookingModal({ car, booking, startTime, endTime, onCl
     setEndInput(toVNTimeStr(booking.end_time));
     setTitle(booking.title || '');
     setNotes(booking.notes || '');
+    setRequester(booking.requester || null);
     setError('');
     setMode('form');
   };
@@ -73,14 +152,14 @@ export default function CarBookingModal({ car, booking, startTime, endTime, onCl
     if (!timeValid) { setError('Giờ kết thúc phải sau giờ bắt đầu'); return; }
     setLoading(true);
     try {
+      const payload = {
+        title, notes, start_time: actualStart, end_time: actualEnd,
+        requester_user_id: requester?.id || null,
+      };
       if (isEdit) {
-        await carBookingsApi.update(booking.id, {
-          title, notes, start_time: actualStart, end_time: actualEnd,
-        });
+        await carBookingsApi.update(booking.id, payload);
       } else {
-        await carBookingsApi.create({
-          car_id: car.id, title, notes, start_time: actualStart, end_time: actualEnd,
-        });
+        await carBookingsApi.create({ car_id: car.id, ...payload });
       }
       onSaved?.();
       onClose();
@@ -139,9 +218,27 @@ export default function CarBookingModal({ car, booking, startTime, endTime, onCl
                 </div>
               </div>
 
-              <div>
-                <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Mục đích / Người yêu cầu</p>
-                <p className="text-sm font-semibold text-gray-800">{booking.title || '—'}</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <div>
+                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Mục đích</p>
+                  <p className="text-sm font-semibold text-gray-800">{booking.title || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Người sử dụng xe</p>
+                  <p className="text-sm font-semibold text-gray-800">{booking.requester?.full_name || '—'}</p>
+                </div>
+                {booking.requester && (
+                  <>
+                    <div>
+                      <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">MSNV</p>
+                      <p className="text-sm font-semibold text-gray-800">{booking.requester.employee_id || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Phòng ban</p>
+                      <p className="text-sm font-semibold text-gray-800">{booking.requester.department || '—'}</p>
+                    </div>
+                  </>
+                )}
               </div>
 
               {booking.notes && (
@@ -202,10 +299,15 @@ export default function CarBookingModal({ car, booking, startTime, endTime, onCl
               <form onSubmit={handleSubmit} className="space-y-4 mt-5">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Mục đích / Người yêu cầu <span className="text-red-500">*</span>
+                    Mục đích <span className="text-red-500">*</span>
                   </label>
                   <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-                    className="input-field" placeholder="VD: Chị Lan - Đi khách" required maxLength={200} autoFocus />
+                    className="input-field" placeholder="VD: Đi khách, giao hàng gấp..." required maxLength={200} autoFocus />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Người sử dụng xe</label>
+                  <RequesterPicker selected={requester} onSelect={setRequester} onClear={() => setRequester(null)} />
+                  <p className="mt-1 text-[11px] text-gray-400">Chọn nhân viên thực tế dùng xe để báo cáo lấy đúng MSNV/phòng ban.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Ghi chú</label>

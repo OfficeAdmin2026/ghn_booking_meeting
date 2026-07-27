@@ -49,7 +49,8 @@ class CarBookingService {
           end_time: { [Op.gt]: startDate }
         },
         include: [
-          { model: User, as: 'creator', attributes: ['id', 'full_name'] }
+          { model: User, as: 'creator', attributes: ['id', 'full_name'] },
+          { model: User, as: 'requester', attributes: ['id', 'full_name', 'employee_id', 'department'] },
         ],
         order: [['start_time', 'ASC']]
       });
@@ -75,7 +76,7 @@ class CarBookingService {
    */
   static async createBooking(adminUserId, bookingData) {
     try {
-      const { car_id, title, start_time, end_time, notes } = bookingData;
+      const { car_id, title, start_time, end_time, notes, requester_user_id } = bookingData;
 
       if (!car_id || !title || !start_time || !end_time) {
         throw new Error('Missing required fields');
@@ -103,6 +104,7 @@ class CarBookingService {
           return CarBooking.create({
             car_id,
             created_by: adminUserId,
+            requester_user_id: requester_user_id || null,
             title,
             start_time: startTime,
             end_time: endTime,
@@ -128,7 +130,7 @@ class CarBookingService {
         throw new Error('Car booking not found');
       }
 
-      const { title, notes, start_time, end_time } = updateData;
+      const { title, notes, start_time, end_time, requester_user_id } = updateData;
       const newStart = start_time ? new Date(start_time) : new Date(booking.start_time);
       const newEnd = end_time ? new Date(end_time) : new Date(booking.end_time);
 
@@ -136,7 +138,7 @@ class CarBookingService {
         throw new Error('end_time must be after start_time');
       }
       if (title !== undefined && !title.trim()) {
-        throw new Error('Mục đích / Người yêu cầu không được để trống');
+        throw new Error('Mục đích không được để trống');
       }
 
       const conflict = await this.checkTimeConflict(booking.car_id, newStart, newEnd, bookingId);
@@ -146,6 +148,7 @@ class CarBookingService {
 
       if (title !== undefined) booking.title = title;
       if (notes !== undefined) booking.notes = notes;
+      if (requester_user_id !== undefined) booking.requester_user_id = requester_user_id || null;
       booking.start_time = newStart;
       booking.end_time = newEnd;
 

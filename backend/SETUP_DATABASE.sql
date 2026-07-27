@@ -187,6 +187,7 @@ CREATE TABLE car_bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   car_id UUID NOT NULL REFERENCES cars(id),
   created_by UUID NOT NULL REFERENCES users(id),
+  requester_user_id UUID REFERENCES users(id),
   title VARCHAR(255) NOT NULL,
   start_time TIMESTAMP NOT NULL,
   end_time TIMESTAMP NOT NULL,
@@ -200,6 +201,7 @@ CREATE TABLE car_bookings (
 CREATE INDEX idx_car_bookings_car_id ON car_bookings(car_id);
 CREATE INDEX idx_car_bookings_status ON car_bookings(status);
 CREATE INDEX idx_car_bookings_car_time ON car_bookings(car_id, start_time, end_time);
+CREATE INDEX idx_car_bookings_requester ON car_bookings(requester_user_id);
 
 -- View
 CREATE VIEW available_rooms_at_time AS

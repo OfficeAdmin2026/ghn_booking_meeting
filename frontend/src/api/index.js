@@ -68,6 +68,8 @@ export const adminApi = {
 
   getUsers: (params) => api.get('/admin/users', { params }),
 
+  searchUsers: (q) => api.get('/admin/users/search', { params: { q } }),
+
   findUserByEmail: (email) => api.post('/admin/users/by-email', { email }),
 
   setUserRole: (id, role) => api.patch(`/admin/users/${id}/role`, { role }),

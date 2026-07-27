@@ -150,8 +150,33 @@ router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
     if (req.query.role) where.role = req.query.role;
     const users = await User.findAll({
       where,
-      attributes: ['id', 'email', 'full_name', 'department', 'role', 'is_active', 'last_login', 'created_at'],
+      attributes: ['id', 'email', 'full_name', 'employee_id', 'department', 'role', 'is_active', 'last_login', 'created_at'],
       order: [['role', 'ASC'], ['full_name', 'ASC']],
+    });
+    res.json({ status: 'success', data: { users } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// GET /api/admin/users/search?q= - Tìm nhanh user theo tên/MSNV/email (dùng cho autocomplete
+// chọn "người sử dụng xe" khi admin đặt xe hộ). Đặt trước /users/:id-style routes nếu có.
+router.get('/users/search', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    if (q.length < 2) return res.json({ status: 'success', data: { users: [] } });
+    const users = await User.findAll({
+      where: {
+        is_active: true,
+        [Op.or]: [
+          { full_name: { [Op.iLike]: `%${q}%` } },
+          { employee_id: { [Op.iLike]: `%${q}%` } },
+          { email: { [Op.iLike]: `%${q}%` } },
+        ],
+      },
+      attributes: ['id', 'full_name', 'employee_id', 'department', 'email'],
+      order: [['full_name', 'ASC']],
+      limit: 10,
     });
     res.json({ status: 'success', data: { users } });
   } catch (err) {
