@@ -46,14 +46,17 @@ function fmtDuration(minutes) {
   return h > 0 ? `${h}h${m > 0 ? m + 'm' : ''}` : `${m}m`;
 }
 
-function exportCSV(bookings) {
-  const headers = ['STT', 'Phòng', 'Vị trí', 'Tiêu đề', 'Người đặt', 'Email', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy'];
+async function exportExcel(bookings) {
+  const XLSX = await import('xlsx');
+  const headers = ['STT', 'Phòng', 'Vị trí', 'Tiêu đề', 'MSNV', 'Họ và tên', 'Phòng ban', 'Email', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy'];
   const rows = bookings.map((b, i) => [
     i + 1,
     b.room?.name || '',
     b.room ? `${b.room.location} Tầng ${b.room.floor}` : '',
     b.title || '',
+    b.user?.employee_id || '',
     b.user?.full_name || '',
+    b.user?.department || '',
     b.user?.email || '',
     toVNDateStr(b.start_time),
     toVNTimeStr(b.start_time),
@@ -62,16 +65,10 @@ function exportCSV(bookings) {
     statusLabel(b.status),
     b.status === 'cancelled' ? (b.cancellation_message || '') : '',
   ]);
-  const csv = [headers, ...rows]
-    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-    .join('\n');
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `bao-cao-dat-phong-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const sheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, 'B\u00e1o c\u00e1o \u0111\u1eb7t ph\u00f2ng');
+  XLSX.writeFile(workbook, `bao-cao-dat-phong-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 /* ── sub-components ── */
@@ -131,7 +128,7 @@ export default function AnalyticsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [sortCol,      setSortCol]      = useState('start_time');
   const [sortDir,      setSortDir]      = useState('desc');
-  const [colFilters,   setColFilters]   = useState({ room: '', title: '', user: '', status: '', reason: '' });
+  const [colFilters,   setColFilters]   = useState({ room: '', title: '', employee_id: '', full_name: '', department: '', status: '', reason: '' });
   const setCol = (key, val) => setColFilters(prev => ({ ...prev, [key]: val }));
 
   const fetchData = useCallback(async () => {
@@ -167,7 +164,9 @@ export default function AnalyticsPage() {
     switch (col) {
       case 'room':       return b.room?.name || '';
       case 'title':      return b.title || '';
-      case 'user':       return b.user?.full_name || '';
+      case 'employee_id': return b.user?.employee_id || '';
+      case 'full_name':   return b.user?.full_name || '';
+      case 'department':  return b.user?.department || '';
       case 'start_time': return new Date(b.start_time).getTime();
       case 'duration':   return new Date(b.end_time) - new Date(b.start_time);
       case 'status':     return simpleStatus(b.status);
@@ -180,7 +179,9 @@ export default function AnalyticsPage() {
     let list = [...report];
     if (colFilters.room)   list = list.filter(b => b.room?.name?.toLowerCase().includes(colFilters.room.toLowerCase()) || b.room?.location?.toLowerCase().includes(colFilters.room.toLowerCase()));
     if (colFilters.title)  list = list.filter(b => b.title?.toLowerCase().includes(colFilters.title.toLowerCase()));
-    if (colFilters.user)   list = list.filter(b => b.user?.full_name?.toLowerCase().includes(colFilters.user.toLowerCase()) || b.user?.email?.toLowerCase().includes(colFilters.user.toLowerCase()));
+    if (colFilters.employee_id) list = list.filter(b => b.user?.employee_id?.toLowerCase().includes(colFilters.employee_id.toLowerCase()));
+    if (colFilters.full_name)   list = list.filter(b => b.user?.full_name?.toLowerCase().includes(colFilters.full_name.toLowerCase()) || b.user?.email?.toLowerCase().includes(colFilters.full_name.toLowerCase()));
+    if (colFilters.department)  list = list.filter(b => b.user?.department?.toLowerCase().includes(colFilters.department.toLowerCase()));
     if (colFilters.status) list = list.filter(b => simpleStatus(b.status) === colFilters.status);
     if (colFilters.reason) list = list.filter(b => b.cancellation_message?.toLowerCase().includes(colFilters.reason.toLowerCase()));
     list.sort((a, b) => {
@@ -420,11 +421,11 @@ export default function AnalyticsPage() {
           </h3>
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={() => exportCSV(filteredReport)}
+              onClick={() => exportExcel(filteredReport)}
               disabled={filteredReport.length === 0}
               className="flex items-center gap-1.5 px-4 py-1.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-40"
             >
-              <ArrowDownTrayIcon className="w-4 h-4" /> Xuất CSV
+              <ArrowDownTrayIcon className="w-4 h-4" /> Xuất Excel
             </button>
           </div>
         </div>
@@ -436,10 +437,12 @@ export default function AnalyticsPage() {
               <tr className="border-b border-gray-100">
                 <th className="pb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wide text-left">#</th>
                 {[
-                  { col: 'room',       label: 'Phòng',      align: 'left'  },
-                  { col: 'title',      label: 'Tiêu đề',    align: 'left'  },
-                  { col: 'user',       label: 'Người đặt',  align: 'left'  },
-                  { col: 'start_time', label: 'Thời gian',  align: 'left'  },
+                  { col: 'room',        label: 'Phòng',      align: 'left'  },
+                  { col: 'title',       label: 'Tiêu đề',    align: 'left'  },
+                  { col: 'employee_id', label: 'MSNV',       align: 'left'  },
+                  { col: 'full_name',   label: 'Họ và tên',  align: 'left'  },
+                  { col: 'department',  label: 'Phòng ban',  align: 'left'  },
+                  { col: 'start_time',  label: 'Thời gian',  align: 'left'  },
                   { col: 'duration',   label: 'TL',         align: 'right' },
                   { col: 'status',     label: 'Trạng thái', align: 'left'  },
                   { col: 'reason',     label: 'Lý do hủy',  align: 'left'  },
@@ -468,7 +471,13 @@ export default function AnalyticsPage() {
                   <input value={colFilters.title} onChange={e => setCol('title', e.target.value)} placeholder="Lọc tiêu đề..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
                 </td>
                 <td className="pb-2 px-2">
-                  <input value={colFilters.user} onChange={e => setCol('user', e.target.value)} placeholder="Lọc người đặt..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
+                  <input value={colFilters.employee_id} onChange={e => setCol('employee_id', e.target.value)} placeholder="Lọc MSNV..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
+                </td>
+                <td className="pb-2 px-2">
+                  <input value={colFilters.full_name} onChange={e => setCol('full_name', e.target.value)} placeholder="Lọc họ tên..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
+                </td>
+                <td className="pb-2 px-2">
+                  <input value={colFilters.department} onChange={e => setCol('department', e.target.value)} placeholder="Lọc phòng ban..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
                 </td>
                 <td className="pb-2 px-2" />
                 <td className="pb-2 px-2" />
@@ -487,7 +496,7 @@ export default function AnalyticsPage() {
             <tbody>
               {filteredReport.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center text-gray-400 py-8">
+                  <td colSpan={10} className="text-center text-gray-400 py-8">
                     {loading ? 'Đang tải...' : 'Không có dữ liệu trong kỳ này'}
                   </td>
                 </tr>
@@ -503,10 +512,12 @@ export default function AnalyticsPage() {
                     <td className="py-3 px-2 max-w-[200px]">
                       <div className="truncate font-medium text-gray-700">{b.title}</div>
                     </td>
+                    <td className="py-3 px-2 text-gray-700">{b.user?.employee_id || '—'}</td>
                     <td className="py-3 px-2">
                       <div className="text-gray-700">{b.user?.full_name || '—'}</div>
                       <div className="text-xs text-gray-400">{b.user?.email}</div>
                     </td>
+                    <td className="py-3 px-2 text-gray-700">{b.user?.department || '—'}</td>
                     <td className="py-3 px-2 whitespace-nowrap">
                       <div className="text-gray-700">{toVNDateStr(b.start_time)}</div>
                       <div className="text-xs text-gray-400">{toVNTimeStr(b.start_time)} – {toVNTimeStr(b.end_time)}</div>
