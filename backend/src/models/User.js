@@ -19,6 +19,10 @@ const User = sequelize.define('users', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  employee_id: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   department: {
     type: DataTypes.STRING,
     allowNull: true

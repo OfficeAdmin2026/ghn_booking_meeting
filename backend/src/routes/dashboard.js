@@ -168,13 +168,13 @@ router.get('/metrics', authMiddleware, adminMiddleware, async (req, res) => {
 
     // Top 5 users by booking count
     const topUsers = await sequelize.query(
-      `SELECT u.full_name, u.email,
+      `SELECT u.full_name, u.email, u.employee_id, u.department,
               COUNT(b.id) FILTER (WHERE b.status != 'cancelled') AS total,
               COUNT(b.id) FILTER (WHERE b.status = 'cancelled') AS cancelled
        FROM users u
        JOIN bookings b ON u.id = b.user_id
          AND b.start_time BETWEEN :from AND :to
-       GROUP BY u.id, u.full_name, u.email
+       GROUP BY u.id, u.full_name, u.email, u.employee_id, u.department
        ORDER BY total DESC
        LIMIT 5`,
       { replacements: { from, to }, type: sequelize.QueryTypes.SELECT }
@@ -202,10 +202,12 @@ router.get('/metrics', authMiddleware, adminMiddleware, async (req, res) => {
         peak_hours: peakHours.map(r => ({ hour: r.hour, count: parseInt(r.count) })),
         top_rooms: topRooms,
         top_users: topUsers.map(r => ({
-          full_name: r.full_name,
-          email:     r.email,
-          total:     parseInt(r.total),
-          cancelled: parseInt(r.cancelled),
+          full_name:   r.full_name,
+          email:       r.email,
+          employee_id: r.employee_id,
+          department:  r.department,
+          total:       parseInt(r.total),
+          cancelled:   parseInt(r.cancelled),
         })),
       },
     });
@@ -226,7 +228,7 @@ router.get('/report', authMiddleware, adminMiddleware, async (req, res) => {
       where,
       include: [
         { model: Room, attributes: ['name', 'location', 'floor', 'capacity'] },
-        { model: User, attributes: ['full_name', 'email', 'role'] },
+        { model: User, attributes: ['full_name', 'email', 'employee_id', 'department', 'role'] },
       ],
       order: [['start_time', 'ASC']],
     });

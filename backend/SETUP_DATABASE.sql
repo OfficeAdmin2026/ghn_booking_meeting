@@ -15,6 +15,7 @@ CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
   full_name VARCHAR(255) NOT NULL,
+  employee_id VARCHAR(50),
   department VARCHAR(255),
   role user_role DEFAULT 'user',
   is_active BOOLEAN DEFAULT true,

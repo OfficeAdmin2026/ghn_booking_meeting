@@ -377,7 +377,9 @@ export default function AnalyticsPage() {
                   <thead>
                     <tr className="border-b border-gray-100">
                       <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">#</th>
-                      <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Tên</th>
+                      <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">MSNV</th>
+                      <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Họ và tên</th>
+                      <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Phòng ban</th>
                       <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Email</th>
                       <th className="text-right pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Đặt phòng</th>
                       <th className="text-right pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Đã hủy</th>
@@ -387,7 +389,9 @@ export default function AnalyticsPage() {
                     {metrics.top_users.map((u, i) => (
                       <tr key={u.email} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                         <td className="py-2.5 text-gray-400 text-xs font-medium">{i + 1}</td>
+                        <td className="py-2.5 px-2 text-gray-500 text-xs">{u.employee_id || '—'}</td>
                         <td className="py-2.5 px-2 font-medium text-gray-800">{u.full_name}</td>
+                        <td className="py-2.5 px-2 text-gray-500 text-xs">{u.department || '—'}</td>
                         <td className="py-2.5 px-2 text-gray-500 text-xs">{u.email}</td>
                         <td className="py-2.5 px-2 text-right font-bold text-gray-800">{u.total}</td>
                         <td className="py-2.5 px-2 text-right">
