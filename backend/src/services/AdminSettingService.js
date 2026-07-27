@@ -4,6 +4,8 @@ const DEFAULTS = {
   booking_freeze_weekly_enabled: 'true',
   booking_freeze_weekly_day: '4', // 0=CN, 1=Thứ 2, ..., 4=Thứ 5
   booking_freeze_weekly_time: '14:00', // HH:mm
+  car_booking_details_visible: 'false',
+  car_booking_rules: '',
 };
 
 class AdminSettingService {
@@ -91,6 +93,12 @@ class AdminSettingService {
   }
 
 
+  /** Check if car booking details (title/notes/requester) are visible to regular users */
+  static async isCarDetailsVisible() {
+    const settings = await this.getAll();
+    return settings.car_booking_details_visible === 'true';
+  }
+
   /** Save one or more settings. `data` is { key: value, ... } */
   static async updateSettings(data) {
     const ALLOWED_KEYS = [
@@ -98,6 +106,8 @@ class AdminSettingService {
       'booking_freeze_weekly_day',
       'booking_freeze_weekly_time',
       'meeting_room_rules',
+      'car_booking_details_visible',
+      'car_booking_rules',
     ];
     for (const [key, value] of Object.entries(data)) {
       if (!ALLOWED_KEYS.includes(key)) continue;

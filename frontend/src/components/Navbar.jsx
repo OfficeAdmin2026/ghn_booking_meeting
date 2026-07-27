@@ -6,6 +6,7 @@ import {
   ClipboardDocumentListIcon,
   ChartBarIcon,
   Cog6ToothIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline';
 
 export default function Navbar() {
@@ -53,6 +54,9 @@ export default function Navbar() {
             <Link to="/office-map" className={linkClass(location.pathname === '/office-map')}>
               <MapIcon className="w-4 h-4" /> Bản đồ văn phòng
             </Link>
+            <Link to="/cars" className={linkClass(location.pathname === '/cars')}>
+              <TruckIcon className="w-4 h-4" /> Xe công ty
+            </Link>
             {isAdmin && (
               <>
                 <Link to="/analytics" className={linkClass(location.pathname === '/analytics')}>
@@ -95,6 +99,9 @@ export default function Navbar() {
           </Link>
           <Link to="/office-map" className={mobileLinkClass(location.pathname === '/office-map')}>
             <MapIcon className="w-3.5 h-3.5" /> Bản đồ
+          </Link>
+          <Link to="/cars" className={mobileLinkClass(location.pathname === '/cars')}>
+            <TruckIcon className="w-3.5 h-3.5" /> Xe
           </Link>
           {isAdmin && (
             <>

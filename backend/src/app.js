@@ -48,6 +48,8 @@ app.use('/api/wayfinding-paths', require('./routes/wayfindingPaths'));
 app.use('/api/room-shapes', require('./routes/roomShapes'));
 app.use('/api/floor-backgrounds', require('./routes/floorBackgrounds'));
 app.use('/api/map-annotations', require('./routes/mapAnnotations'));
+app.use('/api/cars', require('./routes/cars'));
+app.use('/api/car-bookings', require('./routes/carBookings'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

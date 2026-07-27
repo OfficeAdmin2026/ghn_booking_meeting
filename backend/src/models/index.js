@@ -8,6 +8,8 @@ const WayfindingPath = require('./WayfindingPath');
 const RoomShape = require('./RoomShape');
 const FloorBackground = require('./FloorBackground');
 const MapAnnotation = require('./MapAnnotation');
+const Car = require('./Car');
+const CarBooking = require('./CarBooking');
 
 // Define associations
 Room.hasMany(RoomAmenity, { foreignKey: 'room_id', as: 'amenities' });
@@ -31,6 +33,12 @@ Notification.belongsTo(Booking, { foreignKey: 'booking_id' });
 User.hasMany(Notification, { foreignKey: 'user_id' });
 Notification.belongsTo(User, { foreignKey: 'user_id' });
 
+Car.hasMany(CarBooking, { foreignKey: 'car_id', as: 'bookings' });
+CarBooking.belongsTo(Car, { foreignKey: 'car_id' });
+
+User.hasMany(CarBooking, { foreignKey: 'created_by', as: 'carBookings' });
+CarBooking.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
 module.exports = {
   User,
   Room,
@@ -41,5 +49,7 @@ module.exports = {
   WayfindingPath,
   RoomShape,
   FloorBackground,
-  MapAnnotation
+  MapAnnotation,
+  Car,
+  CarBooking
 };

@@ -56,6 +56,10 @@ export const adminApi = {
 
   updateRules: (rules) => api.put('/admin/rules', { rules }),
 
+  getCarRules: () => api.get('/admin/car-rules'),
+
+  updateCarRules: (rules) => api.put('/admin/car-rules', { rules }),
+
   getUsers: (params) => api.get('/admin/users', { params }),
 
   findUserByEmail: (email) => api.post('/admin/users/by-email', { email }),
@@ -97,6 +101,29 @@ export const mapAnnotationsApi = {
   update: (id, data) => api.put(`/map-annotations/${id}`, data),
 
   remove: (id) => api.delete(`/map-annotations/${id}`),
+};
+
+export const carsApi = {
+  getAll: (params) => api.get('/cars', { params }),
+
+  getById: (id) => api.get(`/cars/${id}`),
+
+  create: (data) => api.post('/cars', data),
+
+  update: (id, data) => api.put(`/cars/${id}`, data),
+
+  delete: (id) => api.delete(`/cars/${id}`),
+};
+
+export const carBookingsApi = {
+  getBookings: (carId, startDate, endDate) =>
+    api.get('/car-bookings', { params: { car_id: carId, start_date: startDate, end_date: endDate } }),
+
+  create: (data) => api.post('/car-bookings', data),
+
+  update: (id, data) => api.put(`/car-bookings/${id}`, data),
+
+  cancel: (id, message = null) => api.delete(`/car-bookings/${id}`, { data: { message } }),
 };
 
 export const floorBackgroundsApi = {

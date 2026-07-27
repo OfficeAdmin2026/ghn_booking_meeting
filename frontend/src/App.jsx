@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import RulesPage from './pages/RulesPage';
+import CarsPage from './pages/CarsPage';
 
 function Layout({ children, fullHeight }) {
   return (
@@ -33,6 +34,11 @@ export default function App() {
           <Route path="/office-map" element={
             <ProtectedRoute>
               <Layout fullHeight><OfficeMapPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/cars" element={
+            <ProtectedRoute>
+              <Layout fullHeight><CarsPage /></Layout>
             </ProtectedRoute>
           } />
           <Route path="/dashboard" element={

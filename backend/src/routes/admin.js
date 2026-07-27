@@ -23,6 +23,7 @@ router.put('/settings', authMiddleware, adminMiddleware, async (req, res) => {
       booking_freeze_weekly_enabled,
       booking_freeze_weekly_day,
       booking_freeze_weekly_time,
+      car_booking_details_visible,
     } = req.body;
     const data = {};
 
@@ -34,6 +35,9 @@ router.put('/settings', authMiddleware, adminMiddleware, async (req, res) => {
     }
     if (booking_freeze_weekly_time !== undefined) {
       data.booking_freeze_weekly_time = String(booking_freeze_weekly_time);
+    }
+    if (car_booking_details_visible !== undefined) {
+      data.car_booking_details_visible = String(car_booking_details_visible);
     }
 
     const settings = await AdminSettingService.updateSettings(data);
@@ -62,6 +66,27 @@ router.put('/rules', authMiddleware, adminMiddleware, async (req, res) => {
     res.json({ status: 'success', data: { rules: rules ?? '' } });
   } catch (err) {
     console.error('[admin/rules] save error:', err);
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// GET /api/admin/car-rules - All authenticated users can read
+router.get('/car-rules', authMiddleware, async (req, res) => {
+  try {
+    const settings = await AdminSettingService.getAll();
+    res.json({ status: 'success', data: { rules: settings.car_booking_rules || '' } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// PUT /api/admin/car-rules - Admin only
+router.put('/car-rules', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { rules } = req.body;
+    await AdminSettingService.updateSettings({ car_booking_rules: rules ?? '' });
+    res.json({ status: 'success', data: { rules: rules ?? '' } });
+  } catch (err) {
     res.status(500).json({ error: { status: 500, message: err.message } });
   }
 });

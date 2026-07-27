@@ -170,6 +170,37 @@ CREATE TABLE map_annotations (
 );
 CREATE INDEX idx_map_annotations_floor ON map_annotations(location, floor);
 
+-- Company Car booking
+CREATE TABLE cars (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  license_plate VARCHAR(50),
+  seats INTEGER CHECK (seats > 0),
+  driver_note TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_cars_is_active ON cars(is_active);
+
+CREATE TABLE car_bookings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  car_id UUID NOT NULL REFERENCES cars(id),
+  created_by UUID NOT NULL REFERENCES users(id),
+  title VARCHAR(255) NOT NULL,
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'cancelled')),
+  notes TEXT,
+  cancellation_message TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CHECK (end_time > start_time)
+);
+CREATE INDEX idx_car_bookings_car_id ON car_bookings(car_id);
+CREATE INDEX idx_car_bookings_status ON car_bookings(status);
+CREATE INDEX idx_car_bookings_car_time ON car_bookings(car_id, start_time, end_time);
+
 -- View
 CREATE VIEW available_rooms_at_time AS
 SELECT DISTINCT r.id, r.name, r.location, r.floor, r.capacity, r.is_vip, r.code
@@ -228,7 +259,9 @@ INSERT INTO room_amenities (room_id, amenity) VALUES
 INSERT INTO admin_settings (key, value) VALUES
 ('booking_freeze_weekly_enabled', 'false'),
 ('booking_freeze_weekly_day', '4'),
-('booking_freeze_weekly_time', '14:00');
+('booking_freeze_weekly_time', '14:00'),
+('car_booking_details_visible', 'false'),
+('car_booking_rules', '');
 
 INSERT INTO bookings (id, room_id, user_id, title, participants_count, start_time, end_time, status, recurring) VALUES
 ('e1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333', 'Team Sync', 8, NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days' + INTERVAL '1 hour', 'completed', 'none'),
