@@ -135,6 +135,9 @@ class CarBookingService {
       if (newEnd <= newStart) {
         throw new Error('end_time must be after start_time');
       }
+      if (title !== undefined && !title.trim()) {
+        throw new Error('Mục đích / Người yêu cầu không được để trống');
+      }
 
       const conflict = await this.checkTimeConflict(booking.car_id, newStart, newEnd, bookingId);
       if (conflict) {

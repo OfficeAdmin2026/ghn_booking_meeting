@@ -50,6 +50,7 @@ export default function CarWeekCalendar({ bookings, isAdmin, onWeekChange, onCre
   const weekDays = useMemo(() => getWeekRange(weekAnchor), [weekAnchor]);
   const dragInfo = useRef(null);
   const [dragSel, setDragSel] = useState(null);
+  const [slotWarning, setSlotWarning] = useState('');
 
   useEffect(() => {
     const start = new Date(weekDays[0]); start.setHours(0, 0, 0, 0);
@@ -67,15 +68,33 @@ export default function CarWeekCalendar({ bookings, isAdmin, onWeekChange, onCre
     return map;
   }, [bookings]);
 
+  // Ref để mousemove/mouseup luôn đọc được bookingsByDay mới nhất, tránh closure cũ
+  const bookingsByDayRef = useRef(bookingsByDay);
+  useEffect(() => { bookingsByDayRef.current = bookingsByDay; }, [bookingsByDay]);
+
+  function checkConflict(dayDateStr, startMin, endMin) {
+    const dayBookings = bookingsByDayRef.current[dayDateStr] || [];
+    return dayBookings.some((b) => {
+      const bStart = toVNMinutes(new Date(b.start_time));
+      const bEnd = toVNMinutes(new Date(b.end_time));
+      return startMin < bEnd && endMin > bStart;
+    });
+  }
+
   const timeSlots = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
   function handleDayMouseDown(e, dayDate) {
     if (!isAdmin || e.button !== 0) return;
+    setSlotWarning('');
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const startMin = Math.min(yToMin(y), (END_HOUR - 1) * 60);
+    const endMin = Math.min(startMin + 60, END_HOUR * 60);
     dragInfo.current = { dayDate, dayEl: e.currentTarget, startMin };
-    setDragSel({ dayDateStr: toVNDateStr(dayDate), startMin, endMin: Math.min(startMin + 60, END_HOUR * 60) });
+    setDragSel({
+      dayDateStr: toVNDateStr(dayDate), startMin, endMin,
+      hasConflict: checkConflict(toVNDateStr(dayDate), startMin, endMin),
+    });
     e.preventDefault();
   }
 
@@ -86,7 +105,9 @@ export default function CarWeekCalendar({ bookings, isAdmin, onWeekChange, onCre
       const rect = dragInfo.current.dayEl.getBoundingClientRect();
       const y = e.clientY - rect.top;
       const endMin = Math.min(END_HOUR * 60, Math.max(dragInfo.current.startMin + 30, yToMin(y)));
-      setDragSel((prev) => (prev ? { ...prev, endMin } : null));
+      const dayDateStr = toVNDateStr(dragInfo.current.dayDate);
+      const hasConflict = checkConflict(dayDateStr, dragInfo.current.startMin, endMin);
+      setDragSel((prev) => (prev ? { ...prev, endMin, hasConflict } : null));
     }
     function onUp(e) {
       if (!dragInfo.current) return;
@@ -99,6 +120,13 @@ export default function CarWeekCalendar({ bookings, isAdmin, onWeekChange, onCre
         ? Math.min(startMin + 60, END_HOUR * 60)
         : Math.min(END_HOUR * 60, Math.max(startMin + 30, raw));
       setDragSel(null);
+
+      const dayDateStr = toVNDateStr(dayDate);
+      if (checkConflict(dayDateStr, startMin, endMin)) {
+        setSlotWarning('Khung giờ này đã có lịch đặt xe. Vui lòng chọn khung giờ khác.');
+        setTimeout(() => setSlotWarning(''), 5000);
+        return;
+      }
 
       const start = new Date(dayDate);
       start.setHours(Math.floor(startMin / 60), startMin % 60, 0, 0);
@@ -136,6 +164,12 @@ export default function CarWeekCalendar({ bookings, isAdmin, onWeekChange, onCre
           {weekDays[0].toLocaleDateString('vi-VN')} – {weekDays[6].toLocaleDateString('vi-VN')}
         </p>
       </div>
+
+      {slotWarning && (
+        <div className="px-4 py-2 bg-red-50 border-b border-red-100 text-xs font-medium text-red-600 shrink-0">
+          {slotWarning}
+        </div>
+      )}
 
       {/* Day headers */}
       <div className="flex border-b border-gray-100 shrink-0">
@@ -181,14 +215,17 @@ export default function CarWeekCalendar({ bookings, isAdmin, onWeekChange, onCre
 
                 {dragSel && dragSel.dayDateStr === ds && (
                   <div
-                    className="absolute inset-x-0.5 rounded-md bg-ghn-orange/25 border-2 border-dashed border-ghn-orange pointer-events-none z-10"
+                    className={`absolute inset-x-0.5 rounded-md border-2 border-dashed pointer-events-none z-10 ${
+                      dragSel.hasConflict ? 'bg-red-500/20 border-red-500' : 'bg-ghn-orange/25 border-ghn-orange'
+                    }`}
                     style={{
                       top: (dragSel.startMin - START_HOUR * 60) * (HOUR_HEIGHT / 60),
                       height: Math.max((dragSel.endMin - dragSel.startMin) * (HOUR_HEIGHT / 60), 16),
                     }}
                   >
-                    <span className="text-[10px] font-bold text-ghn-orange px-1">
+                    <span className={`text-[10px] font-bold px-1 ${dragSel.hasConflict ? 'text-red-600' : 'text-ghn-orange'}`}>
                       {minToTimeStr(dragSel.startMin)}–{minToTimeStr(dragSel.endMin)}
+                      {dragSel.hasConflict ? ' ⚠' : ''}
                     </span>
                   </div>
                 )}
