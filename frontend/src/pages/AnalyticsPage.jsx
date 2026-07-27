@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { dashboardApi } from '../api';
+import CarAnalyticsSection from '../components/CarAnalyticsSection';
 import {
   ChartBarIcon,
   ClipboardDocumentListIcon,
@@ -12,6 +13,7 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   ChevronUpDownIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline';
 
 /* ── helpers ── */
@@ -114,6 +116,7 @@ function HBar({ label, value, maxValue, sub, badge, colorClass = 'bg-ghn-orange'
 
 /* ── main page ── */
 export default function AnalyticsPage() {
+  const [activeSection, setActiveSection] = useState('rooms'); // 'rooms' | 'cars'
   const now = new Date();
   const [dateFrom, setDateFrom] = useState(
     () => new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-CA')
@@ -226,7 +229,27 @@ export default function AnalyticsPage() {
         <h1 className="text-2xl font-bold text-gray-900 inline-flex items-center gap-2">
           <ChartBarIcon className="w-6 h-6 text-ghn-orange" /> Thống kê & Báo cáo
         </h1>
-        <p className="text-gray-500 text-sm mt-0.5">Phân tích hiệu suất sử dụng phòng họp</p>
+        <p className="text-gray-500 text-sm mt-0.5">Phân tích hiệu suất sử dụng phòng họp &amp; xe công ty</p>
+      </div>
+
+      {/* ── Section tabs ── */}
+      <div className="inline-flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+        <button
+          onClick={() => setActiveSection('rooms')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 ${
+            activeSection === 'rooms' ? 'bg-white text-ghn-orange shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <ClipboardDocumentListIcon className="w-4 h-4" /> Phòng họp
+        </button>
+        <button
+          onClick={() => setActiveSection('cars')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 ${
+            activeSection === 'cars' ? 'bg-white text-ghn-orange shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <TruckIcon className="w-4 h-4" /> Xe công ty
+        </button>
       </div>
 
       {/* ── Date range filter ── */}
@@ -260,6 +283,10 @@ export default function AnalyticsPage() {
         {error && <p className="text-sm text-red-500">{error}</p>}
       </div>
 
+      {activeSection === 'cars' ? (
+        <CarAnalyticsSection dateFrom={dateFrom} dateTo={dateTo} />
+      ) : (
+      <>
       {s && (
         <>
           {/* ── Summary metric cards ── */}
@@ -541,6 +568,8 @@ export default function AnalyticsPage() {
           </table>
         </div>
       </div>
+      </>
+      )}
 
     </div>
   );

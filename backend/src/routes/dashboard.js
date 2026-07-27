@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
-const { Booking, Room, User } = require('../models');
+const { Booking, Room, User, Car, CarBooking } = require('../models');
 const { sequelize } = require('../config/database');
 
 function getDateRange(query) {
@@ -236,6 +236,129 @@ router.get('/report', authMiddleware, adminMiddleware, async (req, res) => {
     res.json({ data: { count: bookings.length, bookings } });
   } catch (err) {
     console.error('[dashboard/report]', err);
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// GET /api/dashboard/car-metrics
+router.get('/car-metrics', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { from, to } = getDateRange(req.query);
+
+    const statusRows = await sequelize.query(
+      `SELECT status, COUNT(*) AS count FROM car_bookings
+       WHERE start_time BETWEEN :from AND :to
+       GROUP BY status`,
+      { replacements: { from, to }, type: sequelize.QueryTypes.SELECT }
+    );
+    const counts = {};
+    for (const r of statusRows) counts[r.status] = parseInt(r.count);
+    const totalBookings = Object.values(counts).reduce((a, b) => a + b, 0);
+    const cancelled = counts.cancelled || 0;
+    const cancellationRate = totalBookings > 0
+      ? parseFloat((cancelled / totalBookings * 100).toFixed(1))
+      : 0;
+
+    const [durRow] = await sequelize.query(
+      `SELECT ROUND(AVG(EXTRACT(EPOCH FROM (end_time - start_time)) / 60)) AS avg_minutes
+       FROM car_bookings WHERE status != 'cancelled' AND start_time BETWEEN :from AND :to`,
+      { replacements: { from, to }, type: sequelize.QueryTypes.SELECT }
+    );
+    const avgMinutes = parseInt(durRow?.avg_minutes || 0);
+
+    const totalCars = await Car.count({ where: { is_active: true } });
+
+    // Occupancy: tổng phút đã đặt / (số xe hoạt động x số ngày x 24h)
+    const days = Math.max(1, Math.ceil((to - from) / (1000 * 60 * 60 * 24)));
+    const [bookedRow] = await sequelize.query(
+      `SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (end_time - start_time)) / 60), 0) AS total_minutes
+       FROM car_bookings WHERE status != 'cancelled' AND start_time BETWEEN :from AND :to`,
+      { replacements: { from, to }, type: sequelize.QueryTypes.SELECT }
+    );
+    const totalBooked = parseFloat(bookedRow?.total_minutes || 0);
+    const capacityMinutes = totalCars * days * 24 * 60;
+    const occupancyRate = capacityMinutes > 0
+      ? Math.min(parseFloat((totalBooked / capacityMinutes * 100).toFixed(1)), 100)
+      : 0;
+
+    // Peak hours (VN timezone)
+    const peakHours = await sequelize.query(
+      `SELECT EXTRACT(HOUR FROM start_time AT TIME ZONE 'Asia/Ho_Chi_Minh')::int AS hour,
+              COUNT(*) AS count
+       FROM car_bookings
+       WHERE status != 'cancelled' AND start_time BETWEEN :from AND :to
+       GROUP BY hour ORDER BY hour`,
+      { replacements: { from, to }, type: sequelize.QueryTypes.SELECT }
+    );
+
+    // Top xe theo số lượt đặt
+    const topCarsRaw = await sequelize.query(
+      `SELECT c.id, c.name, c.license_plate,
+              COUNT(cb.id) AS booking_count,
+              ROUND(COALESCE(AVG(EXTRACT(EPOCH FROM (cb.end_time - cb.start_time)) / 60), 0)) AS avg_minutes,
+              COALESCE(SUM(EXTRACT(EPOCH FROM (cb.end_time - cb.start_time)) / 60), 0) AS booked_minutes
+       FROM cars c
+       LEFT JOIN car_bookings cb ON c.id = cb.car_id
+         AND cb.status != 'cancelled'
+         AND cb.start_time BETWEEN :from AND :to
+       WHERE c.is_active = true
+       GROUP BY c.id, c.name, c.license_plate
+       ORDER BY booking_count DESC
+       LIMIT 8`,
+      { replacements: { from, to }, type: sequelize.QueryTypes.SELECT }
+    );
+    const perCarCapacityMinutes = days * 24 * 60;
+    const topCars = topCarsRaw.map(c => ({
+      name:          c.name,
+      license_plate: c.license_plate,
+      booking_count: parseInt(c.booking_count),
+      avg_minutes:   parseInt(c.avg_minutes) || 0,
+      utilization:   perCarCapacityMinutes > 0
+        ? Math.min(parseFloat((parseFloat(c.booked_minutes) / perCarCapacityMinutes * 100).toFixed(1)), 100)
+        : 0,
+    }));
+
+    res.json({
+      data: {
+        period: { from, to },
+        summary: {
+          total_bookings:    totalBookings,
+          cancelled:         cancelled,
+          confirmed:         counts.confirmed || 0,
+          cancellation_rate: cancellationRate,
+          avg_duration_minutes: avgMinutes,
+          occupancy_rate:    occupancyRate,
+          total_cars:        totalCars,
+        },
+        peak_hours: peakHours.map(r => ({ hour: r.hour, count: parseInt(r.count) })),
+        top_cars: topCars,
+      },
+    });
+  } catch (err) {
+    console.error('[dashboard/car-metrics]', err);
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// GET /api/dashboard/car-report — detailed car booking list for Excel export
+router.get('/car-report', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { from, to } = getDateRange(req.query);
+    const where = { start_time: { [Op.between]: [from, to] } };
+    if (req.query.status) where.status = req.query.status;
+
+    const bookings = await CarBooking.findAll({
+      where,
+      include: [
+        { model: Car, attributes: ['name', 'license_plate', 'seats'] },
+        { model: User, as: 'creator', attributes: ['full_name', 'email'] },
+      ],
+      order: [['start_time', 'ASC']],
+    });
+
+    res.json({ data: { count: bookings.length, bookings } });
+  } catch (err) {
+    console.error('[dashboard/car-report]', err);
     res.status(500).json({ error: { status: 500, message: err.message } });
   }
 });

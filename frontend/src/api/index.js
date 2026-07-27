@@ -41,6 +41,8 @@ export const bookingsApi = {
 export const dashboardApi = {
   getMetrics: (params) => api.get('/dashboard/metrics', { params }),
   getReport:  (params) => api.get('/dashboard/report',  { params }),
+  getCarMetrics: (params) => api.get('/dashboard/car-metrics', { params }),
+  getCarReport:  (params) => api.get('/dashboard/car-report',  { params }),
 };
 
 export const adminApi = {
