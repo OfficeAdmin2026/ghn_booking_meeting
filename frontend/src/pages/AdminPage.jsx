@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { roomsApi, adminApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
-import RoomCard from '../components/RoomCard';
 import {
   PlusIcon,
   XMarkIcon,
@@ -58,7 +57,6 @@ export default function AdminPage() {
   const [sortDir, setSortDir] = useState('asc');
 
   // Settings
-  const [settings, setSettings] = useState({});
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [siteLockSaving, setSiteLockSaving] = useState(false);
   const [siteLockError, setSiteLockError] = useState('');
@@ -115,7 +113,6 @@ export default function AdminPage() {
     try {
       const res = await adminApi.getSettings();
       const s = res.data.data.settings || {};
-      setSettings(s);
       setSettingsForm({
         booking_freeze_weekly_enabled: s.booking_freeze_weekly_enabled === 'true' || false,
         booking_freeze_weekly_day: s.booking_freeze_weekly_day !== undefined ? Number(s.booking_freeze_weekly_day) : 4,
