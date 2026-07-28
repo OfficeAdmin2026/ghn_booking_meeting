@@ -384,10 +384,10 @@ export default function AdminPage() {
     .filter(u => matchesQuery(u, bannedSearch.trim().toLowerCase()));
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="p-4">
       <div className="flex gap-6 items-start">
         {/* Sidebar nav */}
-        <div className="w-64 shrink-0 rounded-xl border border-gray-200 bg-white p-2">
+        <div className="w-64 shrink-0 rounded-xl border border-gray-200 bg-white p-3">
           <button
             onClick={() => setActiveTab('rooms')}
             className={`w-full text-left rounded-lg px-3 py-2.5 font-medium transition-colors ${
