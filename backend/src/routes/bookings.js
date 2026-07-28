@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, blockLockedUsers } = require('../middleware/auth');
 const BookingController = require('../controllers/BookingController');
 
 // GET /api/bookings - Get my bookings
@@ -13,15 +13,15 @@ router.get('/freeze-status', authMiddleware, BookingController.getFreezeStatus);
 router.get('/room/:roomId', authMiddleware, BookingController.getRoomBookings);
 
 // POST /api/bookings - Create booking
-router.post('/', authMiddleware, BookingController.createBooking);
+router.post('/', authMiddleware, blockLockedUsers, BookingController.createBooking);
 
 // GET /api/bookings/:id - Get booking details
 router.get('/:id', authMiddleware, BookingController.getBookingById);
 
 // PUT /api/bookings/:id - Update booking (extend/early finish)
-router.put('/:id', authMiddleware, BookingController.updateBooking);
+router.put('/:id', authMiddleware, blockLockedUsers, BookingController.updateBooking);
 
 // DELETE /api/bookings/:id - Cancel booking
-router.delete('/:id', authMiddleware, BookingController.cancelBooking);
+router.delete('/:id', authMiddleware, blockLockedUsers, BookingController.cancelBooking);
 
 module.exports = router;

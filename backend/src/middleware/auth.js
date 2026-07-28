@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const AdminSettingService = require('../services/AdminSettingService');
 
 const authMiddleware = (req, res, next) => {
   try {
@@ -50,8 +51,23 @@ const vipMiddleware = (req, res, next) => {
   next();
 };
 
+// Blocks 'user'-role accounts from mutating bookings while the admin has locked the site for them
+const blockLockedUsers = async (req, res, next) => {
+  try {
+    if (req.user?.role !== 'user') return next();
+    const { locked, message } = await AdminSettingService.getSiteLockStatus();
+    if (locked) {
+      return res.status(423).json({ error: { status: 423, message } });
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   authMiddleware,
   adminMiddleware,
-  vipMiddleware
+  vipMiddleware,
+  blockLockedUsers
 };

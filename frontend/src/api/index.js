@@ -66,6 +66,8 @@ export const adminApi = {
 
   updateCarContactNote: (note) => api.put('/admin/car-contact-note', { note }),
 
+  getSiteLock: () => api.get('/admin/site-lock'),
+
   getUsers: (params) => api.get('/admin/users', { params }),
 
   searchUsers: (q) => api.get('/admin/users/search', { params: { q } }),

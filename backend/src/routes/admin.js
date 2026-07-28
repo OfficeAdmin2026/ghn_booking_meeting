@@ -24,6 +24,8 @@ router.put('/settings', authMiddleware, adminMiddleware, async (req, res) => {
       booking_freeze_weekly_day,
       booking_freeze_weekly_time,
       car_booking_details_visible,
+      site_locked_for_users,
+      site_lock_message,
     } = req.body;
     const data = {};
 
@@ -38,6 +40,12 @@ router.put('/settings', authMiddleware, adminMiddleware, async (req, res) => {
     }
     if (car_booking_details_visible !== undefined) {
       data.car_booking_details_visible = String(car_booking_details_visible);
+    }
+    if (site_locked_for_users !== undefined) {
+      data.site_locked_for_users = String(site_locked_for_users);
+    }
+    if (site_lock_message !== undefined) {
+      data.site_lock_message = site_lock_message;
     }
 
     const settings = await AdminSettingService.updateSettings(data);
@@ -107,6 +115,16 @@ router.put('/car-contact-note', authMiddleware, adminMiddleware, async (req, res
     const { note } = req.body;
     await AdminSettingService.updateSettings({ car_booking_contact_note: note ?? '' });
     res.json({ status: 'success', data: { note: note ?? '' } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// GET /api/admin/site-lock - All authenticated users can read (used to gate the UI for 'user' role)
+router.get('/site-lock', authMiddleware, async (req, res) => {
+  try {
+    const status = await AdminSettingService.getSiteLockStatus();
+    res.json({ status: 'success', data: status });
   } catch (err) {
     res.status(500).json({ error: { status: 500, message: err.message } });
   }

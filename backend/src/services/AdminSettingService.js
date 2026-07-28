@@ -7,6 +7,8 @@ const DEFAULTS = {
   car_booking_details_visible: 'false',
   car_booking_rules: '',
   car_booking_contact_note: 'Thấy khung giờ trống? Nhắn Admin để đặt xe.',
+  site_locked_for_users: 'false',
+  site_lock_message: 'Hệ thống đặt phòng đang tạm khoá để phục vụ demo. Vui lòng quay lại sau.',
 };
 
 class AdminSettingService {
@@ -100,6 +102,15 @@ class AdminSettingService {
     return settings.car_booking_details_visible === 'true';
   }
 
+  /** Get site lock status + message shown to regular ('user' role) accounts */
+  static async getSiteLockStatus() {
+    const settings = await this.getAll();
+    return {
+      locked: settings.site_locked_for_users === 'true',
+      message: settings.site_lock_message ?? DEFAULTS.site_lock_message,
+    };
+  }
+
   /** Save one or more settings. `data` is { key: value, ... } */
   static async updateSettings(data) {
     const ALLOWED_KEYS = [
@@ -110,6 +121,8 @@ class AdminSettingService {
       'car_booking_details_visible',
       'car_booking_rules',
       'car_booking_contact_note',
+      'site_locked_for_users',
+      'site_lock_message',
     ];
     for (const [key, value] of Object.entries(data)) {
       if (!ALLOWED_KEYS.includes(key)) continue;

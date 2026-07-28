@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authApi } from '../api';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { authApi, adminApi } from '../api';
 
 const AuthContext = createContext(null);
 
@@ -9,6 +9,20 @@ export function AuthProvider({ children }) {
     return stored ? JSON.parse(stored) : null;
   });
   const [loading, setLoading] = useState(false);
+  const [siteLock, setSiteLock] = useState({ locked: false, message: '' });
+
+  const refreshSiteLock = useCallback(async () => {
+    try {
+      const res = await adminApi.getSiteLock();
+      setSiteLock(res.data.data);
+    } catch {
+      // ignore - default to unlocked if the check itself fails
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) refreshSiteLock();
+  }, [user, refreshSiteLock]);
 
   const login = async (email, fullName) => {
     setLoading(true);
@@ -37,7 +51,7 @@ export function AuthProvider({ children }) {
   const isVip = user?.role === 'vip' || user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin, isVip }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin, isVip, siteLock, refreshSiteLock }}>
       {children}
     </AuthContext.Provider>
   );

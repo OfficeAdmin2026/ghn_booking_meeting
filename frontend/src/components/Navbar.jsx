@@ -10,7 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function Navbar() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, siteLock } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -115,6 +115,12 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {isAdmin && siteLock?.locked && (
+        <div className="bg-amber-100 border-t border-amber-200 text-amber-800 text-xs font-medium text-center py-1.5 px-4">
+          Hệ thống đang khoá đối với tài khoản user thường — vào Quản trị → Cài đặt để mở lại
+        </div>
+      )}
     </nav>
   );
 }

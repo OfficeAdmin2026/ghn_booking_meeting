@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { roomsApi, adminApi } from '../api';
+import { useAuth } from '../contexts/AuthContext';
 import RoomCard from '../components/RoomCard';
 import {
   PlusIcon,
@@ -18,6 +19,7 @@ import {
   BookmarkIcon,
   NoSymbolIcon,
   MagnifyingGlassIcon,
+  LockClosedIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
@@ -38,6 +40,8 @@ const EMPTY_FORM = {
 };
 
 export default function AdminPage() {
+  const { refreshSiteLock } = useAuth();
+
   // Tabs
   const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' or 'settings'
   
@@ -61,6 +65,8 @@ export default function AdminPage() {
     booking_freeze_weekly_enabled: false,
     booking_freeze_weekly_day: 4, // default: Thứ 5
     booking_freeze_weekly_time: '14:00',
+    site_locked_for_users: false,
+    site_lock_message: '',
   });
   const [settingsError, setSettingsError] = useState('');
   const [settingsSuccess, setSettingsSuccess] = useState('');
@@ -111,6 +117,8 @@ export default function AdminPage() {
         booking_freeze_weekly_enabled: s.booking_freeze_weekly_enabled === 'true' || false,
         booking_freeze_weekly_day: s.booking_freeze_weekly_day !== undefined ? Number(s.booking_freeze_weekly_day) : 4,
         booking_freeze_weekly_time: padTime(s.booking_freeze_weekly_time),
+        site_locked_for_users: s.site_locked_for_users === 'true' || false,
+        site_lock_message: s.site_lock_message ?? '',
       });
     } catch (e) {
       console.error(e);
@@ -286,10 +294,13 @@ export default function AdminPage() {
         booking_freeze_weekly_enabled: String(settingsForm.booking_freeze_weekly_enabled),
         booking_freeze_weekly_day: settingsForm.booking_freeze_weekly_day,
         booking_freeze_weekly_time: padTime(settingsForm.booking_freeze_weekly_time),
+        site_locked_for_users: String(settingsForm.site_locked_for_users),
+        site_lock_message: settingsForm.site_lock_message,
       };
       await adminApi.updateSettings(payload);
       setSettingsSuccess('Cài đặt đã lưu thành công');
       await loadSettings();
+      await refreshSiteLock();
       setTimeout(() => setSettingsSuccess(''), 3000);
     } catch (err) {
       setSettingsError(err.response?.data?.error?.message || 'Lưu thất bại');
@@ -902,6 +913,46 @@ export default function AdminPage() {
           ) : (
             <form onSubmit={handleSaveSettings}>
               <div className="card p-6 space-y-6">
+
+                {/* Site Lock for User accounts */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 inline-flex items-center gap-1.5">
+                    <LockClosedIcon className="w-5 h-5" /> Khoá hệ thống (tài khoản User)
+                  </h3>
+                  <div className="border-t pt-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <input
+                        type="checkbox"
+                        id="siteLocked"
+                        checked={settingsForm.site_locked_for_users}
+                        onChange={(e) =>
+                          setSettingsForm({ ...settingsForm, site_locked_for_users: e.target.checked })
+                        }
+                        className="w-4 h-4 accent-ghn-orange"
+                      />
+                      <label htmlFor="siteLocked" className="text-sm font-medium text-gray-700">
+                        Khoá hệ thống đối với tài khoản User (Admin và VIP không bị ảnh hưởng)
+                      </label>
+                    </div>
+
+                    <label className="text-sm font-medium text-gray-700 block mb-1.5">
+                      Nội dung hiển thị cho User khi bị khoá
+                    </label>
+                    <textarea
+                      value={settingsForm.site_lock_message}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, site_lock_message: e.target.value })}
+                      rows={3}
+                      className="input-field w-full"
+                      placeholder="Hệ thống đặt phòng đang tạm khoá. Vui lòng quay lại sau."
+                    />
+
+                    <p className="text-xs text-gray-600 mt-3 inline-flex items-center gap-1.5">
+                      {settingsForm.site_locked_for_users
+                        ? (<><ExclamationTriangleIcon className="w-3.5 h-3.5 text-amber-500" /> User thường sẽ không thể vào hệ thống, chỉ thấy nội dung ở trên</>)
+                        : (<><CheckCircleIcon className="w-3.5 h-3.5 text-green-600" /> Hệ thống đang mở bình thường cho mọi tài khoản</>)}
+                    </p>
+                  </div>
+                </div>
 
                 {/* Booking Freeze Settings */}
                 <div>
