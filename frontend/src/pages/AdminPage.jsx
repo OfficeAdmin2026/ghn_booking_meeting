@@ -385,11 +385,6 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Bảng Điều Khiển Quản Trị</h1>
-      </div>
-
       <div className="flex gap-6 items-start">
         {/* Sidebar nav */}
         <div className="w-64 shrink-0 rounded-xl border border-gray-200 bg-white p-2">
