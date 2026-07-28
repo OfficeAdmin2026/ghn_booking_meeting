@@ -389,10 +389,10 @@ export default function AdminPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Bảng Điều Khiển Quản Trị</h1>
 
         {/* Tabs */}
-        <div className="flex gap-4 border-b border-gray-200">
+        <div className="flex justify-start gap-1 border-b border-gray-200">
           <button
             onClick={() => setActiveTab('rooms')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            className={`pl-0 pr-3 py-2.5 font-medium border-b-2 transition-colors ${
               activeTab === 'rooms'
                 ? 'border-ghn-orange text-ghn-orange'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -402,7 +402,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab('roles')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            className={`px-3 py-2.5 font-medium border-b-2 transition-colors ${
               activeTab === 'roles'
                 ? 'border-ghn-orange text-ghn-orange'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -412,7 +412,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab('settings')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            className={`px-3 py-2.5 font-medium border-b-2 transition-colors ${
               activeTab === 'settings'
                 ? 'border-ghn-orange text-ghn-orange'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
