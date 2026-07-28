@@ -60,7 +60,12 @@ export default function AdminPage() {
   // Settings
   const [settings, setSettings] = useState({});
   const [settingsLoading, setSettingsLoading] = useState(false);
-  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [siteLockSaving, setSiteLockSaving] = useState(false);
+  const [siteLockError, setSiteLockError] = useState('');
+  const [siteLockSuccess, setSiteLockSuccess] = useState('');
+  const [freezeSaving, setFreezeSaving] = useState(false);
+  const [freezeError, setFreezeError] = useState('');
+  const [freezeSuccess, setFreezeSuccess] = useState('');
   const [settingsForm, setSettingsForm] = useState({
     booking_freeze_weekly_enabled: false,
     booking_freeze_weekly_day: 4, // default: Thứ 5
@@ -68,8 +73,6 @@ export default function AdminPage() {
     site_locked_for_users: false,
     site_lock_message: '',
   });
-  const [settingsError, setSettingsError] = useState('');
-  const [settingsSuccess, setSettingsSuccess] = useState('');
 
   // Role management
   const [elevatedUsers, setElevatedUsers] = useState([]);
@@ -122,7 +125,8 @@ export default function AdminPage() {
       });
     } catch (e) {
       console.error(e);
-      setSettingsError('Tải cài đặt thất bại');
+      setSiteLockError('Tải cài đặt thất bại');
+      setFreezeError('Tải cài đặt thất bại');
     } finally {
       setSettingsLoading(false);
     }
@@ -284,28 +288,47 @@ export default function AdminPage() {
     }
   };
 
-  const handleSaveSettings = async (e) => {
+  const handleSaveSiteLock = async (e) => {
     e.preventDefault();
-    setSettingsSaving(true);
-    setSettingsError('');
-    setSettingsSuccess('');
+    setSiteLockSaving(true);
+    setSiteLockError('');
+    setSiteLockSuccess('');
+    try {
+      const payload = {
+        site_locked_for_users: String(settingsForm.site_locked_for_users),
+        site_lock_message: settingsForm.site_lock_message,
+      };
+      await adminApi.updateSettings(payload);
+      setSiteLockSuccess('Đã lưu cài đặt khoá hệ thống');
+      await loadSettings();
+      await refreshSiteLock();
+      setTimeout(() => setSiteLockSuccess(''), 3000);
+    } catch (err) {
+      setSiteLockError(err.response?.data?.error?.message || 'Lưu thất bại');
+    } finally {
+      setSiteLockSaving(false);
+    }
+  };
+
+  const handleSaveFreeze = async (e) => {
+    e.preventDefault();
+    setFreezeSaving(true);
+    setFreezeError('');
+    setFreezeSuccess('');
     try {
       const payload = {
         booking_freeze_weekly_enabled: String(settingsForm.booking_freeze_weekly_enabled),
         booking_freeze_weekly_day: settingsForm.booking_freeze_weekly_day,
         booking_freeze_weekly_time: padTime(settingsForm.booking_freeze_weekly_time),
-        site_locked_for_users: String(settingsForm.site_locked_for_users),
-        site_lock_message: settingsForm.site_lock_message,
       };
       await adminApi.updateSettings(payload);
-      setSettingsSuccess('Cài đặt đã lưu thành công');
+      setFreezeSuccess('Đã lưu cài đặt đóng băng đặt phòng');
       await loadSettings();
-      await refreshSiteLock();
-      setTimeout(() => setSettingsSuccess(''), 3000);
+      setTimeout(() => setFreezeSuccess(''), 3000);
     } catch (err) {
-      setSettingsError(err.response?.data?.error?.message || 'Lưu thất bại');
+      setFreezeError(err.response?.data?.error?.message || 'Lưu thất bại');
     } finally {
-      setSettingsSaving(false);
+      setFreezeSaving(false);
     }
   };
 
@@ -911,11 +934,11 @@ export default function AdminPage() {
           {settingsLoading ? (
             <div className="card p-12 text-center text-gray-400">Đang tải cài đặt...</div>
           ) : (
-            <form onSubmit={handleSaveSettings}>
-              <div className="card p-6 space-y-6">
+            <div className="space-y-6">
 
-                {/* Site Lock for User accounts */}
-                <div>
+              {/* Site Lock for User accounts */}
+              <form onSubmit={handleSaveSiteLock}>
+                <div className="card p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 inline-flex items-center gap-1.5">
                     <LockClosedIcon className="w-5 h-5" /> Khoá hệ thống (tài khoản User)
                   </h3>
@@ -954,7 +977,31 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Booking Freeze Settings */}
+                <button
+                  type="submit"
+                  disabled={siteLockSaving}
+                  className="btn-primary w-full mt-4 inline-flex items-center justify-center gap-1.5"
+                >
+                  {siteLockSaving
+                    ? (<><ArrowPathIcon className="w-4 h-4 animate-spin" /> Đang lưu...</>)
+                    : (<><BookmarkIcon className="w-4 h-4" /> Lưu cài đặt khoá hệ thống</>)}
+                </button>
+
+                {siteLockError && (
+                  <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {siteLockError}
+                  </div>
+                )}
+                {siteLockSuccess && (
+                  <div className="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg inline-flex items-center gap-1.5">
+                    <CheckCircleIcon className="w-4 h-4" /> {siteLockSuccess}
+                  </div>
+                )}
+              </form>
+
+              {/* Booking Freeze Settings */}
+              <form onSubmit={handleSaveFreeze}>
+              <div className="card p-6 space-y-6">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-4">Đóng băng đặt phòng</h3>
                   <div className="space-y-4">
@@ -1040,28 +1087,27 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Single Save Button */}
-              <button
-                type="submit"
-                disabled={settingsSaving}
-                className="btn-primary w-full mt-6 inline-flex items-center justify-center gap-1.5"
-              >
-                {settingsSaving
-                  ? (<><ArrowPathIcon className="w-4 h-4 animate-spin" /> Đang lưu...</>)
-                  : (<><BookmarkIcon className="w-4 h-4" /> Lưu cài đặt</>)}
-              </button>
-            </form>
-          )}
+                <button
+                  type="submit"
+                  disabled={freezeSaving}
+                  className="btn-primary w-full mt-6 inline-flex items-center justify-center gap-1.5"
+                >
+                  {freezeSaving
+                    ? (<><ArrowPathIcon className="w-4 h-4 animate-spin" /> Đang lưu...</>)
+                    : (<><BookmarkIcon className="w-4 h-4" /> Lưu cài đặt đóng băng đặt phòng</>)}
+                </button>
 
-          {/* Messages */}
-          {settingsError && (
-            <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {settingsError}
-            </div>
-          )}
-          {settingsSuccess && (
-            <div className="mt-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg inline-flex items-center gap-1.5">
-              <CheckCircleIcon className="w-4 h-4" /> {settingsSuccess}
+                {freezeError && (
+                  <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {freezeError}
+                  </div>
+                )}
+                {freezeSuccess && (
+                  <div className="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg inline-flex items-center gap-1.5">
+                    <CheckCircleIcon className="w-4 h-4" /> {freezeSuccess}
+                  </div>
+                )}
+              </form>
             </div>
           )}
         </div>
