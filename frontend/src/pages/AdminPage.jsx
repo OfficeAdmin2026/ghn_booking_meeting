@@ -42,7 +42,8 @@ export default function AdminPage() {
   const { refreshSiteLock } = useAuth();
 
   // Tabs
-  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' or 'settings'
+  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' | 'roles' | 'settings'
+  const [settingsSubTab, setSettingsSubTab] = useState('lock'); // 'lock' | 'freeze'
   
   // Room management
   const [rooms, setRooms] = useState([]);
@@ -384,44 +385,54 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header with Tabs */}
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Bảng Điều Khiển Quản Trị</h1>
+      </div>
 
-        {/* Tabs */}
-        <div className="flex justify-start gap-1 border-b border-gray-200">
+      <div className="flex gap-6 items-start">
+        {/* Sidebar nav */}
+        <div className="w-64 shrink-0 rounded-xl border border-gray-200 bg-white p-2">
           <button
             onClick={() => setActiveTab('rooms')}
-            className={`pl-0 pr-3 py-2.5 font-medium border-b-2 transition-colors ${
-              activeTab === 'rooms'
-                ? 'border-ghn-orange text-ghn-orange'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+            className={`w-full text-left rounded-lg px-3 py-2.5 font-medium transition-colors ${
+              activeTab === 'rooms' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
             1. Quản lý phòng
           </button>
           <button
             onClick={() => setActiveTab('roles')}
-            className={`px-3 py-2.5 font-medium border-b-2 transition-colors ${
-              activeTab === 'roles'
-                ? 'border-ghn-orange text-ghn-orange'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+            className={`w-full text-left rounded-lg px-3 py-2.5 font-medium transition-colors mt-1 ${
+              activeTab === 'roles' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
             2. Phân quyền
           </button>
+
+          <div className="mt-1 px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            3. Cài đặt hệ thống
+          </div>
           <button
-            onClick={() => setActiveTab('settings')}
-            className={`px-3 py-2.5 font-medium border-b-2 transition-colors ${
-              activeTab === 'settings'
-                ? 'border-ghn-orange text-ghn-orange'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+            onClick={() => { setActiveTab('settings'); setSettingsSubTab('lock'); }}
+            className={`w-full text-left rounded-lg pl-6 pr-3 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'settings' && settingsSubTab === 'lock' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            3. Đóng băng đặt phòng
+            3.1 Khoá hệ thống (tài khoản User)
+          </button>
+          <button
+            onClick={() => { setActiveTab('settings'); setSettingsSubTab('freeze'); }}
+            className={`w-full text-left rounded-lg pl-6 pr-3 py-2 text-sm font-medium transition-colors mt-0.5 ${
+              activeTab === 'settings' && settingsSubTab === 'freeze' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            3.2 Đóng băng đặt phòng
           </button>
         </div>
-      </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
 
       {/* Rooms Tab */}
       {activeTab === 'rooms' && (
@@ -926,14 +937,13 @@ export default function AdminPage() {
       {/* Settings Tab */}
       {activeTab === 'settings' && (
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Cài đặt hệ thống</h2>
-          
           {settingsLoading ? (
             <div className="card p-12 text-center text-gray-400">Đang tải cài đặt...</div>
           ) : (
             <div className="space-y-6">
 
               {/* Site Lock for User accounts */}
+              {settingsSubTab === 'lock' && (
               <form onSubmit={handleSaveSiteLock}>
                 <div className="card p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 inline-flex items-center gap-1.5">
@@ -995,8 +1005,10 @@ export default function AdminPage() {
                   </div>
                 )}
               </form>
+              )}
 
               {/* Booking Freeze Settings */}
+              {settingsSubTab === 'freeze' && (
               <form onSubmit={handleSaveFreeze}>
               <div className="card p-6 space-y-6">
                 <div>
@@ -1105,10 +1117,14 @@ export default function AdminPage() {
                   </div>
                 )}
               </form>
+              )}
             </div>
           )}
         </div>
       )}
+
+        </div>
+      </div>
     </div>
   );
 }
