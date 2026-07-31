@@ -2,80 +2,64 @@ import { useState, useEffect } from 'react';
 import { adminApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  GlobeAltIcon,
+  QuestionMarkCircleIcon,
+  PlusIcon,
   PencilIcon,
-  PencilSquareIcon,
+  TrashIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  TrashIcon,
-  PlusIcon,
-  ArrowUturnLeftIcon,
   BookmarkIcon,
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
-/* ─── Color palette ─── */
-const COLORS = {
-  orange: { header: 'bg-ghn-orange', num: 'text-ghn-orange', border: 'border-orange-200', dot: 'bg-ghn-orange',  label: 'Cam'      },
-  blue:   { header: 'bg-blue-500',   num: 'text-blue-500',   border: 'border-blue-200',   dot: 'bg-blue-500',   label: 'Xanh'     },
-  red:    { header: 'bg-red-500',    num: 'text-red-500',    border: 'border-red-200',    dot: 'bg-red-500',    label: 'Đỏ'       },
-  green:  { header: 'bg-green-600',  num: 'text-green-600',  border: 'border-green-200',  dot: 'bg-green-600',  label: 'Xanh lá'  },
-  purple: { header: 'bg-purple-500', num: 'text-purple-500', border: 'border-purple-200', dot: 'bg-purple-500', label: 'Tím'      },
-};
-
 /* ─── Default content ─── */
-const DEFAULT_DATA = {
-  badge: 'Hướng dẫn',
-  title: 'Hướng dẫn sử dụng hệ thống đặt phòng GHN',
-  intro: 'Hệ thống giúp ACE tra cứu và đặt phòng họp, xem bản đồ văn phòng, đặt xe công ty nhanh chóng. Dưới đây là hướng dẫn các bước sử dụng cơ bản.',
-  sections: [
-    {
-      id: 's1', color: 'orange', icon: '🔑', title: 'Đăng nhập', intro: '',
-      items: [
-        'Truy cập web, nhập **email công ty (@ghn.vn)** và họ tên — không cần mật khẩu.',
-        'Lần đầu đăng nhập, hệ thống tự động tạo tài khoản với quyền **User**. Muốn nâng quyền VIP/Admin, liên hệ bộ phận quản trị.',
-      ],
-    },
-    {
-      id: 's2', color: 'blue', icon: '📅', title: 'Đặt phòng họp', intro: '',
-      items: [
-        'Vào **Trang chủ**, chọn địa điểm (Rivera Park / Mipec) và tầng ở bộ lọc bên trái để xem lịch các phòng.',
-        'Trên lịch, **kéo chọn khung giờ trống** của phòng cần đặt, nhập tiêu đề cuộc họp rồi bấm Đặt phòng.',
-        'Không nhớ phòng nào trống? Dùng ô **Tìm phòng trống** để lọc theo sức chứa, tiện ích (TV, Video Conference...).',
-        'Muốn đổi giờ hoặc huỷ lịch đã đặt, bấm vào lịch đó trên calendar để mở chi tiết.',
-        'Phòng có gắn nhãn **VIP** chỉ dành cho Ban điều hành (BOD) sử dụng.',
-      ],
-    },
-    {
-      id: 's3', color: 'purple', icon: '⏰', title: 'Quy tắc mở lịch theo tuần', intro: '',
-      items: [
-        'Lịch đặt phòng chỉ mở theo tuần, thường vào **chiều Thứ 5** hàng tuần cho tuần kế tiếp (tuỳ cấu hình admin).',
-        'Nếu chọn khung giờ ở tuần chưa mở, hệ thống sẽ báo "chưa thể đặt phòng" kèm thời điểm mở tiếp theo.',
-      ],
-    },
-    {
-      id: 's4', color: 'green', icon: '🗺️', title: 'Bản đồ văn phòng', intro: '',
-      items: [
-        'Vào mục **Bản đồ văn phòng** để xem sơ đồ trực quan, tìm phòng theo tên hoặc vị trí trên từng tầng.',
-        'Bấm vào một phòng trên bản đồ để xem thông tin và đặt phòng nhanh.',
-      ],
-    },
-    {
-      id: 's5', color: 'red', icon: '🚗', title: 'Xe công ty', intro: '',
-      items: [
-        'Vào mục **Xe công ty** để xem lịch trống của các xe trong tuần.',
-        'Hệ thống hiện chỉ cho **Admin đặt xe hộ** — thấy khung giờ trống thì nhắn Admin để được sắp xếp.',
-      ],
-    },
-  ],
-  closing: {
-    paragraphs: [
-      'Ngoài ra, ACE có thể xem thêm mục Nội quy phòng họp để nắm các quy định sử dụng phòng.',
+const DEFAULT_TOPICS = [
+  {
+    id: 't1', icon: '🔑', title: 'Đăng nhập',
+    items: [
+      'Truy cập web, nhập **email công ty (@ghn.vn)** và họ tên — không cần mật khẩu.',
+      'Lần đầu đăng nhập, hệ thống tự động tạo tài khoản với quyền **User**. Muốn nâng quyền VIP/Admin, liên hệ bộ phận quản trị.',
+    ],
+  },
+  {
+    id: 't2', icon: '📅', title: 'Đặt phòng họp',
+    items: [
+      'Vào **Trang chủ**, chọn địa điểm (Rivera Park / Mipec) và tầng ở bộ lọc bên trái để xem lịch các phòng.',
+      'Trên lịch, **kéo chọn khung giờ trống** của phòng cần đặt, nhập tiêu đề cuộc họp rồi bấm Đặt phòng.',
+      'Không nhớ phòng nào trống? Dùng ô **Tìm phòng trống** để lọc theo sức chứa, tiện ích (TV, Video Conference...).',
+      'Muốn đổi giờ hoặc huỷ lịch đã đặt, bấm vào lịch đó trên calendar để mở chi tiết.',
+      'Phòng có gắn nhãn **VIP** chỉ dành cho Ban điều hành (BOD) sử dụng.',
+    ],
+  },
+  {
+    id: 't3', icon: '⏰', title: 'Quy tắc mở lịch theo tuần',
+    items: [
+      'Lịch đặt phòng chỉ mở theo tuần, thường vào **chiều Thứ 5** hàng tuần cho tuần kế tiếp (tuỳ cấu hình admin).',
+      'Nếu chọn khung giờ ở tuần chưa mở, hệ thống sẽ báo "chưa thể đặt phòng" kèm thời điểm mở tiếp theo.',
+    ],
+  },
+  {
+    id: 't4', icon: '🗺️', title: 'Bản đồ văn phòng',
+    items: [
+      'Vào mục **Bản đồ văn phòng** để xem sơ đồ trực quan, tìm phòng theo tên hoặc vị trí trên từng tầng.',
+      'Bấm vào một phòng trên bản đồ để xem thông tin và đặt phòng nhanh.',
+    ],
+  },
+  {
+    id: 't5', icon: '🚗', title: 'Xe công ty',
+    items: [
+      'Vào mục **Xe công ty** để xem lịch trống của các xe trong tuần.',
+      'Hệ thống hiện chỉ cho **Admin đặt xe hộ** — thấy khung giờ trống thì nhắn Admin để được sắp xếp.',
+    ],
+  },
+  {
+    id: 't6', icon: '💬', title: 'Hỗ trợ',
+    items: [
+      'Xem thêm mục **Nội quy phòng họp** để nắm các quy định sử dụng phòng.',
       'Có thắc mắc hoặc gặp lỗi khi sử dụng hệ thống, vui lòng liên hệ bộ phận Hành chính / Admin để được hỗ trợ.',
     ],
-    signature: '— Office Admin Team',
   },
-};
+];
 
 /* ─── **bold** renderer ─── */
 function T({ text }) {
@@ -84,285 +68,66 @@ function T({ text }) {
   return <>{parts.map((p, i) => i % 2 === 1 ? <strong key={i}>{p}</strong> : p)}</>;
 }
 
-/* ─── Display: one section ─── */
-function SectionDisplay({ s }) {
-  const c = COLORS[s.color] || COLORS.orange;
-  return (
-    <div className={`rounded-xl overflow-hidden border ${c.border}`}>
-      <div className={`${c.header} px-5 py-3 flex items-center gap-2`}>
-        <span className="text-lg">{s.icon}</span>
-        <span className="text-white font-bold text-sm uppercase tracking-wider">{s.title}</span>
-      </div>
-      <div className="px-5 py-4 space-y-3.5 bg-white">
-        {s.intro && <p className="text-gray-500 text-sm italic">{s.intro}</p>}
-        {s.items.map((item, i) => (
-          <div key={i} className="flex items-start gap-3">
-            <span className={`${c.num} font-bold text-sm flex-shrink-0 w-5 text-right mt-0.5`}>{i + 1}.</span>
-            <p className="text-gray-700 text-sm leading-relaxed"><T text={item} /></p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Display: full page ─── */
-function GuideDisplay({ data }) {
-  return (
-    <>
-      <div className="h-1.5 bg-gradient-to-r from-red-400 via-yellow-300 via-green-400 via-blue-400 to-purple-500" />
-      <div className="text-center px-6 pt-8 pb-6">
-        <span className="inline-block bg-ghn-orange text-white text-[11px] font-bold px-5 py-1.5 rounded-full tracking-widest uppercase mb-4">
-          {data.badge}
-        </span>
-        <h1 className="text-xl md:text-2xl font-black text-gray-900 uppercase tracking-wide leading-snug">
-          {data.title}
-        </h1>
-        <div className="w-10 h-1 bg-ghn-orange mx-auto rounded-full mt-3" />
-      </div>
-      <div className="px-6 pb-8 space-y-6">
-        {data.intro && <p className="text-gray-700 text-sm leading-relaxed"><T text={data.intro} /></p>}
-        {data.sections.map((s) => <SectionDisplay key={s.id} s={s} />)}
-        <hr className="border-dashed border-gray-200" />
-        <div className="space-y-3 text-center">
-          {data.closing.paragraphs.map((p, i) => (
-            <p key={i} className="text-gray-700 text-sm leading-relaxed">{p}</p>
-          ))}
-          {data.closing.signature && (
-            <p className="text-ghn-orange font-bold italic text-sm">{data.closing.signature}</p>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
-
-/* ─── Reusable field label ─── */
-function FieldLabel({ children, hint }) {
-  return (
-    <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
-      {children}
-      {hint && <span className="normal-case font-normal tracking-normal text-gray-300 ml-1">{hint}</span>}
-    </label>
-  );
-}
-
-/* ─── Collapsible card ─── */
-function Card({ title, colorDot, open, onToggle, actions, children }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div
-        className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer select-none"
-        onClick={onToggle}
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          {colorDot && <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${colorDot}`} />}
-          <span className="text-sm font-semibold text-gray-800 truncate">{title}</span>
-        </div>
-        <div className="flex items-center gap-1 flex-shrink-0 ml-2" onClick={(e) => e.stopPropagation()}>
-          {actions}
-          <svg className={`w-4 h-4 text-gray-400 transition-transform ml-1 ${open ? '' : '-rotate-90'}`}
-            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </div>
-      {open && <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-3">{children}</div>}
-    </div>
-  );
-}
-
-/* ─── Icon button ─── */
-function IconBtn({ onClick, danger, disabled, title, children }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className={`w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 transition-colors text-sm disabled:opacity-30
-        ${danger ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-400 hover:text-gray-600'}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* ─── Input/Textarea helpers ─── */
 const inputCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-ghn-orange';
 
-/* ─── Edit form ─── */
-function EditForm({ initial, onSave, onCancel, saving }) {
-  const [d, setD] = useState(() => JSON.parse(JSON.stringify(initial)));
-  const [openCards, setOpenCards] = useState({ overview: true });
-
-  const toggleCard = (id) => setOpenCards((v) => ({ ...v, [id]: !v[id] }));
-
-  /* form-level fields */
-  const setField = (f, v) => setD((p) => ({ ...p, [f]: v }));
-
-  /* closing */
-  const setClosingField = (f, v) => setD((p) => ({ ...p, closing: { ...p.closing, [f]: v } }));
-  const setClosingPara  = (i, v) => setD((p) => { const a = [...p.closing.paragraphs]; a[i] = v; return { ...p, closing: { ...p.closing, paragraphs: a } }; });
-  const addClosingPara  = ()      => setD((p) => ({ ...p, closing: { ...p.closing, paragraphs: [...p.closing.paragraphs, ''] } }));
-  const delClosingPara  = (i)     => setD((p) => ({ ...p, closing: { ...p.closing, paragraphs: p.closing.paragraphs.filter((_, j) => j !== i) } }));
-
-  /* sections */
-  const setSection      = (id, f, v)  => setD((p) => ({ ...p, sections: p.sections.map((s) => s.id === id ? { ...s, [f]: v } : s) }));
-  const addSection      = ()          => setD((p) => ({ ...p, sections: [...p.sections, { id: `s${Date.now()}`, color: 'orange', icon: '📌', title: 'Mục mới', intro: '', items: [''] }] }));
-  const delSection      = (id)        => setD((p) => ({ ...p, sections: p.sections.filter((s) => s.id !== id) }));
-  const moveSectionUp   = (i)         => { if (i === 0) return; setD((p) => { const a = [...p.sections]; [a[i-1], a[i]] = [a[i], a[i-1]]; return { ...p, sections: a }; }); };
-  const moveSectionDown = (i)         => setD((p) => { if (i >= p.sections.length - 1) return p; const a = [...p.sections]; [a[i], a[i+1]] = [a[i+1], a[i]]; return { ...p, sections: a }; });
-
-  /* items */
-  const setItem = (sid, i, v) => setD((p) => ({ ...p, sections: p.sections.map((s) => { if (s.id !== sid) return s; const a = [...s.items]; a[i] = v; return { ...s, items: a }; }) }));
-  const addItem = (sid)       => setD((p) => ({ ...p, sections: p.sections.map((s) => s.id === sid ? { ...s, items: [...s.items, ''] } : s) }));
-  const delItem = (sid, i)    => setD((p) => ({ ...p, sections: p.sections.map((s) => s.id === sid ? { ...s, items: s.items.filter((_, j) => j !== i) } : s) }));
-  const moveItemUp   = (sid, i) => { if (i === 0) return; setD((p) => ({ ...p, sections: p.sections.map((s) => { if (s.id !== sid) return s; const a = [...s.items]; [a[i-1], a[i]] = [a[i], a[i-1]]; return { ...s, items: a }; }) })); };
-  const moveItemDown = (sid, i) => setD((p) => ({ ...p, sections: p.sections.map((s) => { if (s.id !== sid) return s; if (i >= s.items.length - 1) return s; const a = [...s.items]; [a[i], a[i+1]] = [a[i+1], a[i]]; return { ...s, items: a }; }) }));
+/* ─── Edit form for the currently selected topic ─── */
+function TopicEditForm({ topic, onChange, onSave, onCancel, saving }) {
+  const setField = (f, v) => onChange({ ...topic, [f]: v });
+  const setItem = (i, v) => { const a = [...topic.items]; a[i] = v; onChange({ ...topic, items: a }); };
+  const addItem = () => onChange({ ...topic, items: [...topic.items, ''] });
+  const delItem = (i) => onChange({ ...topic, items: topic.items.filter((_, j) => j !== i) });
+  const moveUp = (i) => { if (i === 0) return; const a = [...topic.items]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; onChange({ ...topic, items: a }); };
+  const moveDown = (i) => { if (i >= topic.items.length - 1) return; const a = [...topic.items]; [a[i], a[i + 1]] = [a[i + 1], a[i]]; onChange({ ...topic, items: a }); };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      <div className="grid grid-cols-[80px_1fr] gap-3">
+        <div>
+          <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Icon</label>
+          <input value={topic.icon} onChange={(e) => setField('icon', e.target.value)} className={inputCls} placeholder="📌" />
+        </div>
+        <div>
+          <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Tiêu đề mục</label>
+          <input value={topic.title} onChange={(e) => setField('title', e.target.value)} className={inputCls} />
+        </div>
+      </div>
 
-      {/* ── Overview ── */}
-      <Card title={<span className="flex items-center gap-1.5"><GlobeAltIcon className="w-4 h-4" /> Tổng quan</span>} open={!!openCards.overview} onToggle={() => toggleCard('overview')}>
-        <div>
-          <FieldLabel>Nhãn badge</FieldLabel>
-          <input value={d.badge} onChange={(e) => setField('badge', e.target.value)} className={inputCls} placeholder="Hướng dẫn" />
-        </div>
-        <div>
-          <FieldLabel>Tiêu đề chính</FieldLabel>
-          <input value={d.title} onChange={(e) => setField('title', e.target.value)} className={inputCls} />
-        </div>
-        <div>
-          <FieldLabel>Đoạn giới thiệu</FieldLabel>
-          <textarea value={d.intro} onChange={(e) => setField('intro', e.target.value)} rows={3} className={`${inputCls} resize-none`} />
-        </div>
-      </Card>
-
-      {/* ── Sections ── */}
-      {d.sections.map((s, idx) => {
-        const c = COLORS[s.color] || COLORS.orange;
-        const cardId = `sec_${s.id}`;
-        return (
-          <Card
-            key={s.id}
-            title={<span className="flex items-center gap-1.5">{s.icon} {s.title}</span>}
-            colorDot={c.dot}
-            open={!!openCards[cardId]}
-            onToggle={() => toggleCard(cardId)}
-            actions={
-              <>
-                <IconBtn onClick={() => moveSectionUp(idx)}   disabled={idx === 0}                       title="Di lên"><ArrowUpIcon className="w-3.5 h-3.5" /></IconBtn>
-                <IconBtn onClick={() => moveSectionDown(idx)} disabled={idx === d.sections.length - 1}   title="Di xuống"><ArrowDownIcon className="w-3.5 h-3.5" /></IconBtn>
-                <IconBtn onClick={() => delSection(s.id)} danger title="Xóa mục"><TrashIcon className="w-3.5 h-3.5" /></IconBtn>
-              </>
-            }
-          >
-            {/* Icon + Color */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <FieldLabel>Icon</FieldLabel>
-                <input value={s.icon} onChange={(e) => setSection(s.id, 'icon', e.target.value)} className={inputCls} placeholder="📌" />
-              </div>
-              <div>
-                <FieldLabel>Màu sắc</FieldLabel>
-                <div className="flex gap-2 mt-1 flex-wrap">
-                  {Object.entries(COLORS).map(([key, cfg]) => (
-                    <button
-                      key={key}
-                      onClick={() => setSection(s.id, 'color', key)}
-                      title={cfg.label}
-                      className={`w-6 h-6 rounded-full ${cfg.dot} border-2 transition-all ${
-                        s.color === key ? 'border-gray-700 scale-125' : 'border-transparent hover:scale-110'
-                      }`}
-                    />
-                  ))}
-                </div>
+      <div>
+        <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
+          Nội dung <span className="normal-case font-normal text-gray-300 ml-1">· bọc **...** để in đậm</span>
+        </label>
+        <div className="space-y-2">
+          {topic.items.map((item, i) => (
+            <div key={i} className="flex gap-1.5 items-start">
+              <textarea value={item} onChange={(e) => setItem(i, e.target.value)} rows={2} className={`flex-1 ${inputCls} resize-none`} />
+              <div className="flex flex-col gap-0.5 flex-shrink-0 mt-0.5">
+                <button type="button" onClick={() => moveUp(i)} disabled={i === 0}
+                  className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 transition-colors">
+                  <ArrowUpIcon className="w-3.5 h-3.5" />
+                </button>
+                <button type="button" onClick={() => moveDown(i)} disabled={i === topic.items.length - 1}
+                  className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 transition-colors">
+                  <ArrowDownIcon className="w-3.5 h-3.5" />
+                </button>
+                <button type="button" onClick={() => delItem(i)}
+                  className="w-6 h-6 flex items-center justify-center rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                  <TrashIcon className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
-
-            {/* Title */}
-            <div>
-              <FieldLabel>Tiêu đề mục</FieldLabel>
-              <input value={s.title} onChange={(e) => setSection(s.id, 'title', e.target.value)} className={inputCls} />
-            </div>
-
-            {/* Section intro */}
-            <div>
-              <FieldLabel>Mô tả mở đầu mục <span className="text-gray-300">(tùy chọn)</span></FieldLabel>
-              <textarea value={s.intro} onChange={(e) => setSection(s.id, 'intro', e.target.value)}
-                rows={2} className={`${inputCls} resize-none`} placeholder="Để trống nếu không cần..." />
-            </div>
-
-            {/* Items */}
-            <div>
-              <FieldLabel hint="· bọc text bằng **...** để in đậm">Danh sách bước / nội dung</FieldLabel>
-              <div className="space-y-2">
-                {s.items.map((item, ii) => (
-                  <div key={ii} className="flex gap-1.5 items-start">
-                    <span className={`${c.num} font-bold text-xs flex-shrink-0 w-5 text-right mt-2.5`}>{ii + 1}.</span>
-                    <textarea
-                      value={item}
-                      onChange={(e) => setItem(s.id, ii, e.target.value)}
-                      rows={2}
-                      className={`flex-1 ${inputCls} resize-none`}
-                    />
-                    <div className="flex flex-col gap-0.5 flex-shrink-0 mt-1">
-                      <IconBtn onClick={() => moveItemUp(s.id, ii)}   disabled={ii === 0}                    title="Di lên"><ArrowUpIcon className="w-3.5 h-3.5" /></IconBtn>
-                      <IconBtn onClick={() => moveItemDown(s.id, ii)} disabled={ii === s.items.length - 1}   title="Di xuống"><ArrowDownIcon className="w-3.5 h-3.5" /></IconBtn>
-                      <IconBtn onClick={() => delItem(s.id, ii)} danger title="Xóa nội dung"><TrashIcon className="w-3.5 h-3.5" /></IconBtn>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button onClick={() => addItem(s.id)}
-                className="mt-2 text-xs text-ghn-orange hover:text-ghn-orange-dark font-semibold flex items-center gap-1 transition-colors">
-                <PlusIcon className="w-3.5 h-3.5" /> Thêm nội dung
-              </button>
-            </div>
-          </Card>
-        );
-      })}
-
-      {/* Add section */}
-      <button onClick={addSection}
-        className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-ghn-orange hover:text-ghn-orange transition-colors font-medium inline-flex items-center justify-center gap-1">
-        <PlusIcon className="w-4 h-4" /> Thêm mục mới
-      </button>
-
-      {/* ── Closing ── */}
-      <Card title={<span className="flex items-center gap-1.5"><PencilIcon className="w-4 h-4" /> Phần kết</span>} open={!!openCards.closing} onToggle={() => toggleCard('closing')}>
-        <div>
-          <FieldLabel>Đoạn văn kết</FieldLabel>
-          <div className="space-y-2">
-            {d.closing.paragraphs.map((p, i) => (
-              <div key={i} className="flex gap-1.5">
-                <textarea value={p} onChange={(e) => setClosingPara(i, e.target.value)}
-                  rows={2} className={`flex-1 ${inputCls} resize-none`} />
-                <IconBtn onClick={() => delClosingPara(i)} danger title="Xóa đoạn" className="mt-1 flex-shrink-0"><TrashIcon className="w-3.5 h-3.5" /></IconBtn>
-              </div>
-            ))}
-          </div>
-          <button onClick={addClosingPara}
-            className="mt-2 text-xs text-ghn-orange hover:text-ghn-orange-dark font-semibold flex items-center gap-1 transition-colors">
-            <PlusIcon className="w-3.5 h-3.5" /> Thêm đoạn văn
-          </button>
+          ))}
         </div>
-        <div>
-          <FieldLabel>Chữ ký</FieldLabel>
-          <input value={d.closing.signature} onChange={(e) => setClosingField('signature', e.target.value)}
-            className={inputCls} placeholder="— Tên / chức danh" />
-        </div>
-      </Card>
-
-      {/* Save / Cancel */}
-      <div className="flex gap-3 pt-2">
-        <button onClick={() => onSave(d)} disabled={saving} className="flex-1 btn-primary py-3 inline-flex items-center justify-center gap-1.5">
-          {saving ? 'Đang lưu...' : (<><BookmarkIcon className="w-4 h-4" /> Lưu tất cả thay đổi</>)}
+        <button type="button" onClick={addItem}
+          className="mt-2 text-xs text-ghn-orange hover:text-ghn-orange-dark font-semibold inline-flex items-center gap-1 transition-colors">
+          <PlusIcon className="w-3.5 h-3.5" /> Thêm nội dung
         </button>
-        <button onClick={onCancel} disabled={saving} className="flex-1 btn-ghost py-3">
-          Hủy
+      </div>
+
+      <div className="flex gap-3 pt-1">
+        <button onClick={onSave} disabled={saving} className="btn-primary px-5 py-2 inline-flex items-center gap-1.5">
+          {saving ? 'Đang lưu...' : (<><BookmarkIcon className="w-4 h-4" /> Lưu</>)}
         </button>
+        <button onClick={onCancel} disabled={saving} className="btn-ghost px-5 py-2">Hủy</button>
       </div>
     </div>
   );
@@ -371,30 +136,36 @@ function EditForm({ initial, onSave, onCancel, saving }) {
 /* ─── Main page ─── */
 export default function GuidePage() {
   const { isAdmin } = useAuth();
-  const [data, setData]         = useState(null);
+  const [topics, setTopics] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
-  const [loading, setLoading]   = useState(true);
-  const [saving, setSaving]     = useState(false);
-  const [saved, setSaved]       = useState(false);
-  const [error, setError]       = useState('');
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     adminApi.getGuide()
       .then((res) => {
         const raw = res.data.data?.guide || '';
-        try { setData(JSON.parse(raw)); } catch { setData(DEFAULT_DATA); }
+        let parsed = null;
+        try { parsed = JSON.parse(raw); } catch { /* fall back below */ }
+        const list = Array.isArray(parsed) && parsed.length ? parsed : DEFAULT_TOPICS;
+        setTopics(list);
+        setSelectedId(list[0].id);
       })
-      .catch(() => setData(DEFAULT_DATA))
+      .catch(() => { setTopics(DEFAULT_TOPICS); setSelectedId(DEFAULT_TOPICS[0].id); })
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSave = async (newData) => {
+  const persist = async (newTopics, keepSelected) => {
     setSaving(true);
     setError('');
     try {
-      await adminApi.updateGuide(JSON.stringify(newData));
-      setData(newData);
-      setEditMode(false);
+      await adminApi.updateGuide(JSON.stringify(newTopics));
+      setTopics(newTopics);
+      if (keepSelected !== undefined) setSelectedId(keepSelected);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
@@ -404,56 +175,112 @@ export default function GuidePage() {
     }
   };
 
-  const handleReset = async () => {
-    if (!window.confirm('Khôi phục về nội dung mặc định?')) return;
-    handleSave(DEFAULT_DATA);
+  const startEdit = () => { setDraft({ ...selectedTopic }); setEditMode(true); };
+  const cancelEdit = () => { setDraft(null); setEditMode(false); };
+  const saveEdit = () => {
+    const newTopics = topics.map((t) => (t.id === draft.id ? draft : t));
+    persist(newTopics).then(() => { setDraft(null); setEditMode(false); });
   };
 
-  if (loading) return (
+  const addTopic = () => {
+    const t = { id: `t${Date.now()}`, icon: '📌', title: 'Mục mới', items: [''] };
+    const newTopics = [...topics, t];
+    persist(newTopics, t.id).then(() => { setDraft(t); setEditMode(true); });
+  };
+
+  const deleteTopic = (id) => {
+    if (!window.confirm('Xoá mục này?')) return;
+    const newTopics = topics.filter((t) => t.id !== id);
+    if (newTopics.length === 0) return;
+    const nextSelected = selectedId === id ? newTopics[0].id : selectedId;
+    persist(newTopics, nextSelected);
+  };
+
+  if (loading || !topics) return (
     <div className="flex justify-center py-24">
       <div className="w-6 h-6 border-2 border-ghn-orange border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
-  return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+  const selectedTopic = topics.find((t) => t.id === selectedId) || topics[0];
 
-      {/* Admin toolbar */}
-      {isAdmin && (
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-bold text-gray-700 inline-flex items-center gap-1.5">
-            {editMode ? (<><PencilSquareIcon className="w-4 h-4" /> Chỉnh sửa hướng dẫn</>) : 'Hướng dẫn sử dụng'}
-          </h2>
-          {!editMode && (
-            <div className="flex gap-2">
-              <button onClick={handleReset}
-                className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                <ArrowUturnLeftIcon className="w-3.5 h-3.5" /> Mặc định
+  return (
+    <div className="p-4">
+      <div className="flex gap-6 items-start">
+        {/* Sidebar */}
+        <div className="w-64 shrink-0 rounded-xl border border-gray-200 bg-white p-3">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 inline-flex items-center gap-1.5">
+              <QuestionMarkCircleIcon className="w-4 h-4 text-ghn-orange" /> Hướng dẫn sử dụng
+            </h3>
+            {isAdmin && (
+              <button type="button" onClick={addTopic} title="Thêm mục" className="text-gray-400 hover:text-ghn-orange transition-colors">
+                <PlusIcon className="w-4 h-4" />
               </button>
-              <button onClick={() => setEditMode(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-ghn-orange text-white text-sm font-semibold hover:bg-ghn-orange-dark transition-colors">
-                <PencilSquareIcon className="w-3.5 h-3.5" />
-                Chỉnh sửa
-              </button>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            {topics.map((t) => (
+              <div
+                key={t.id}
+                onClick={() => { setSelectedId(t.id); setEditMode(false); }}
+                className={`flex items-center gap-2 rounded-lg px-2.5 py-2 cursor-pointer transition-colors ${
+                  selectedId === t.id ? 'bg-orange-50 border border-ghn-orange/40' : 'hover:bg-gray-50 border border-transparent'
+                }`}
+              >
+                <span className="text-base shrink-0">{t.icon}</span>
+                <p className="min-w-0 flex-1 text-sm font-medium text-gray-800 truncate">{t.title}</p>
+                {isAdmin && topics.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); deleteTopic(t.id); }}
+                    className="shrink-0 text-gray-300 hover:text-red-500 transition-colors"
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0 rounded-xl border border-gray-200 bg-white p-6">
+          {saved && (
+            <div className="mb-4 px-4 py-2.5 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm font-medium inline-flex items-center gap-1.5">
+              <CheckCircleIcon className="w-4 h-4" /> Đã lưu thành công.
             </div>
           )}
-        </div>
-      )}
+          {error && <div className="mb-4 px-4 py-2.5 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
-      {saved  && (
-        <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-medium inline-flex items-center gap-1.5">
-          <CheckCircleIcon className="w-4 h-4" /> Đã lưu thành công.
+          {editMode ? (
+            <TopicEditForm topic={draft} onChange={setDraft} onSave={saveEdit} onCancel={cancelEdit} saving={saving} />
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-bold text-gray-900 inline-flex items-center gap-2">
+                  <span className="text-xl">{selectedTopic.icon}</span> {selectedTopic.title}
+                </h2>
+                {isAdmin && (
+                  <button onClick={startEdit}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-ghn-orange hover:bg-orange-50 transition-colors">
+                    <PencilIcon className="w-3.5 h-3.5" /> Chỉnh sửa
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {selectedTopic.items.map((item, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="text-ghn-orange font-bold text-sm flex-shrink-0 w-5 text-right mt-0.5">{i + 1}.</span>
+                    <p className="text-gray-700 text-sm leading-relaxed"><T text={item} /></p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
-      )}
-      {error  && <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">{error}</div>}
-
-      {editMode ? (
-        <EditForm initial={data} onSave={handleSave} onCancel={() => setEditMode(false)} saving={saving} />
-      ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <GuideDisplay data={data} />
-        </div>
-      )}
+      </div>
     </div>
   );
 }
