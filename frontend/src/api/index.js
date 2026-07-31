@@ -58,6 +58,10 @@ export const adminApi = {
 
   updateRules: (rules) => api.put('/admin/rules', { rules }),
 
+  getGuide: () => api.get('/admin/guide'),
+
+  updateGuide: (guide) => api.put('/admin/guide', { guide }),
+
   getCarRules: () => api.get('/admin/car-rules'),
 
   updateCarRules: (rules) => api.put('/admin/car-rules', { rules }),

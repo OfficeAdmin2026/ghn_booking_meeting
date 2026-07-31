@@ -123,6 +123,7 @@ class AdminSettingService {
       'car_booking_contact_note',
       'site_locked_for_users',
       'site_lock_message',
+      'usage_guide',
     ];
     for (const [key, value] of Object.entries(data)) {
       if (!ALLOWED_KEYS.includes(key)) continue;

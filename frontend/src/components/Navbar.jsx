@@ -7,6 +7,7 @@ import {
   ChartBarIcon,
   Cog6ToothIcon,
   TruckIcon,
+  QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 
 export default function Navbar() {
@@ -47,6 +48,9 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-1 bg-gray-100 rounded-xl p-1">
             <Link to="/" className={linkClass(location.pathname === '/')}>
               <HomeIcon className="w-4 h-4" /> Trang chủ
+            </Link>
+            <Link to="/guide" className={linkClass(location.pathname === '/guide')}>
+              <QuestionMarkCircleIcon className="w-4 h-4" /> Hướng dẫn sử dụng
             </Link>
             <Link to="/rules" className={linkClass(location.pathname === '/rules')}>
               <ClipboardDocumentListIcon className="w-4 h-4" /> Nội quy phòng họp
@@ -93,6 +97,9 @@ export default function Navbar() {
         <div className="md:hidden flex items-center gap-1 pb-2 pt-1 overflow-x-auto px-0 bg-gray-100 rounded-xl">
           <Link to="/" className={mobileLinkClass(location.pathname === '/')}>
             <HomeIcon className="w-3.5 h-3.5" /> Trang chủ
+          </Link>
+          <Link to="/guide" className={mobileLinkClass(location.pathname === '/guide')}>
+            <QuestionMarkCircleIcon className="w-3.5 h-3.5" /> Hướng dẫn
           </Link>
           <Link to="/rules" className={mobileLinkClass(location.pathname === '/rules')}>
             <ClipboardDocumentListIcon className="w-3.5 h-3.5" /> Nội quy

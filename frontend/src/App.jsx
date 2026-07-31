@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import RulesPage from './pages/RulesPage';
+import GuidePage from './pages/GuidePage';
 import CarsPage from './pages/CarsPage';
 
 function Layout({ children, fullHeight }) {
@@ -59,6 +60,11 @@ export default function App() {
           <Route path="/rules" element={
             <ProtectedRoute>
               <Layout><RulesPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/guide" element={
+            <ProtectedRoute>
+              <Layout><GuidePage /></Layout>
             </ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />

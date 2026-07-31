@@ -78,6 +78,27 @@ router.put('/rules', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/admin/guide - All authenticated users can read
+router.get('/guide', authMiddleware, async (req, res) => {
+  try {
+    const settings = await AdminSettingService.getAll();
+    res.json({ status: 'success', data: { guide: settings.usage_guide || '' } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// PUT /api/admin/guide - Admin only
+router.put('/guide', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { guide } = req.body;
+    await AdminSettingService.updateSettings({ usage_guide: guide ?? '' });
+    res.json({ status: 'success', data: { guide: guide ?? '' } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
 // GET /api/admin/car-rules - All authenticated users can read
 router.get('/car-rules', authMiddleware, async (req, res) => {
   try {
