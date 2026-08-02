@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Icon Đặt phòng họp">
+  <defs>
+    <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.6" flood-color="#2A251E" flood-opacity="0.18"/>
+    </filter>
+    <clipPath id="cardClip">
+      <rect x="28" y="34" width="72" height="64" rx="10"/>
+    </clipPath>
+    <linearGradient id="tileGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F5F1EA"/>
+      <stop offset="1" stop-color="#E9E2D2"/>
+    </linearGradient>
+    <linearGradient id="badgeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF8A3D"/>
+      <stop offset="1" stop-color="#FF6C0A"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="128" height="128" rx="27" fill="url(#tileGrad)"/>
+
+  <!-- binder rings -->
+  <rect x="42" y="27" width="7" height="15" rx="3.5" fill="#FFFFFF" stroke="#D8CBAE" stroke-width="1.4"/>
+  <rect x="79" y="27" width="7" height="15" rx="3.5" fill="#FFFFFF" stroke="#D8CBAE" stroke-width="1.4"/>
+
+  <!-- calendar card -->
+  <g filter="url(#cardShadow)">
+    <g clip-path="url(#cardClip)">
+      <rect x="28" y="34" width="72" height="64" fill="#FFFFFF"/>
+      <rect x="28" y="34" width="72" height="19" fill="#FF6C0A"/>
+
+      <!-- day grid: 3 cols x 2 rows -->
+      <rect x="36" y="61" width="14" height="14" rx="4" fill="#EFE7D6"/>
+      <rect x="57" y="61" width="14" height="14" rx="4" fill="#EFE7D6"/>
+      <rect x="78" y="61" width="14" height="14" rx="4" fill="#EFE7D6"/>
+      <rect x="36" y="79" width="14" height="14" rx="4" fill="#EFE7D6"/>
+      <rect x="78" y="79" width="14" height="14" rx="4" fill="#EFE7D6"/>
+
+      <!-- booked slot, highlighted -->
+      <rect x="57" y="79" width="14" height="14" rx="4" fill="#FF6C0A"/>
+      <path d="M60.4 86.2 L63 88.8 L67.6 82.8" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <rect x="28" y="34" width="72" height="64" rx="10" fill="none" stroke="#E2D9C4" stroke-width="1.2"/>
+  </g>
+
+  <!-- GHN corner badge -->
+  <g filter="url(#cardShadow)">
+    <rect x="80" y="80" width="34" height="34" rx="10" fill="url(#badgeGrad)"/>
+    <path d="M92 106 V93 a5 5 0 0 1 5-5 h4 a5 5 0 0 1 5 5 v13 Z" fill="none" stroke="#FFFFFF" stroke-width="2.1" stroke-linejoin="round"/>
+    <circle cx="99.5" cy="99.5" r="1.5" fill="#FFFFFF"/>
+  </g>
+</svg>
