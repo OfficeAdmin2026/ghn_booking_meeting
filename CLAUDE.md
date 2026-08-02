@@ -17,9 +17,9 @@ Internal meeting room booking system for GHN (Giao Hàng Nhanh).
 
 | Service    | URL |
 |------------|-----|
-| GitHub     | https://github.com/tilo2402/ghn_booking_meeting |
+| GitHub     | https://github.com/OfficeAdmin2026/ghn_booking_meeting |
 | Frontend   | https://ghn-booking-meeting-seven.vercel.app |
-| Backend    | https://ghn-booking-meeting.onrender.com |
+| Backend    | https://ghn-booking-meeting-l0op.onrender.com |
 | Database   | Supabase (PostgreSQL 15, project: `ghn-booking-meeting`) |
 | Report     | https://tilo2402.github.io/ghn_booking_meeting/ (GitHub Pages, `docs/index.html`) |
 
@@ -80,7 +80,7 @@ ALLOWED_ORIGINS=https://ghn-booking-meeting-seven.vercel.app
 
 ### Frontend (set on Vercel)
 ```
-VITE_API_URL=https://ghn-booking-meeting.onrender.com/api
+VITE_API_URL=https://ghn-booking-meeting-l0op.onrender.com/api
 ```
 > Must include `/api` suffix. Vite env vars are baked at build time — redeploy after changing.
 > Local fallback: `http://localhost:5001/api` (see `frontend/src/api/axios.js`).
