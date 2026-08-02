@@ -45,11 +45,11 @@ export default function Navbar() {
               <Link to="/" className="text-xs text-gray-500 hover:text-gray-700 transition-colors">Hệ thống đặt phòng họp</Link>
               <Link
                 to="/guide"
-                className={`mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${
+                className={`mt-0.5 inline-flex items-center gap-1 text-xs font-medium transition-colors ${
                   location.pathname === '/guide' ? 'text-ghn-orange' : 'text-gray-400 hover:text-ghn-orange'
                 }`}
               >
-                <QuestionMarkCircleIcon className="w-3 h-3" /> Hướng dẫn sử dụng
+                <QuestionMarkCircleIcon className="w-3.5 h-3.5" /> Hướng dẫn sử dụng
               </Link>
             </div>
           </div>
