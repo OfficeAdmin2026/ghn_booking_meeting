@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Icon Đặt phòng họp">
+  <defs>
+    <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.6" flood-color="#2A251E" flood-opacity="0.18"/>
+    </filter>
+    <clipPath id="cardClip">
+      <rect x="22" y="36" width="84" height="76" rx="11"/>
+    </clipPath>
+  </defs>
+
+  <!-- binder rings -->
+  <rect x="40" y="27" width="7" height="16" rx="3.5" fill="#FFFFFF" stroke="#171310" stroke-width="2.6" stroke-linejoin="round"/>
+  <rect x="81" y="27" width="7" height="16" rx="3.5" fill="#FFFFFF" stroke="#171310" stroke-width="2.6" stroke-linejoin="round"/>
+
+  <!-- calendar card -->
+  <g filter="url(#cardShadow)">
+    <g clip-path="url(#cardClip)">
+      <rect x="22" y="36" width="84" height="76" fill="#F7F3EA"/>
+
+      <!-- perforation strip -->
+      <rect x="22" y="36" width="84" height="9" fill="#C9C2B4"/>
+      <circle cx="30" cy="40.5" r="1.4" fill="#F7F3EA"/>
+      <circle cx="42" cy="40.5" r="1.4" fill="#F7F3EA"/>
+      <circle cx="54" cy="40.5" r="1.4" fill="#F7F3EA"/>
+      <circle cx="66" cy="40.5" r="1.4" fill="#F7F3EA"/>
+      <circle cx="78" cy="40.5" r="1.4" fill="#F7F3EA"/>
+      <circle cx="90" cy="40.5" r="1.4" fill="#F7F3EA"/>
+      <circle cx="98" cy="40.5" r="1.4" fill="#F7F3EA"/>
+      <path d="M22 45 H106" stroke="#171310" stroke-width="2"/>
+
+      <!-- day grid: 4 rows x 5 cols -->
+      <g font-family="Arial, Helvetica, sans-serif" font-weight="700" text-anchor="middle" dominant-baseline="middle">
+        <!-- row 1 -->
+        <text x="30.4" y="55.5" font-size="10" fill="#4A4536">1</text>
+        <text x="47.2" y="55.5" font-size="10" fill="#171310">2</text>
+        <text x="64" y="55.5" font-size="10" fill="#171310">3</text>
+        <text x="80.8" y="55.5" font-size="10" fill="#171310">4</text>
+        <text x="97.6" y="55.5" font-size="10" fill="#171310">5</text>
+        <!-- row 2 -->
+        <text x="30.4" y="71.5" font-size="10" fill="#171310">6</text>
+        <text x="47.2" y="71.5" font-size="10" fill="#171310">7</text>
+        <text x="64" y="71.5" font-size="10" fill="#171310">8</text>
+        <text x="80.8" y="71.5" font-size="10" fill="#171310">9</text>
+        <text x="97.6" y="71.5" font-size="10" fill="#171310">10</text>
+        <!-- row 3 -->
+        <circle cx="30.4" cy="87.5" r="8.6" fill="#E4392F"/>
+        <text x="30.4" y="87.8" font-size="10" fill="#FFFFFF">11</text>
+        <text x="47.2" y="87.5" font-size="10" fill="#171310">12</text>
+        <text x="64" y="87.5" font-size="10" fill="#171310">13</text>
+        <text x="80.8" y="87.5" font-size="10" fill="#171310">14</text>
+        <text x="97.6" y="87.5" font-size="10" fill="#171310">15</text>
+        <!-- row 4 -->
+        <text x="30.4" y="103.5" font-size="10" fill="#171310">16</text>
+        <text x="47.2" y="103.5" font-size="10" fill="#171310">17</text>
+        <text x="64" y="103.5" font-size="10" fill="#171310">18</text>
+        <text x="80.8" y="103.5" font-size="10" fill="#171310">19</text>
+        <text x="97.6" y="103.5" font-size="10" fill="#4A4536">20</text>
+      </g>
+    </g>
+    <rect x="22" y="36" width="84" height="76" rx="11" fill="none" stroke="#171310" stroke-width="2.8"/>
+  </g>
+</svg>
