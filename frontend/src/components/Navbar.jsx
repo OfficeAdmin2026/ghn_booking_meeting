@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   HomeIcon,
@@ -11,14 +11,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function Navbar() {
-  const { user, logout, isAdmin, siteLock } = useAuth();
+  const { user, isAdmin, siteLock } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const linkClass = (active) =>
     `flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 ${
@@ -81,22 +75,14 @@ export default function Navbar() {
           </div>
 
           {/* User menu */}
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-ghn-orange flex items-center justify-center text-white text-sm font-bold">
-                {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-800 leading-tight">{user?.full_name}</p>
-                <p className="text-xs text-gray-500 leading-tight capitalize">{user?.role}</p>
-              </div>
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-ghn-orange flex items-center justify-center text-white text-sm font-bold">
+              {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-500 hover:text-red-500 font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors duration-200"
-            >
-              Đăng xuất
-            </button>
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-800 leading-tight">{user?.full_name}</p>
+              <p className="text-xs text-gray-500 leading-tight capitalize">{user?.role}</p>
+            </div>
           </div>
         </div>
 
