@@ -97,6 +97,7 @@ export default function AdminPage() {
   const [allowedSearch, setAllowedSearch] = useState('');
   const [newEmployeeId, setNewEmployeeId] = useState('');
   const [newEmployeeName, setNewEmployeeName] = useState('');
+  const [newEmployeeDept, setNewEmployeeDept] = useState('');
   const [addEmployeeLoading, setAddEmployeeLoading] = useState(false);
   const [addEmployeeError, setAddEmployeeError] = useState('');
   const [importLoading, setImportLoading] = useState(false);
@@ -266,10 +267,11 @@ export default function AdminPage() {
     setAddEmployeeLoading(true);
     setAddEmployeeError('');
     try {
-      await adminApi.addAllowedEmployee(id, newEmployeeName.trim());
+      await adminApi.addAllowedEmployee(id, newEmployeeName.trim(), newEmployeeDept.trim());
       await loadAllowedEmployees();
       setNewEmployeeId('');
       setNewEmployeeName('');
+      setNewEmployeeDept('');
     } catch (err) {
       setAddEmployeeError(err.response?.data?.error?.message || 'Thêm thất bại');
       setTimeout(() => setAddEmployeeError(''), 5000);
@@ -310,10 +312,12 @@ export default function AdminPage() {
 
       const rows = raw.map((row) => {
         const idKey = pickKey(row, ['msnv', 'employee_id', 'ma nhan vien', 'mã nhân viên', 'id']);
-        const nameKey = pickKey(row, ['ho ten', 'họ tên', 'full_name', 'ten', 'tên', 'name']);
+        const nameKey = pickKey(row, ['ho ten', 'họ tên', 'ho va ten', 'họ và tên', 'full_name', 'ten', 'tên', 'name']);
+        const deptKey = pickKey(row, ['department', 'phong ban', 'phòng ban', 'dept']);
         return {
           employee_id: idKey ? String(row[idKey]).trim() : '',
           full_name: nameKey ? String(row[nameKey]).trim() : '',
+          department: deptKey ? String(row[deptKey]).trim() : '',
         };
       }).filter(r => r.employee_id);
 
@@ -337,7 +341,11 @@ export default function AdminPage() {
   const filteredAllowedEmployees = allowedEmployees.filter((e) => {
     const q = allowedSearch.trim().toLowerCase();
     if (!q) return true;
-    return e.employee_id.toLowerCase().includes(q) || (e.full_name || '').toLowerCase().includes(q);
+    return (
+      e.employee_id.toLowerCase().includes(q) ||
+      (e.full_name || '').toLowerCase().includes(q) ||
+      (e.department || '').toLowerCase().includes(q)
+    );
   });
 
   const openCreate = () => {
@@ -1066,7 +1074,7 @@ export default function AdminPage() {
               <DocumentArrowUpIcon className="w-4 h-4" /> Import từ file Excel
             </h3>
             <p className="text-xs text-gray-400 mb-4">
-              File .xlsx/.xls/.csv có cột MSNV (hoặc "employee_id") — cột Họ tên là tuỳ chọn, chỉ để hiển thị.
+              File .xlsx/.xls/.csv có cột "Mã nhân viên"/"MSNV", "Họ và tên", "Department" — chỉ cột MSNV là bắt buộc, 2 cột còn lại tuỳ chọn để hiển thị/tìm kiếm.
             </p>
             <label className="btn-primary inline-flex items-center gap-2 px-5 cursor-pointer disabled:opacity-50">
               <DocumentArrowUpIcon className="w-4 h-4" />
@@ -1115,8 +1123,16 @@ export default function AdminPage() {
                 value={newEmployeeName}
                 onChange={e => setNewEmployeeName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
-                placeholder="Họ tên (tuỳ chọn, để dễ nhận diện)"
-                className="input-field flex-1 min-w-[220px]"
+                placeholder="Họ và tên (tuỳ chọn)"
+                className="input-field flex-1 min-w-[200px]"
+              />
+              <input
+                type="text"
+                value={newEmployeeDept}
+                onChange={e => setNewEmployeeDept(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
+                placeholder="Department (tuỳ chọn)"
+                className="input-field flex-1 min-w-[180px]"
               />
               <button
                 onClick={handleAddEmployee}
@@ -1171,7 +1187,11 @@ export default function AdminPage() {
                   <div key={e.id} className="flex items-center justify-between py-2.5">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-800">{e.employee_id}</p>
-                      {e.full_name && <p className="text-xs text-gray-400 truncate">{e.full_name}</p>}
+                      {(e.full_name || e.department) && (
+                        <p className="text-xs text-gray-400 truncate">
+                          {[e.full_name, e.department].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
                     </div>
                     <button
                       onClick={() => handleRemoveEmployee(e.id, e.full_name || e.employee_id)}

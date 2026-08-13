@@ -16,23 +16,28 @@ class AllowedEmployeeService {
     return !!found;
   }
 
-  static async add(employeeId, fullName, addedBy) {
+  static async add(employeeId, fullName, department, addedBy) {
     const id = String(employeeId || '').trim();
     if (!id) throw new Error('MSNV không được để trống');
 
     const [record] = await AllowedEmployee.findOrCreate({
       where: { employee_id: id },
-      defaults: { full_name: fullName ? String(fullName).trim() : null, added_by: addedBy || null }
+      defaults: {
+        full_name: fullName ? String(fullName).trim() : null,
+        department: department ? String(department).trim() : null,
+        added_by: addedBy || null
+      }
     });
     return record;
   }
 
-  // rows: [{ employee_id, full_name }] — dùng cho import từ Excel (đã parse ở frontend)
+  // rows: [{ employee_id, full_name, department }] — dùng cho import từ Excel (đã parse ở frontend)
   static async bulkImport(rows, addedBy) {
     const cleaned = rows
       .map((r) => ({
         employee_id: String(r.employee_id || '').trim(),
-        full_name: r.full_name ? String(r.full_name).trim() : null
+        full_name: r.full_name ? String(r.full_name).trim() : null,
+        department: r.department ? String(r.department).trim() : null
       }))
       .filter((r) => r.employee_id);
 

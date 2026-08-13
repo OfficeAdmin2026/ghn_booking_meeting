@@ -18,6 +18,10 @@ const AllowedEmployee = sequelize.define('allowed_employees', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  department: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   added_by: {
     type: DataTypes.UUID,
     allowNull: true,
