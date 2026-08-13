@@ -143,6 +143,9 @@ export const carBookingsApi = {
 export const floorBackgroundsApi = {
   getAll: () => api.get('/floor-backgrounds'),
 
+  getOne: (location, floor) =>
+    api.get(`/floor-backgrounds/${encodeURIComponent(location)}/${encodeURIComponent(floor)}`),
+
   upload: (location, floor, file) => {
     const formData = new FormData();
     formData.append('location', location);

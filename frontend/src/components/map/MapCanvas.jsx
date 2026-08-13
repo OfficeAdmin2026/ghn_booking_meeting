@@ -52,17 +52,6 @@ export default function MapCanvas({
 
   const directionPathRef = useRef(null);
 
-  useEffect(() => {
-    if (!focusRequest || !transformRef.current) return;
-    const path = directionPathRef.current;
-    if (path && path.length >= 2) {
-      // Zoom to fit the full direction path bbox instead of just the room
-      transformRef.current.zoomToElement('direction-path-focus', undefined, 600);
-    } else {
-      transformRef.current.zoomToElement(focusRequest.domId, 1.3, 600);
-    }
-  }, [focusRequest]);
-
   const directionPath = useMemo(() => {
     if (!floorData || !showDirection || !selectedCode) return null;
     const room = roomsByCode[selectedCode];
@@ -79,6 +68,23 @@ export default function MapCanvas({
 
   // Sync ref before effects fire so focusRequest effect reads the latest path
   useLayoutEffect(() => { directionPathRef.current = directionPath; }, [directionPath]);
+
+  useEffect(() => {
+    if (!focusRequest || !transformRef.current) return;
+    const path = directionPathRef.current;
+    if (path && path.length >= 2) {
+      // Zoom to fit the full direction path bbox instead of just the room
+      transformRef.current.zoomToElement('direction-path-focus', undefined, 600);
+    } else {
+      transformRef.current.zoomToElement(focusRequest.domId, 1.3, 600);
+    }
+    // directionPath re-triggers this so a deep link (focusRequest fires before
+    // savedPathsByRoomId finishes loading) re-fits once the real path arrives.
+    // Canvas width/height re-trigger this too: directionPath can keep the same
+    // array reference (e.g. saved path already loaded) while the SVG coordinate
+    // space itself still changes underneath it once the real floor background
+    // (fetched separately, can resolve later) replaces the fallback canvas size.
+  }, [focusRequest, directionPath, floorData?.canvas?.width, floorData?.canvas?.height]);
 
   // Rect drag handlers (shape drawing mode)
   const handleMouseDown = (e) => {

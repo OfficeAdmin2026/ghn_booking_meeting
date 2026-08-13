@@ -19,8 +19,11 @@ function uploadSingleImage(req, res, next) {
   });
 }
 
-// GET /api/floor-backgrounds - mọi user đăng nhập đều đọc được
+// GET /api/floor-backgrounds - danh sách nhẹ (không kèm ảnh) mọi tầng
 router.get('/', authMiddleware, FloorBackgroundController.list);
+
+// GET /api/floor-backgrounds/:location/:floor - ảnh đầy đủ của đúng 1 tầng
+router.get('/:location/:floor', authMiddleware, FloorBackgroundController.getOne);
 
 // POST /api/floor-backgrounds - chỉ admin upload (multipart: image, location, floor)
 router.post('/', authMiddleware, adminMiddleware, uploadSingleImage, FloorBackgroundController.upload);

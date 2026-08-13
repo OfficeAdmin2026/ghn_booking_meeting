@@ -87,18 +87,26 @@ export default function OfficeMapPage() {
       .catch(() => {});
   }, []);
 
+  // Chỉ tải ảnh nền của đúng tầng đang xem (ảnh có thể vài trăm KB base64) —
+  // tránh tải toàn bộ ảnh của mọi tầng mỗi lần vào trang, gây chậm.
   const fetchBackgrounds = useCallback(() => {
+    const key = getFloorKey(location_, floor);
     floorBackgroundsApi
-      .getAll()
+      .getOne(location_, floor)
       .then((res) => {
-        const map = {};
-        (res.data.data?.backgrounds || []).forEach((b) => {
-          map[getFloorKey(normalizeLocation(b.location), b.floor)] = b;
+        const background = res.data.data?.background;
+        setBackgroundsByFloorKey((prev) => {
+          if (!background) {
+            if (!(key in prev)) return prev;
+            const next = { ...prev };
+            delete next[key];
+            return next;
+          }
+          return { ...prev, [key]: background };
         });
-        setBackgroundsByFloorKey(map);
       })
       .catch(() => {});
-  }, []);
+  }, [location_, floor]);
 
   const fetchAnnotations = useCallback(() => {
     mapAnnotationsApi

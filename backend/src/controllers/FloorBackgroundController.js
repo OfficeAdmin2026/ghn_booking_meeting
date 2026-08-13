@@ -19,6 +19,21 @@ class FloorBackgroundController {
   }
 
   /**
+   * GET /api/floor-backgrounds/:location/:floor
+   * Lấy ảnh nền của đúng 1 tầng (kèm image_url đầy đủ)
+   */
+  static async getOne(req, res) {
+    try {
+      const { location, floor } = req.params;
+      const background = await FloorBackgroundService.getOne(location, floor);
+      res.json({ status: 'success', data: { background } });
+    } catch (error) {
+      console.error('Get floor background error:', error);
+      res.status(500).json({ error: { status: 500, message: error.message } });
+    }
+  }
+
+  /**
    * POST /api/floor-backgrounds (admin only, multipart: image, location, floor)
    */
   static async upload(req, res) {

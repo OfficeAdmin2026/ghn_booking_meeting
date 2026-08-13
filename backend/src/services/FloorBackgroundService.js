@@ -13,8 +13,14 @@ const ALLOWED_MIMETYPES = {
  * ngoài. 1 tầng (location+floor) chỉ có 1 ảnh — upload lại là ghi đè.
  */
 class FloorBackgroundService {
+  // Danh sách nhẹ (không kèm image_url) — chỉ dùng để biết tầng nào đã có ảnh.
+  // Muốn lấy ảnh thật của 1 tầng cụ thể thì dùng getOne().
   static async getAll() {
-    return await FloorBackground.findAll();
+    return await FloorBackground.findAll({ attributes: { exclude: ['image_url'] } });
+  }
+
+  static async getOne(location, floor) {
+    return await FloorBackground.findOne({ where: { location, floor } });
   }
 
   static async upload({ location, floor, buffer, mimetype, userId }) {
