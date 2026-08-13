@@ -12,7 +12,7 @@ class AuthController {
    */
   static async login(req, res) {
     try {
-      const { email, full_name } = req.body;
+      const { email, full_name, employee_id } = req.body;
 
       if (!email) {
         return res.status(400).json({
@@ -34,7 +34,7 @@ class AuthController {
       }
 
       // Login (tạo user nếu chưa tồn tại)
-      const result = await AuthService.login(email, full_name);
+      const result = await AuthService.login(email, full_name, employee_id);
 
       res.json({
         status: 'success',
@@ -46,8 +46,8 @@ class AuthController {
     } catch (error) {
       console.error('Login error:', error);
 
-      // Tài khoản bị chặn truy cập
-      if (error.message.includes('khóa truy cập')) {
+      // Tài khoản bị chặn truy cập / không nằm trong danh sách MSNV được phép
+      if (error.message.includes('khóa truy cập') || error.message.includes('cấp quyền truy cập')) {
         return res.status(403).json({
           error: {
             status: 403,

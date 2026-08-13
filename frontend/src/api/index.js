@@ -85,6 +85,17 @@ export const adminApi = {
   banUser: (email) => api.post('/admin/ban', { email }),
 
   setUserStatus: (id, isActive) => api.patch(`/admin/users/${id}/status`, { is_active: isActive }),
+
+  setUserEmployeeId: (id, employeeId) => api.patch(`/admin/users/${id}/employee-id`, { employee_id: employeeId }),
+
+  getAllowedEmployees: () => api.get('/admin/allowed-employees'),
+
+  addAllowedEmployee: (employeeId, fullName) =>
+    api.post('/admin/allowed-employees', { employee_id: employeeId, full_name: fullName }),
+
+  bulkImportAllowedEmployees: (rows) => api.post('/admin/allowed-employees/bulk', { rows }),
+
+  removeAllowedEmployee: (id) => api.delete(`/admin/allowed-employees/${id}`),
 };
 
 export const wayfindingApi = {

@@ -7,7 +7,11 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    const notice = sessionStorage.getItem('ghn_login_notice');
+    if (notice) sessionStorage.removeItem('ghn_login_notice');
+    return notice || '';
+  });
 
   if (user) return <Navigate to="/" replace />;
 

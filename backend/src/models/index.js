@@ -10,6 +10,7 @@ const FloorBackground = require('./FloorBackground');
 const MapAnnotation = require('./MapAnnotation');
 const Car = require('./Car');
 const CarBooking = require('./CarBooking');
+const AllowedEmployee = require('./AllowedEmployee');
 
 // Define associations
 Room.hasMany(RoomAmenity, { foreignKey: 'room_id', as: 'amenities' });
@@ -53,5 +54,6 @@ module.exports = {
   FloorBackground,
   MapAnnotation,
   Car,
-  CarBooking
+  CarBooking,
+  AllowedEmployee
 };

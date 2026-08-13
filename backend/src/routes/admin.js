@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const AdminSettingService = require('../services/AdminSettingService');
+const AllowedEmployeeService = require('../services/AllowedEmployeeService');
 const BookingController = require('../controllers/BookingController');
 const { User } = require('../models');
 const { Op } = require('sequelize');
@@ -298,6 +299,67 @@ router.patch('/users/:id/status', authMiddleware, adminMiddleware, async (req, r
     if (!user) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng' } });
     await user.update({ is_active, updated_at: new Date() });
     res.json({ status: 'success', data: { user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, is_active: user.is_active } } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// PATCH /api/admin/users/:id/employee-id - Gán MSNV cho 1 user (để xét allowlist)
+router.patch('/users/:id/employee-id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const employeeId = (req.body.employee_id || '').trim();
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng' } });
+    await user.update({ employee_id: employeeId || null, updated_at: new Date() });
+    res.json({
+      status: 'success',
+      data: { user: { id: user.id, email: user.email, full_name: user.full_name, employee_id: user.employee_id } },
+    });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// ---- Allowlist MSNV (2 văn phòng có phòng họp) ----
+
+// GET /api/admin/allowed-employees - Danh sách MSNV được phép
+router.get('/allowed-employees', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const employees = await AllowedEmployeeService.list();
+    res.json({ status: 'success', data: { employees } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// POST /api/admin/allowed-employees - Thêm 1 MSNV
+router.post('/allowed-employees', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { employee_id, full_name } = req.body;
+    const record = await AllowedEmployeeService.add(employee_id, full_name, req.user.id);
+    res.json({ status: 'success', data: { employee: record } });
+  } catch (err) {
+    res.status(400).json({ error: { status: 400, message: err.message } });
+  }
+});
+
+// POST /api/admin/allowed-employees/bulk - Import nhiều MSNV (đã parse Excel ở frontend)
+router.post('/allowed-employees/bulk', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+    const result = await AllowedEmployeeService.bulkImport(rows, req.user.id);
+    res.json({ status: 'success', data: result });
+  } catch (err) {
+    res.status(400).json({ error: { status: 400, message: err.message } });
+  }
+});
+
+// DELETE /api/admin/allowed-employees/:id - Xoá 1 MSNV khỏi danh sách
+router.delete('/allowed-employees/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const removed = await AllowedEmployeeService.remove(req.params.id);
+    if (!removed) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy' } });
+    res.json({ status: 'success' });
   } catch (err) {
     res.status(500).json({ error: { status: 500, message: err.message } });
   }

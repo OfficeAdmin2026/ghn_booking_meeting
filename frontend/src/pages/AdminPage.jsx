@@ -19,6 +19,9 @@ import {
   NoSymbolIcon,
   MagnifyingGlassIcon,
   LockClosedIcon,
+  DocumentArrowUpIcon,
+  TrashIcon,
+  IdentificationIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
@@ -42,7 +45,7 @@ export default function AdminPage() {
   const { refreshSiteLock } = useAuth();
 
   // Tabs
-  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' | 'roles' | 'settings'
+  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' | 'roles' | 'access' | 'settings'
   const [settingsSubTab, setSettingsSubTab] = useState('lock'); // 'lock' | 'freeze'
   
   // Room management
@@ -87,6 +90,19 @@ export default function AdminPage() {
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('all'); // all | admin | vip
   const [bannedSearch, setBannedSearch] = useState('');
+
+  // Allowlist MSNV (truy cập theo 2 văn phòng)
+  const [allowedEmployees, setAllowedEmployees] = useState([]);
+  const [allowedLoading, setAllowedLoading] = useState(false);
+  const [allowedSearch, setAllowedSearch] = useState('');
+  const [newEmployeeId, setNewEmployeeId] = useState('');
+  const [newEmployeeName, setNewEmployeeName] = useState('');
+  const [addEmployeeLoading, setAddEmployeeLoading] = useState(false);
+  const [addEmployeeError, setAddEmployeeError] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importSuccess, setImportSuccess] = useState('');
+  const [removeEmployeeLoading, setRemoveEmployeeLoading] = useState(null); // id đang xoá
 
   const loadRooms = useCallback(async () => {
     setLoading(true);
@@ -227,6 +243,102 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === 'roles') loadElevatedUsers();
   }, [activeTab, loadElevatedUsers]);
+
+  const loadAllowedEmployees = useCallback(async () => {
+    setAllowedLoading(true);
+    try {
+      const res = await adminApi.getAllowedEmployees();
+      setAllowedEmployees(res.data.data.employees || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAllowedLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'access') loadAllowedEmployees();
+  }, [activeTab, loadAllowedEmployees]);
+
+  const handleAddEmployee = async () => {
+    const id = newEmployeeId.trim();
+    if (!id) return;
+    setAddEmployeeLoading(true);
+    setAddEmployeeError('');
+    try {
+      await adminApi.addAllowedEmployee(id, newEmployeeName.trim());
+      await loadAllowedEmployees();
+      setNewEmployeeId('');
+      setNewEmployeeName('');
+    } catch (err) {
+      setAddEmployeeError(err.response?.data?.error?.message || 'Thêm thất bại');
+      setTimeout(() => setAddEmployeeError(''), 5000);
+    } finally {
+      setAddEmployeeLoading(false);
+    }
+  };
+
+  const handleRemoveEmployee = async (id, label) => {
+    if (!confirm(`Xoá "${label}" khỏi danh sách MSNV được phép truy cập?`)) return;
+    setRemoveEmployeeLoading(id);
+    try {
+      await adminApi.removeAllowedEmployee(id);
+      await loadAllowedEmployees();
+    } catch (err) {
+      setImportError(err.response?.data?.error?.message || 'Xoá thất bại');
+      setTimeout(() => setImportError(''), 5000);
+    } finally {
+      setRemoveEmployeeLoading(null);
+    }
+  };
+
+  // Đọc file Excel (.xlsx/.xls/.csv) — nhận diện linh hoạt tên cột MSNV/Họ tên
+  const handleImportFile = async (file) => {
+    if (!file) return;
+    setImportLoading(true);
+    setImportError('');
+    setImportSuccess('');
+    try {
+      const XLSX = await import('xlsx');
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      const pickKey = (row, candidates) =>
+        Object.keys(row).find(k => candidates.includes(k.trim().toLowerCase()));
+
+      const rows = raw.map((row) => {
+        const idKey = pickKey(row, ['msnv', 'employee_id', 'ma nhan vien', 'mã nhân viên', 'id']);
+        const nameKey = pickKey(row, ['ho ten', 'họ tên', 'full_name', 'ten', 'tên', 'name']);
+        return {
+          employee_id: idKey ? String(row[idKey]).trim() : '',
+          full_name: nameKey ? String(row[nameKey]).trim() : '',
+        };
+      }).filter(r => r.employee_id);
+
+      if (rows.length === 0) {
+        throw new Error('Không tìm thấy cột MSNV hợp lệ trong file — cần cột tên "MSNV" hoặc "employee_id"');
+      }
+
+      const res = await adminApi.bulkImportAllowedEmployees(rows);
+      const { inserted, skipped } = res.data.data;
+      setImportSuccess(`Đã thêm ${inserted} MSNV mới${skipped ? `, bỏ qua ${skipped} MSNV đã có sẵn` : ''}.`);
+      setTimeout(() => setImportSuccess(''), 6000);
+      await loadAllowedEmployees();
+    } catch (err) {
+      setImportError(err.response?.data?.error?.message || err.message || 'Import thất bại');
+      setTimeout(() => setImportError(''), 6000);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const filteredAllowedEmployees = allowedEmployees.filter((e) => {
+    const q = allowedSearch.trim().toLowerCase();
+    if (!q) return true;
+    return e.employee_id.toLowerCase().includes(q) || (e.full_name || '').toLowerCase().includes(q);
+  });
 
   const openCreate = () => {
     setEditRoom(null);
@@ -404,9 +516,17 @@ export default function AdminPage() {
           >
             2. Phân quyền
           </button>
+          <button
+            onClick={() => setActiveTab('access')}
+            className={`w-full text-left rounded-lg px-3 py-2.5 font-medium transition-colors mt-1 ${
+              activeTab === 'access' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            3. Truy cập theo MSNV
+          </button>
 
           <div className="mt-1 px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-            3. Cài đặt hệ thống
+            4. Cài đặt hệ thống
           </div>
           <button
             onClick={() => { setActiveTab('settings'); setSettingsSubTab('lock'); }}
@@ -414,7 +534,7 @@ export default function AdminPage() {
               activeTab === 'settings' && settingsSubTab === 'lock' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            3.1 Khoá hệ thống (tài khoản User)
+            4.1 Khoá hệ thống (tài khoản User)
           </button>
           <button
             onClick={() => { setActiveTab('settings'); setSettingsSubTab('freeze'); }}
@@ -422,7 +542,7 @@ export default function AdminPage() {
               activeTab === 'settings' && settingsSubTab === 'freeze' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            3.2 Đóng băng đặt phòng
+            4.2 Đóng băng đặt phòng
           </button>
         </div>
 
@@ -920,6 +1040,145 @@ export default function AdminPage() {
                       className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50"
                     >
                       {roleActionLoading === u.id ? '...' : 'Bỏ chặn'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Access allowlist tab */}
+      {activeTab === 'access' && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Truy cập theo MSNV</h2>
+            <p className="text-gray-500 mt-1">
+              Chỉ những tài khoản có MSNV nằm trong danh sách dưới đây mới đăng nhập/truy cập được hệ thống
+              (áp dụng cho mọi tài khoản, kể cả Admin/VIP).
+            </p>
+          </div>
+
+          {/* Import Excel */}
+          <div className="card p-5">
+            <h3 className="text-sm font-semibold text-gray-700 mb-1 inline-flex items-center gap-1.5">
+              <DocumentArrowUpIcon className="w-4 h-4" /> Import từ file Excel
+            </h3>
+            <p className="text-xs text-gray-400 mb-4">
+              File .xlsx/.xls/.csv có cột MSNV (hoặc "employee_id") — cột Họ tên là tuỳ chọn, chỉ để hiển thị.
+            </p>
+            <label className="btn-primary inline-flex items-center gap-2 px-5 cursor-pointer disabled:opacity-50">
+              <DocumentArrowUpIcon className="w-4 h-4" />
+              {importLoading ? 'Đang import...' : 'Chọn file Excel'}
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                disabled={importLoading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  handleImportFile(file);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+
+            {importSuccess && (
+              <div className="mt-3 px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm inline-flex items-center gap-1.5">
+                <CheckCircleIcon className="w-4 h-4" /> {importSuccess}
+              </div>
+            )}
+            {importError && (
+              <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                {importError}
+              </div>
+            )}
+          </div>
+
+          {/* Thêm 1 MSNV thủ công */}
+          <div className="card p-5">
+            <h3 className="text-sm font-semibold text-gray-700 mb-1 inline-flex items-center gap-1.5">
+              <IdentificationIcon className="w-4 h-4" /> Thêm 1 MSNV
+            </h3>
+            <div className="flex gap-3 flex-wrap mt-3">
+              <input
+                type="text"
+                value={newEmployeeId}
+                onChange={e => { setNewEmployeeId(e.target.value); setAddEmployeeError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
+                placeholder="MSNV, ví dụ: 3091620"
+                className="input-field flex-1 min-w-[160px]"
+              />
+              <input
+                type="text"
+                value={newEmployeeName}
+                onChange={e => setNewEmployeeName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
+                placeholder="Họ tên (tuỳ chọn, để dễ nhận diện)"
+                className="input-field flex-1 min-w-[220px]"
+              />
+              <button
+                onClick={handleAddEmployee}
+                disabled={addEmployeeLoading || !newEmployeeId.trim()}
+                className="btn-primary px-6 disabled:opacity-50"
+              >
+                {addEmployeeLoading ? 'Đang thêm...' : 'Thêm'}
+              </button>
+            </div>
+            {addEmployeeError && (
+              <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                {addEmployeeError}
+              </div>
+            )}
+          </div>
+
+          {/* Danh sách */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <h3 className="text-sm font-semibold text-gray-700">
+                Danh sách MSNV được phép
+                <span className="ml-2 text-xs font-normal text-gray-400">({allowedEmployees.length})</span>
+              </h3>
+              <button
+                onClick={loadAllowedEmployees}
+                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-ghn-orange border border-gray-200 px-3 py-1.5 rounded-lg hover:border-ghn-orange transition-colors"
+              >
+                <ArrowPathIcon className="w-3.5 h-3.5" /> Làm mới
+              </button>
+            </div>
+
+            <div className="relative mb-4">
+              <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={allowedSearch}
+                onChange={e => setAllowedSearch(e.target.value)}
+                placeholder="Tìm theo MSNV hoặc họ tên..."
+                className="input-field pl-9 w-full"
+              />
+            </div>
+
+            {allowedLoading ? (
+              <p className="text-sm text-gray-400 text-center py-6">Đang tải...</p>
+            ) : filteredAllowedEmployees.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">
+                {allowedEmployees.length === 0 ? 'Chưa có MSNV nào trong danh sách.' : 'Không tìm thấy kết quả.'}
+              </p>
+            ) : (
+              <div className="divide-y divide-gray-100 max-h-[28rem] overflow-y-auto">
+                {filteredAllowedEmployees.map((e) => (
+                  <div key={e.id} className="flex items-center justify-between py-2.5">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800">{e.employee_id}</p>
+                      {e.full_name && <p className="text-xs text-gray-400 truncate">{e.full_name}</p>}
+                    </div>
+                    <button
+                      onClick={() => handleRemoveEmployee(e.id, e.full_name || e.employee_id)}
+                      disabled={removeEmployeeLoading === e.id}
+                      className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 shrink-0"
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" /> {removeEmployeeLoading === e.id ? '...' : 'Xoá'}
                     </button>
                   </div>
                 ))}

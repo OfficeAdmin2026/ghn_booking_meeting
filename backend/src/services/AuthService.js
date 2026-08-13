@@ -1,6 +1,7 @@
 const { User } = require('../models');
 const jwt = require('jsonwebtoken');
 const bcryptjs = require('bcryptjs');
+const AllowedEmployeeService = require('./AllowedEmployeeService');
 require('dotenv').config();
 
 /**
@@ -62,8 +63,9 @@ class AuthService {
 
   /**
    * Login user (tạo mới nếu chưa tồn tại)
+   * employeeId: MSNV — sẽ do SSO gửi kèm khi tích hợp xong; cho phép truyền tay trong lúc chưa có SSO.
    */
-  static async login(email, fullName = null) {
+  static async login(email, fullName = null, employeeId = null) {
     try {
       // Kiểm tra email format
       if (!email.endsWith('@ghn.vn')) {
@@ -86,6 +88,17 @@ class AuthService {
           null,
           'user'
         );
+      }
+
+      // MSNV do SSO gửi kèm — cập nhật lại trên user record (nguồn duy nhất được dùng để xét allowlist)
+      if (employeeId && employeeId !== user.employee_id) {
+        user.employee_id = employeeId;
+      }
+
+      // Chỉ nhân viên có MSNV nằm trong danh sách cho phép (2 văn phòng có phòng họp) mới được vào
+      const allowed = await AllowedEmployeeService.isAllowed(user.employee_id);
+      if (!allowed) {
+        throw new Error('Tài khoản của bạn chưa được cấp quyền truy cập hệ thống đặt phòng. Vui lòng liên hệ quản trị viên để được thêm vào danh sách.');
       }
 
       // Cập nhật last_login
