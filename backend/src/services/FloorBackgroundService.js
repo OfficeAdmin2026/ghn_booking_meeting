@@ -1,5 +1,4 @@
 const { FloorBackground } = require('../models');
-const { supabase, FLOOR_PLANS_BUCKET } = require('../config/supabase');
 const { imageSize } = require('image-size');
 
 const ALLOWED_MIMETYPES = {
@@ -9,9 +8,9 @@ const ALLOWED_MIMETYPES = {
 };
 
 /**
- * Service layer cho ảnh sơ đồ tầng (upload trực tiếp lên Supabase Storage,
- * URL + kích thước lưu trong DB). 1 tầng (location+floor) chỉ có 1 ảnh —
- * upload lại là ghi đè.
+ * Service layer cho ảnh sơ đồ tầng. Ảnh được lưu dạng base64 data URI
+ * ngay trong cột image_url (Postgres) — không phụ thuộc dịch vụ storage
+ * ngoài. 1 tầng (location+floor) chỉ có 1 ảnh — upload lại là ghi đè.
  */
 class FloorBackgroundService {
   static async getAll() {
@@ -19,10 +18,6 @@ class FloorBackgroundService {
   }
 
   static async upload({ location, floor, buffer, mimetype, userId }) {
-    if (!supabase) {
-      throw new Error('Supabase Storage chưa được cấu hình trên server (thiếu SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY)');
-    }
-
     const ext = ALLOWED_MIMETYPES[mimetype];
     if (!ext) {
       throw new Error(
@@ -37,19 +32,7 @@ class FloorBackgroundService {
       throw new Error('Không đọc được kích thước ảnh — file có thể bị hỏng');
     }
 
-    const safeLocation = location.replace(/\s+/g, '-').toLowerCase();
-    const safeFloor = floor.replace(/\s+/g, '-').toLowerCase();
-    const path = `${safeLocation}/${safeFloor}-${Date.now()}.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from(FLOOR_PLANS_BUCKET)
-      .upload(path, buffer, { contentType: mimetype, upsert: true });
-    if (uploadError) {
-      throw new Error(`Tải ảnh lên Supabase Storage thất bại: ${uploadError.message}`);
-    }
-
-    const { data: publicUrlData } = supabase.storage.from(FLOOR_PLANS_BUCKET).getPublicUrl(path);
-    const imageUrl = publicUrlData.publicUrl;
+    const imageUrl = `data:${mimetype};base64,${buffer.toString('base64')}`;
 
     const existing = await FloorBackground.findOne({ where: { location, floor } });
     if (existing) {
