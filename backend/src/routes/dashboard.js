@@ -351,8 +351,8 @@ router.get('/car-report', authMiddleware, adminMiddleware, async (req, res) => {
       where,
       include: [
         { model: Car, attributes: ['name', 'license_plate', 'seats'] },
-        { model: User, as: 'creator', attributes: ['full_name', 'email'] },
-        { model: User, as: 'requester', attributes: ['full_name', 'employee_id', 'department'] },
+        { model: User, as: 'creator', attributes: ['full_name', 'employee_id', 'department', 'email'] },
+        { model: User, as: 'requester', attributes: ['full_name', 'employee_id', 'department', 'email'] },
       ],
       order: [['start_time', 'ASC']],
     });

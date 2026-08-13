@@ -98,6 +98,7 @@ export default function AdminPage() {
   const [newEmployeeId, setNewEmployeeId] = useState('');
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [newEmployeeDept, setNewEmployeeDept] = useState('');
+  const [newEmployeeEmail, setNewEmployeeEmail] = useState('');
   const [addEmployeeLoading, setAddEmployeeLoading] = useState(false);
   const [addEmployeeError, setAddEmployeeError] = useState('');
   const [importLoading, setImportLoading] = useState(false);
@@ -269,11 +270,12 @@ export default function AdminPage() {
     setAddEmployeeLoading(true);
     setAddEmployeeError('');
     try {
-      await adminApi.addAllowedEmployee(id, newEmployeeName.trim(), newEmployeeDept.trim());
+      await adminApi.addAllowedEmployee(id, newEmployeeName.trim(), newEmployeeDept.trim(), newEmployeeEmail.trim());
       await loadAllowedEmployees();
       setNewEmployeeId('');
       setNewEmployeeName('');
       setNewEmployeeDept('');
+      setNewEmployeeEmail('');
     } catch (err) {
       setAddEmployeeError(err.response?.data?.error?.message || 'Thêm thất bại');
       setTimeout(() => setAddEmployeeError(''), 5000);
@@ -349,10 +351,12 @@ export default function AdminPage() {
         const idKey = pickKey(row, ['msnv', 'employee_id', 'ma nhan vien', 'mã nhân viên', 'id']);
         const nameKey = pickKey(row, ['ho ten', 'họ tên', 'ho va ten', 'họ và tên', 'full_name', 'ten', 'tên', 'name']);
         const deptKey = pickKey(row, ['department', 'phong ban', 'phòng ban', 'dept']);
+        const emailKey = pickKey(row, ['email', 'e-mail', 'mail']);
         return {
           employee_id: idKey ? String(row[idKey]).trim() : '',
           full_name: nameKey ? String(row[nameKey]).trim() : '',
           department: deptKey ? String(row[deptKey]).trim() : '',
+          email: emailKey ? String(row[emailKey]).trim() : '',
         };
       }).filter(r => r.employee_id);
 
@@ -379,7 +383,8 @@ export default function AdminPage() {
     return (
       e.employee_id.toLowerCase().includes(q) ||
       (e.full_name || '').toLowerCase().includes(q) ||
-      (e.department || '').toLowerCase().includes(q)
+      (e.department || '').toLowerCase().includes(q) ||
+      (e.email || '').toLowerCase().includes(q)
     );
   });
 
@@ -950,7 +955,7 @@ export default function AdminPage() {
                               </div>
                               <div>
                                 <p className="text-sm font-medium text-gray-800">{u.full_name}</p>
-                                <p className="text-xs text-gray-500">{u.email}{u.department ? ` · ${u.department}` : ''}</p>
+                                <p className="text-xs text-gray-500">{u.employee_id ? `MSNV ${u.employee_id} · ` : ''}{u.email}{u.department ? ` · ${u.department}` : ''}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -1074,7 +1079,7 @@ export default function AdminPage() {
                           {u.full_name}
                           <RoleBadge role={u.role} />
                         </p>
-                        <p className="text-xs text-gray-500">{u.email}{u.department ? ` · ${u.department}` : ''}</p>
+                        <p className="text-xs text-gray-500">{u.employee_id ? `MSNV ${u.employee_id} · ` : ''}{u.email}{u.department ? ` · ${u.department}` : ''}</p>
                       </div>
                     </div>
                     <button
@@ -1109,7 +1114,7 @@ export default function AdminPage() {
               <DocumentArrowUpIcon className="w-4 h-4" /> Import từ file Excel
             </h3>
             <p className="text-xs text-gray-400 mb-4">
-              File .xlsx/.xls/.csv có cột "Mã nhân viên"/"MSNV", "Họ và tên", "Department" — chỉ cột MSNV là bắt buộc, 2 cột còn lại tuỳ chọn để hiển thị/tìm kiếm.
+              File .xlsx/.xls/.csv có cột "Mã nhân viên"/"MSNV", "Họ và tên", "Department", "Email" — chỉ cột MSNV là bắt buộc, các cột còn lại tuỳ chọn. Có Email thì tài khoản đăng nhập trùng email đó sẽ tự đồng bộ đủ MSNV/Họ tên/Phòng ban ngay cả khi chưa có SSO.
             </p>
             <label className="btn-primary inline-flex items-center gap-2 px-5 cursor-pointer disabled:opacity-50">
               <DocumentArrowUpIcon className="w-4 h-4" />
@@ -1169,6 +1174,14 @@ export default function AdminPage() {
                 placeholder="Department (tuỳ chọn)"
                 className="input-field flex-1 min-w-[180px]"
               />
+              <input
+                type="email"
+                value={newEmployeeEmail}
+                onChange={e => setNewEmployeeEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
+                placeholder="Email (tuỳ chọn, dùng để đăng nhập trước khi có SSO)"
+                className="input-field flex-1 min-w-[240px]"
+              />
               <button
                 onClick={handleAddEmployee}
                 disabled={addEmployeeLoading || !newEmployeeId.trim()}
@@ -1217,7 +1230,7 @@ export default function AdminPage() {
                 type="text"
                 value={allowedSearch}
                 onChange={e => setAllowedSearch(e.target.value)}
-                placeholder="Tìm theo MSNV, họ tên hoặc department..."
+                placeholder="Tìm theo MSNV, họ tên, department hoặc email..."
                 className="input-field pl-9 w-full"
               />
             </div>
@@ -1256,9 +1269,9 @@ export default function AdminPage() {
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-800">{e.employee_id}</p>
-                        {(e.full_name || e.department) && (
+                        {(e.full_name || e.department || e.email) && (
                           <p className="text-xs text-gray-400 truncate">
-                            {[e.full_name, e.department].filter(Boolean).join(' · ')}
+                            {[e.full_name, e.department, e.email].filter(Boolean).join(' · ')}
                           </p>
                         )}
                       </div>

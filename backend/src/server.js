@@ -24,7 +24,8 @@ const PORT = process.env.PORT || 5000;
         ALTER COLUMN participants_count SET DEFAULT 1,
         ALTER COLUMN participants_count DROP NOT NULL;
       ALTER TABLE allowed_employees
-        ADD COLUMN IF NOT EXISTS department VARCHAR(255);
+        ADD COLUMN IF NOT EXISTS department VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS email VARCHAR(255);
     `);
     console.log('✅ Booking columns migrated');
 

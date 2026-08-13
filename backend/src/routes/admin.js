@@ -335,8 +335,8 @@ router.get('/allowed-employees', authMiddleware, adminMiddleware, async (req, re
 // POST /api/admin/allowed-employees - Thêm 1 MSNV
 router.post('/allowed-employees', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { employee_id, full_name, department } = req.body;
-    const record = await AllowedEmployeeService.add(employee_id, full_name, department, req.user.id);
+    const { employee_id, full_name, department, email } = req.body;
+    const record = await AllowedEmployeeService.add(employee_id, full_name, department, email, req.user.id);
     res.json({ status: 'success', data: { employee: record } });
   } catch (err) {
     res.status(400).json({ error: { status: 400, message: err.message } });

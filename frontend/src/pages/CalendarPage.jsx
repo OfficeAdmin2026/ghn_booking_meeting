@@ -1580,6 +1580,10 @@ export default function CalendarPage() {
                         <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Phòng ban</p>
                         <p className="text-sm font-semibold text-gray-800">{cancelModal.user?.department || '—'}</p>
                       </div>
+                      <div>
+                        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Email</p>
+                        <p className="text-sm font-semibold text-gray-800 truncate">{cancelModal.user?.email || '—'}</p>
+                      </div>
                     </div>
                     {cancelModal.notes && (
                       <div className="border-t border-gray-100 pt-3">

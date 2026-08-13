@@ -90,16 +90,18 @@ class AuthService {
         );
       }
 
-      // MSNV do SSO gửi kèm — cập nhật lại trên user record (nguồn duy nhất được dùng để xét allowlist)
-      if (employeeId && employeeId !== user.employee_id) {
-        user.employee_id = employeeId;
-      }
-
-      // Chỉ nhân viên có MSNV nằm trong danh sách cho phép (2 văn phòng có phòng họp) mới được vào
-      const allowed = await AllowedEmployeeService.isAllowed(user.employee_id);
-      if (!allowed) {
+      // Đối chiếu với danh sách MSNV được phép (allowlist) — khớp theo MSNV (SSO gửi kèm lần
+      // này, hoặc đã đồng bộ từ lần đăng nhập trước) hoặc theo email (dùng được ngay bây giờ,
+      // trước khi có SSO). Allowlist là nguồn dữ liệu gốc: khớp được thì đồng bộ luôn MSNV/Họ
+      // tên/Phòng ban vào user record.
+      const match = await AllowedEmployeeService.findMatch(employeeId || user.employee_id, email);
+      if (!match) {
         throw new Error('Tài khoản của bạn chưa được cấp quyền truy cập hệ thống đặt phòng. Vui lòng liên hệ quản trị viên để được thêm vào danh sách.');
       }
+
+      user.employee_id = match.employee_id;
+      if (match.full_name) user.full_name = match.full_name;
+      if (match.department) user.department = match.department;
 
       // Cập nhật last_login
       user.last_login = new Date();

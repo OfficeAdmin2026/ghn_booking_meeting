@@ -40,7 +40,7 @@ function fmtDuration(minutes) {
 
 async function exportExcel(bookings) {
   const XLSX = await import('xlsx');
-  const headers = ['STT', 'Xe', 'Biển số', 'MSNV', 'Người sử dụng xe', 'Phòng ban', 'Mục đích', 'Ghi chú', 'Người tạo lịch', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy'];
+  const headers = ['STT', 'Xe', 'Biển số', 'MSNV', 'Người sử dụng xe', 'Phòng ban', 'Email', 'Mục đích', 'Ghi chú', 'Người tạo lịch', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy'];
   const rows = bookings.map((b, i) => [
     i + 1,
     b.car?.name || '',
@@ -48,6 +48,7 @@ async function exportExcel(bookings) {
     b.requester?.employee_id || '',
     b.requester?.full_name || '',
     b.requester?.department || '',
+    b.requester?.email || '',
     b.title || '',
     b.notes || '',
     b.creator?.full_name || '',
@@ -111,7 +112,7 @@ export default function CarAnalyticsSection({ dateFrom, dateTo }) {
   const [error, setError] = useState('');
   const [sortCol, setSortCol] = useState('start_time');
   const [sortDir, setSortDir] = useState('desc');
-  const [colFilters, setColFilters] = useState({ car: '', employee_id: '', requester: '', department: '', title: '', notes: '', creator: '', status: '', reason: '' });
+  const [colFilters, setColFilters] = useState({ car: '', employee_id: '', requester: '', department: '', email: '', title: '', notes: '', creator: '', status: '', reason: '' });
   const setCol = (key, val) => setColFilters((prev) => ({ ...prev, [key]: val }));
 
   const fetchData = useCallback(async () => {
@@ -146,6 +147,7 @@ export default function CarAnalyticsSection({ dateFrom, dateTo }) {
       case 'employee_id': return b.requester?.employee_id || '';
       case 'requester':   return b.requester?.full_name || '';
       case 'department':  return b.requester?.department || '';
+      case 'email':       return b.requester?.email || '';
       case 'title':       return b.title || '';
       case 'notes':       return b.notes || '';
       case 'creator':     return b.creator?.full_name || '';
@@ -163,6 +165,7 @@ export default function CarAnalyticsSection({ dateFrom, dateTo }) {
     if (colFilters.employee_id) list = list.filter((b) => b.requester?.employee_id?.toLowerCase().includes(colFilters.employee_id.toLowerCase()));
     if (colFilters.requester)   list = list.filter((b) => b.requester?.full_name?.toLowerCase().includes(colFilters.requester.toLowerCase()));
     if (colFilters.department)  list = list.filter((b) => b.requester?.department?.toLowerCase().includes(colFilters.department.toLowerCase()));
+    if (colFilters.email)   list = list.filter((b) => b.requester?.email?.toLowerCase().includes(colFilters.email.toLowerCase()));
     if (colFilters.title)   list = list.filter((b) => b.title?.toLowerCase().includes(colFilters.title.toLowerCase()));
     if (colFilters.notes)   list = list.filter((b) => b.notes?.toLowerCase().includes(colFilters.notes.toLowerCase()));
     if (colFilters.creator) list = list.filter((b) => b.creator?.full_name?.toLowerCase().includes(colFilters.creator.toLowerCase()));
@@ -307,6 +310,7 @@ export default function CarAnalyticsSection({ dateFrom, dateTo }) {
                   { col: 'employee_id', label: 'MSNV',           align: 'left'  },
                   { col: 'requester',  label: 'Người sử dụng xe', align: 'left' },
                   { col: 'department', label: 'Phòng ban',       align: 'left'  },
+                  { col: 'email',      label: 'Email',           align: 'left'  },
                   { col: 'title',      label: 'Mục đích',        align: 'left'  },
                   { col: 'notes',      label: 'Ghi chú',         align: 'left'  },
                   { col: 'creator',    label: 'Người tạo lịch',  align: 'left'  },
@@ -344,6 +348,9 @@ export default function CarAnalyticsSection({ dateFrom, dateTo }) {
                   <input value={colFilters.department} onChange={(e) => setCol('department', e.target.value)} placeholder="Lọc phòng ban..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
                 </td>
                 <td className="pb-2 px-2">
+                  <input value={colFilters.email} onChange={(e) => setCol('email', e.target.value)} placeholder="Lọc email..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
+                </td>
+                <td className="pb-2 px-2">
                   <input value={colFilters.title} onChange={(e) => setCol('title', e.target.value)} placeholder="Lọc mục đích..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
                 </td>
                 <td className="pb-2 px-2">
@@ -369,7 +376,7 @@ export default function CarAnalyticsSection({ dateFrom, dateTo }) {
             <tbody>
               {filteredReport.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="text-center text-gray-400 py-8">
+                  <td colSpan={13} className="text-center text-gray-400 py-8">
                     {loading ? 'Đang tải...' : 'Không có dữ liệu trong kỳ này'}
                   </td>
                 </tr>
@@ -385,6 +392,7 @@ export default function CarAnalyticsSection({ dateFrom, dateTo }) {
                     <td className="py-3 px-2 text-gray-700">{b.requester?.employee_id || '—'}</td>
                     <td className="py-3 px-2 font-medium text-gray-800">{b.requester?.full_name || '—'}</td>
                     <td className="py-3 px-2 text-gray-700">{b.requester?.department || '—'}</td>
+                    <td className="py-3 px-2 text-gray-700 max-w-[180px] truncate">{b.requester?.email || '—'}</td>
                     <td className="py-3 px-2 max-w-[200px]">
                       <div className="truncate font-medium text-gray-700">{b.title}</div>
                     </td>

@@ -1,9 +1,11 @@
 const { AllowedEmployee } = require('../models');
+const { Op } = require('sequelize');
 
 /**
  * Danh sách MSNV được phép truy cập hệ thống — allowlist độc lập, admin tự
- * quản lý (thêm tay hoặc import Excel). Chỉ xét MSNV có trong danh sách hay
- * không, không xét thêm điều kiện nào khác.
+ * quản lý (thêm tay hoặc import Excel). Đây cũng là nguồn dữ liệu gốc cho
+ * MSNV/Họ tên/Phòng ban/Email — AuthService đồng bộ các trường này vào user
+ * record lúc đăng nhập (khớp theo email, vì chưa có SSO gửi MSNV trực tiếp).
  */
 class AllowedEmployeeService {
   static async list() {
@@ -16,7 +18,23 @@ class AllowedEmployeeService {
     return !!found;
   }
 
-  static async add(employeeId, fullName, department, addedBy) {
+  // Tìm bản ghi allowlist khớp theo MSNV (ưu tiên, sẽ có khi SSO gửi kèm) hoặc theo email
+  // (dùng được ngay bây giờ, trước khi có SSO) — dùng để vừa xét quyền vừa đồng bộ thông tin.
+  static async findMatch(employeeId, email) {
+    const id = employeeId ? String(employeeId).trim() : null;
+    const mail = email ? String(email).trim() : null;
+
+    if (id) {
+      const byId = await AllowedEmployee.findOne({ where: { employee_id: id } });
+      if (byId) return byId;
+    }
+    if (mail) {
+      return await AllowedEmployee.findOne({ where: { email: { [Op.iLike]: mail } } });
+    }
+    return null;
+  }
+
+  static async add(employeeId, fullName, department, email, addedBy) {
     const id = String(employeeId || '').trim();
     if (!id) throw new Error('MSNV không được để trống');
 
@@ -25,19 +43,21 @@ class AllowedEmployeeService {
       defaults: {
         full_name: fullName ? String(fullName).trim() : null,
         department: department ? String(department).trim() : null,
+        email: email ? String(email).trim().toLowerCase() : null,
         added_by: addedBy || null
       }
     });
     return record;
   }
 
-  // rows: [{ employee_id, full_name, department }] — dùng cho import từ Excel (đã parse ở frontend)
+  // rows: [{ employee_id, full_name, department, email }] — dùng cho import từ Excel (đã parse ở frontend)
   static async bulkImport(rows, addedBy) {
     const cleaned = rows
       .map((r) => ({
         employee_id: String(r.employee_id || '').trim(),
         full_name: r.full_name ? String(r.full_name).trim() : null,
-        department: r.department ? String(r.department).trim() : null
+        department: r.department ? String(r.department).trim() : null,
+        email: r.email ? String(r.email).trim().toLowerCase() : null
       }))
       .filter((r) => r.employee_id);
 

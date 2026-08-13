@@ -49,8 +49,8 @@ class CarBookingService {
           end_time: { [Op.gt]: startDate }
         },
         include: [
-          { model: User, as: 'creator', attributes: ['id', 'full_name'] },
-          { model: User, as: 'requester', attributes: ['id', 'full_name', 'employee_id', 'department'] },
+          { model: User, as: 'creator', attributes: ['id', 'full_name', 'employee_id', 'department', 'email'] },
+          { model: User, as: 'requester', attributes: ['id', 'full_name', 'employee_id', 'department', 'email'] },
         ],
         order: [['start_time', 'ASC']]
       });
