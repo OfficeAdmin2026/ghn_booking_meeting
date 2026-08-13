@@ -104,6 +104,8 @@ export default function AdminPage() {
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
   const [removeEmployeeLoading, setRemoveEmployeeLoading] = useState(null); // id đang xoá
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState(new Set());
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
   const loadRooms = useCallback(async () => {
     setLoading(true);
@@ -291,6 +293,39 @@ export default function AdminPage() {
       setTimeout(() => setImportError(''), 5000);
     } finally {
       setRemoveEmployeeLoading(null);
+    }
+  };
+
+  const toggleSelectEmployee = (id) => {
+    setSelectedEmployeeIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = (ids, allSelected) => {
+    setSelectedEmployeeIds(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => { if (allSelected) next.delete(id); else next.add(id); });
+      return next;
+    });
+  };
+
+  const handleBulkDeleteEmployees = async () => {
+    const ids = Array.from(selectedEmployeeIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Xoá ${ids.length} MSNV đã chọn khỏi danh sách được phép truy cập? Hành động này không thể hoàn tác.`)) return;
+    setBulkDeleteLoading(true);
+    try {
+      await adminApi.bulkRemoveAllowedEmployees(ids);
+      setSelectedEmployeeIds(new Set());
+      await loadAllowedEmployees();
+    } catch (err) {
+      setImportError(err.response?.data?.error?.message || 'Xoá thất bại');
+      setTimeout(() => setImportError(''), 5000);
+    } finally {
+      setBulkDeleteLoading(false);
     }
   };
 
@@ -1156,12 +1191,24 @@ export default function AdminPage() {
                 Danh sách MSNV được phép
                 <span className="ml-2 text-xs font-normal text-gray-400">({allowedEmployees.length})</span>
               </h3>
-              <button
-                onClick={loadAllowedEmployees}
-                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-ghn-orange border border-gray-200 px-3 py-1.5 rounded-lg hover:border-ghn-orange transition-colors"
-              >
-                <ArrowPathIcon className="w-3.5 h-3.5" /> Làm mới
-              </button>
+              <div className="flex items-center gap-2">
+                {selectedEmployeeIds.size > 0 && (
+                  <button
+                    onClick={handleBulkDeleteEmployees}
+                    disabled={bulkDeleteLoading}
+                    className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" />
+                    {bulkDeleteLoading ? 'Đang xoá...' : `Xoá đã chọn (${selectedEmployeeIds.size})`}
+                  </button>
+                )}
+                <button
+                  onClick={loadAllowedEmployees}
+                  className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-ghn-orange border border-gray-200 px-3 py-1.5 rounded-lg hover:border-ghn-orange transition-colors"
+                >
+                  <ArrowPathIcon className="w-3.5 h-3.5" /> Làm mới
+                </button>
+              </div>
             </div>
 
             <div className="relative mb-4">
@@ -1170,7 +1217,7 @@ export default function AdminPage() {
                 type="text"
                 value={allowedSearch}
                 onChange={e => setAllowedSearch(e.target.value)}
-                placeholder="Tìm theo MSNV hoặc họ tên..."
+                placeholder="Tìm theo MSNV, họ tên hoặc department..."
                 className="input-field pl-9 w-full"
               />
             </div>
@@ -1182,27 +1229,50 @@ export default function AdminPage() {
                 {allowedEmployees.length === 0 ? 'Chưa có MSNV nào trong danh sách.' : 'Không tìm thấy kết quả.'}
               </p>
             ) : (
-              <div className="divide-y divide-gray-100 max-h-[28rem] overflow-y-auto">
-                {filteredAllowedEmployees.map((e) => (
-                  <div key={e.id} className="flex items-center justify-between py-2.5">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-800">{e.employee_id}</p>
-                      {(e.full_name || e.department) && (
-                        <p className="text-xs text-gray-400 truncate">
-                          {[e.full_name, e.department].filter(Boolean).join(' · ')}
-                        </p>
-                      )}
+              <>
+                {(() => {
+                  const visibleIds = filteredAllowedEmployees.map(e => e.id);
+                  const allVisibleSelected = visibleIds.every(id => selectedEmployeeIds.has(id));
+                  return (
+                    <label className="flex items-center gap-2 pb-2 mb-1 border-b border-gray-100 text-xs text-gray-500 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={allVisibleSelected}
+                        onChange={() => toggleSelectAllVisible(visibleIds, allVisibleSelected)}
+                        className="w-4 h-4 rounded border-gray-300 text-ghn-orange focus:ring-ghn-orange"
+                      />
+                      Chọn tất cả ({filteredAllowedEmployees.length} đang hiển thị)
+                    </label>
+                  );
+                })()}
+                <div className="divide-y divide-gray-100 max-h-[28rem] overflow-y-auto">
+                  {filteredAllowedEmployees.map((e) => (
+                    <div key={e.id} className="flex items-center gap-3 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={selectedEmployeeIds.has(e.id)}
+                        onChange={() => toggleSelectEmployee(e.id)}
+                        className="w-4 h-4 rounded border-gray-300 text-ghn-orange focus:ring-ghn-orange shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-800">{e.employee_id}</p>
+                        {(e.full_name || e.department) && (
+                          <p className="text-xs text-gray-400 truncate">
+                            {[e.full_name, e.department].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleRemoveEmployee(e.id, e.full_name || e.employee_id)}
+                        disabled={removeEmployeeLoading === e.id}
+                        className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 shrink-0"
+                      >
+                        <TrashIcon className="w-3.5 h-3.5" /> {removeEmployeeLoading === e.id ? '...' : 'Xoá'}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleRemoveEmployee(e.id, e.full_name || e.employee_id)}
-                      disabled={removeEmployeeLoading === e.id}
-                      className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 shrink-0"
-                    >
-                      <TrashIcon className="w-3.5 h-3.5" /> {removeEmployeeLoading === e.id ? '...' : 'Xoá'}
-                    </button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>

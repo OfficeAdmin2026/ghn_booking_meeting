@@ -96,6 +96,8 @@ export const adminApi = {
   bulkImportAllowedEmployees: (rows) => api.post('/admin/allowed-employees/bulk', { rows }),
 
   removeAllowedEmployee: (id) => api.delete(`/admin/allowed-employees/${id}`),
+
+  bulkRemoveAllowedEmployees: (ids) => api.post('/admin/allowed-employees/bulk-delete', { ids }),
 };
 
 export const wayfindingApi = {

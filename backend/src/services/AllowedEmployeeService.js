@@ -73,6 +73,12 @@ class AllowedEmployeeService {
     await existing.destroy();
     return true;
   }
+
+  static async removeMany(ids) {
+    const list = Array.isArray(ids) ? ids.filter(Boolean) : [];
+    if (list.length === 0) return 0;
+    return await AllowedEmployee.destroy({ where: { id: list } });
+  }
 }
 
 module.exports = AllowedEmployeeService;

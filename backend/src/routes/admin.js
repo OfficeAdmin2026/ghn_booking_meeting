@@ -365,4 +365,15 @@ router.delete('/allowed-employees/:id', authMiddleware, adminMiddleware, async (
   }
 });
 
+// POST /api/admin/allowed-employees/bulk-delete - Xoá nhiều MSNV cùng lúc (ids: [])
+router.post('/allowed-employees/bulk-delete', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
+    const deleted = await AllowedEmployeeService.removeMany(ids);
+    res.json({ status: 'success', data: { deleted } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
 module.exports = router;
