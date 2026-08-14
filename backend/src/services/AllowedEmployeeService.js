@@ -1,4 +1,4 @@
-const { AllowedEmployee } = require('../models');
+const { AllowedEmployee, User } = require('../models');
 const { Op } = require('sequelize');
 
 /**
@@ -9,7 +9,10 @@ const { Op } = require('sequelize');
  */
 class AllowedEmployeeService {
   static async list() {
-    return await AllowedEmployee.findAll({ order: [['created_at', 'DESC']] });
+    return await AllowedEmployee.findAll({
+      order: [['created_at', 'DESC']],
+      include: [{ model: User, as: 'user', attributes: ['id', 'role', 'is_active'], required: false }]
+    });
   }
 
   static async isAllowed(employeeId) {

@@ -7,7 +7,6 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   ChevronUpDownIcon,
-  UserPlusIcon,
   ArrowPathIcon,
   KeyIcon,
   ArrowRightIcon,
@@ -26,26 +25,16 @@ import {
 import { StarIcon } from '@heroicons/react/20/solid';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
-function RoleBadge({ role }) {
-  if (role === 'admin') return <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">Admin</span>;
-  if (role === 'vip')   return (
-    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-      <StarIcon className="w-3 h-3" /> VIP
-    </span>
-  );
-  return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">User</span>;
-}
-
 const EMPTY_FORM = {
   name: '', code: '', location: '', floor: '',
   capacity: '', is_vip: false, amenities: '',
 };
 
 export default function AdminPage() {
-  const { refreshSiteLock } = useAuth();
+  const { refreshSiteLock, user: currentUser } = useAuth();
 
   // Tabs
-  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' | 'roles' | 'access' | 'settings'
+  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' | 'access' | 'settings'
   const [settingsSubTab, setSettingsSubTab] = useState('lock'); // 'lock' | 'freeze'
   
   // Room management
@@ -76,20 +65,14 @@ export default function AdminPage() {
     site_lock_message: '',
   });
 
-  // Role management
+  // Role management (quản trị viên) — gộp chung với allowlist MSNV trong 1 tab
   const [elevatedUsers, setElevatedUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [promoteEmployeeId, setPromoteEmployeeId] = useState('');
-  const [promoteRole, setPromoteRole] = useState('admin');
-  const [promoteLoading, setPromoteLoading] = useState(false);
-  const [roleActionLoading, setRoleActionLoading] = useState(null); // userId being changed
+  const [roleActionLoading, setRoleActionLoading] = useState(null); // userId/employeeId đang xử lý
   const [roleActionError, setRoleActionError] = useState('');
   const [roleActionSuccess, setRoleActionSuccess] = useState('');
-  const [banEmployeeId, setBanEmployeeId] = useState('');
-  const [banLoading, setBanLoading] = useState(false);
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('all'); // all | admin | vip
-  const [bannedSearch, setBannedSearch] = useState('');
 
   // Allowlist MSNV (truy cập theo 2 văn phòng)
   const [allowedEmployees, setAllowedEmployees] = useState([]);
@@ -163,27 +146,53 @@ export default function AdminPage() {
     }
   }, []);
 
-  const handlePromote = async () => {
-    const employeeId = promoteEmployeeId.trim();
-    if (!employeeId) return;
-    setPromoteLoading(true);
+  // Đổi vai trò theo MSNV — dùng cho dropdown trong bảng allowlist gộp chung.
+  // Cũng dùng lại cho khối "Quản trị viên" (đổi Admin↔VIP, gỡ quyền) vì cả 2 đều thao tác qua MSNV.
+  const handleSetRoleByEmployeeId = async (employeeId, role, label) => {
+    setRoleActionLoading(employeeId);
     setRoleActionError('');
     setRoleActionSuccess('');
     try {
-      const res = await adminApi.promote(employeeId, promoteRole);
+      const res = await adminApi.promote(employeeId, role);
       const u = res.data.data.user;
-      await loadElevatedUsers();
-      setPromoteEmployeeId('');
-      setRoleActionSuccess(`Đã cấp quyền ${promoteRole === 'admin' ? 'Admin' : 'VIP'} cho ${u.full_name || employeeId}`);
+      await Promise.all([loadAllowedEmployees(), loadElevatedUsers()]);
+      setRoleActionSuccess(`Đã cập nhật quyền ${role === 'admin' ? 'Admin' : role === 'vip' ? 'VIP' : 'User'} cho ${label || u.full_name || employeeId}`);
       setTimeout(() => setRoleActionSuccess(''), 4000);
     } catch (err) {
-      setRoleActionError(err.response?.data?.error?.message || 'Thất bại');
+      setRoleActionError(err.response?.data?.error?.message || 'Cập nhật quyền thất bại');
       setTimeout(() => setRoleActionError(''), 5000);
     } finally {
-      setPromoteLoading(false);
+      setRoleActionLoading(null);
     }
   };
 
+  // Khoá/bỏ khoá theo MSNV — nếu chưa từng đăng nhập (chưa có user record) thì banUser sẽ tạo
+  // sẵn tài khoản ở trạng thái bị chặn; bỏ khoá chỉ khả dụng khi đã có tài khoản.
+  const handleToggleLockByRow = async (employeeId, userId, isActive, label) => {
+    if (isActive === false && !confirm(`Chặn truy cập "${label}"? Người này sẽ không thể đăng nhập lại cho đến khi được bỏ chặn.`)) return;
+    setRoleActionLoading(employeeId);
+    setRoleActionError('');
+    setRoleActionSuccess('');
+    try {
+      if (userId) {
+        await adminApi.setUserStatus(userId, isActive);
+      } else {
+        await adminApi.banUser(employeeId);
+      }
+      await Promise.all([loadAllowedEmployees(), loadElevatedUsers()]);
+      setRoleActionSuccess(isActive ? 'Đã bỏ chặn truy cập' : 'Đã chặn truy cập');
+      setTimeout(() => setRoleActionSuccess(''), 3000);
+    } catch (err) {
+      setRoleActionError(err.response?.data?.error?.message || 'Cập nhật thất bại');
+      setTimeout(() => setRoleActionError(''), 5000);
+    } finally {
+      setRoleActionLoading(null);
+    }
+  };
+
+  // Đổi quyền/trạng thái theo user id — dùng cho khối "Quản trị viên hiện tại" vì thao tác
+  // trên tài khoản đã tồn tại sẵn (kể cả những admin cũ chưa có MSNV, promote-theo-MSNV sẽ
+  // không tìm được họ vì chưa có allowlist match).
   const handleSetRole = async (userId, role) => {
     setRoleActionLoading(userId);
     setRoleActionError('');
@@ -197,28 +206,6 @@ export default function AdminPage() {
       setTimeout(() => setRoleActionError(''), 3000);
     } finally {
       setRoleActionLoading(null);
-    }
-  };
-
-  const handleBan = async () => {
-    const employeeId = banEmployeeId.trim();
-    if (!employeeId) return;
-    if (!confirm(`Chặn truy cập MSNV "${employeeId}"? Người này sẽ không thể đăng nhập lại cho đến khi được bỏ chặn.`)) return;
-    setBanLoading(true);
-    setRoleActionError('');
-    setRoleActionSuccess('');
-    try {
-      const res = await adminApi.banUser(employeeId);
-      const u = res.data.data.user;
-      await loadElevatedUsers();
-      setBanEmployeeId('');
-      setRoleActionSuccess(`Đã chặn truy cập: ${u.full_name || employeeId}`);
-      setTimeout(() => setRoleActionSuccess(''), 4000);
-    } catch (err) {
-      setRoleActionError(err.response?.data?.error?.message || 'Thất bại');
-      setTimeout(() => setRoleActionError(''), 5000);
-    } finally {
-      setBanLoading(false);
     }
   };
 
@@ -244,10 +231,6 @@ export default function AdminPage() {
     loadSettings();
   }, [loadRooms, loadSettings]);
 
-  useEffect(() => {
-    if (activeTab === 'roles') loadElevatedUsers();
-  }, [activeTab, loadElevatedUsers]);
-
   const loadAllowedEmployees = useCallback(async () => {
     setAllowedLoading(true);
     try {
@@ -260,9 +243,13 @@ export default function AdminPage() {
     }
   }, []);
 
+  // Tab gộp: cần cả allowlist (MSNV) lẫn danh sách quản trị viên (Admin/VIP)
   useEffect(() => {
-    if (activeTab === 'access') loadAllowedEmployees();
-  }, [activeTab, loadAllowedEmployees]);
+    if (activeTab === 'access') {
+      loadAllowedEmployees();
+      loadElevatedUsers();
+    }
+  }, [activeTab, loadAllowedEmployees, loadElevatedUsers]);
 
   const handleAddEmployee = async () => {
     const id = newEmployeeId.trim();
@@ -541,10 +528,6 @@ export default function AdminPage() {
     .filter(u => userRoleFilter === 'all' || u.role === userRoleFilter)
     .filter(u => matchesQuery(u, userSearch.trim().toLowerCase()));
 
-  const bannedUsers = elevatedUsers
-    .filter(u => !u.is_active)
-    .filter(u => matchesQuery(u, bannedSearch.trim().toLowerCase()));
-
   return (
     <div className="p-4">
       <div className="flex gap-6 items-start">
@@ -559,24 +542,16 @@ export default function AdminPage() {
             1. Quản lý phòng
           </button>
           <button
-            onClick={() => setActiveTab('roles')}
-            className={`w-full text-left rounded-lg px-3 py-2.5 font-medium transition-colors mt-1 ${
-              activeTab === 'roles' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            2. Phân quyền
-          </button>
-          <button
             onClick={() => setActiveTab('access')}
             className={`w-full text-left rounded-lg px-3 py-2.5 font-medium transition-colors mt-1 ${
               activeTab === 'access' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            3. Truy cập theo MSNV
+            2. Truy cập &amp; Phân quyền
           </button>
 
           <div className="mt-1 px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-            4. Cài đặt hệ thống
+            3. Cài đặt hệ thống
           </div>
           <button
             onClick={() => { setActiveTab('settings'); setSettingsSubTab('lock'); }}
@@ -584,7 +559,7 @@ export default function AdminPage() {
               activeTab === 'settings' && settingsSubTab === 'lock' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            4.1 Khoá hệ thống (tài khoản User)
+            3.1 Khoá hệ thống (tài khoản User)
           </button>
           <button
             onClick={() => { setActiveTab('settings'); setSettingsSubTab('freeze'); }}
@@ -592,7 +567,7 @@ export default function AdminPage() {
               activeTab === 'settings' && settingsSubTab === 'freeze' ? 'bg-orange-50 text-ghn-orange' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            4.2 Đóng băng đặt phòng
+            3.2 Đóng băng đặt phòng
           </button>
         </div>
 
@@ -836,68 +811,31 @@ export default function AdminPage() {
       )}
 
       {/* Roles Tab */}
-      {activeTab === 'roles' && (
+      {/* Access allowlist tab (gộp chung Truy cập MSNV + Phân quyền) */}
+      {activeTab === 'access' && (
         <div className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Quản lý quyền người dùng</h2>
-            <p className="text-gray-500 mt-1">Cấp / thu hồi quyền Admin, VIP và chặn truy cập theo MSNV (phải nằm trong danh sách "Truy cập theo MSNV")</p>
+            <h2 className="text-2xl font-bold text-gray-900">Truy cập &amp; Phân quyền theo MSNV</h2>
+            <p className="text-gray-500 mt-1">
+              Chỉ MSNV nằm trong danh sách dưới đây mới đăng nhập/truy cập được hệ thống (áp dụng cho
+              mọi tài khoản, kể cả Admin/VIP). Đổi vai trò và khoá/bỏ khoá ngay tại từng dòng.
+            </p>
           </div>
 
-          {/* Promote form */}
-          <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-1 inline-flex items-center gap-1.5">
-              <UserPlusIcon className="w-4 h-4" /> Cấp quyền theo MSNV
-            </h3>
-            <p className="text-xs text-gray-400 mb-4">MSNV phải có sẵn trong danh sách được phép truy cập.</p>
-            <div className="flex gap-3 flex-wrap">
-              <input
-                type="text"
-                value={promoteEmployeeId}
-                onChange={e => { setPromoteEmployeeId(e.target.value); setRoleActionError(''); }}
-                onKeyDown={e => e.key === 'Enter' && handlePromote()}
-                placeholder="MSNV, ví dụ: 3091620"
-                className="input-field flex-1 min-w-[220px]"
-              />
-              <select
-                value={promoteRole}
-                onChange={e => setPromoteRole(e.target.value)}
-                className="input-field w-36"
-              >
-                <option value="admin">Admin</option>
-                <option value="vip">VIP (BOD)</option>
-                <option value="user">User (gỡ quyền)</option>
-              </select>
-              <button
-                onClick={handlePromote}
-                disabled={promoteLoading || !promoteEmployeeId.trim()}
-                className="btn-primary px-6 disabled:opacity-50"
-              >
-                {promoteLoading ? 'Đang xử lý...' : 'Cấp quyền'}
-              </button>
+          {(roleActionSuccess || roleActionError) && (
+            <div className={`px-4 py-2 rounded-lg text-sm inline-flex items-center gap-1.5 ${
+              roleActionError ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'
+            }`}>
+              {roleActionError ? roleActionError : (<><CheckCircleIcon className="w-4 h-4" /> {roleActionSuccess}</>)}
             </div>
+          )}
 
-            {roleActionSuccess && (
-              <div className="mt-3 px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm inline-flex items-center gap-1.5">
-                <CheckCircleIcon className="w-4 h-4" /> {roleActionSuccess}
-              </div>
-            )}
-            {roleActionError && (
-              <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                {roleActionError}
-              </div>
-            )}
-          </div>
-
-          {/* Granted users list */}
+          {/* Quản trị viên hiện tại */}
           <div className="card p-5">
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <h3 className="text-sm font-semibold text-gray-700">
-                Danh sách được cấp quyền
-                {elevatedUsers.some(u => u.is_active && u.role !== 'user') && (
-                  <span className="ml-2 text-xs font-normal text-gray-400">
-                    ({grantedUsers.length})
-                  </span>
-                )}
+              <h3 className="text-sm font-semibold text-gray-700 inline-flex items-center gap-1.5">
+                <KeyIcon className="w-4 h-4" /> Quản trị viên hiện tại
+                <span className="ml-1 text-xs font-normal text-gray-400">({grantedUsers.length})</span>
               </h3>
               <button
                 onClick={loadElevatedUsers}
@@ -1002,112 +940,6 @@ export default function AdminPage() {
                 })}
               </div>
             )}
-          </div>
-
-          {/* Ban form */}
-          <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-1 inline-flex items-center gap-1.5">
-              <NoSymbolIcon className="w-4 h-4" /> Chặn truy cập theo MSNV
-            </h3>
-            <p className="text-xs text-gray-400 mb-4">
-              MSNV bị chặn sẽ không thể đăng nhập lại. Dùng khi người dùng đặt phòng nhiều lần rồi không đến.
-            </p>
-            <div className="flex gap-3 flex-wrap">
-              <input
-                type="text"
-                value={banEmployeeId}
-                onChange={e => { setBanEmployeeId(e.target.value); setRoleActionError(''); }}
-                onKeyDown={e => e.key === 'Enter' && handleBan()}
-                placeholder="MSNV, ví dụ: 3091620"
-                className="input-field flex-1 min-w-[220px]"
-              />
-              <button
-                onClick={handleBan}
-                disabled={banLoading || !banEmployeeId.trim()}
-                className="inline-flex items-center gap-1.5 px-6 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
-              >
-                <NoSymbolIcon className="w-4 h-4" /> {banLoading ? 'Đang xử lý...' : 'Chặn truy cập'}
-              </button>
-            </div>
-          </div>
-
-          {/* Banned users list */}
-          <div className="card p-5">
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <h3 className="text-sm font-semibold text-gray-700">
-                Danh sách bị chặn truy cập
-                {elevatedUsers.some(u => !u.is_active) && (
-                  <span className="ml-2 text-xs font-normal text-gray-400">
-                    ({bannedUsers.length})
-                  </span>
-                )}
-              </h3>
-              <button
-                onClick={loadElevatedUsers}
-                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-ghn-orange border border-gray-200 px-3 py-1.5 rounded-lg hover:border-ghn-orange transition-colors"
-              >
-                <ArrowPathIcon className="w-3.5 h-3.5" /> Làm mới
-              </button>
-            </div>
-
-            {/* Filter */}
-            <div className="relative mb-4">
-              <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={bannedSearch}
-                onChange={e => setBannedSearch(e.target.value)}
-                placeholder="Tìm theo tên hoặc MSNV..."
-                className="input-field pl-9 w-full"
-              />
-            </div>
-
-            {usersLoading ? (
-              <div className="text-center py-8 text-gray-400">Đang tải...</div>
-            ) : bannedUsers.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                {elevatedUsers.filter(u => !u.is_active).length === 0 ? 'Chưa có tài khoản nào bị chặn' : 'Không tìm thấy kết quả phù hợp'}
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                {bannedUsers.map(u => (
-                  <div key={u.id} className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 bg-gray-400">
-                        {u.full_name?.charAt(0)?.toUpperCase() || '?'}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800 inline-flex items-center gap-2">
-                          {u.full_name}
-                          <RoleBadge role={u.role} />
-                        </p>
-                        <p className="text-xs text-gray-500">{u.employee_id ? `MSNV ${u.employee_id}` : 'Chưa có MSNV'}{u.department ? ` · ${u.department}` : ''}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleSetStatus(u.id, true, u.full_name || u.employee_id)}
-                      disabled={roleActionLoading === u.id}
-                      className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50"
-                    >
-                      {roleActionLoading === u.id ? '...' : 'Bỏ chặn'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Access allowlist tab */}
-      {activeTab === 'access' && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Truy cập theo MSNV</h2>
-            <p className="text-gray-500 mt-1">
-              Chỉ những tài khoản có MSNV nằm trong danh sách dưới đây mới đăng nhập/truy cập được hệ thống
-              (áp dụng cho mọi tài khoản, kể cả Admin/VIP).
-            </p>
           </div>
 
           {/* Import Excel */}
@@ -1277,6 +1109,26 @@ export default function AdminPage() {
                           </p>
                         )}
                       </div>
+                      <select
+                        value={e.user?.role || 'user'}
+                        disabled={roleActionLoading === e.employee_id || (e.user && e.user.id === currentUser?.id)}
+                        onChange={(ev) => handleSetRoleByEmployeeId(e.employee_id, ev.target.value, e.full_name)}
+                        className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-ghn-orange bg-white disabled:opacity-50 shrink-0"
+                      >
+                        <option value="user">User</option>
+                        <option value="vip">VIP</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                      <button
+                        onClick={() => handleToggleLockByRow(e.employee_id, e.user?.id || null, e.user ? !e.user.is_active : false, e.full_name || e.employee_id)}
+                        disabled={roleActionLoading === e.employee_id || (e.user && e.user.id === currentUser?.id)}
+                        title={!e.user ? 'MSNV chưa từng đăng nhập' : undefined}
+                        className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-50 shrink-0 ${
+                          e.user && !e.user.is_active ? 'border-green-200 text-green-700 hover:bg-green-50' : 'border-red-200 text-red-600 hover:bg-red-50'
+                        }`}
+                      >
+                        {roleActionLoading === e.employee_id ? '...' : e.user && !e.user.is_active ? 'Bỏ khoá' : 'Khoá'}
+                      </button>
                       <button
                         onClick={() => handleRemoveEmployee(e.id, e.full_name || e.employee_id)}
                         disabled={removeEmployeeLoading === e.id}

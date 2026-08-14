@@ -42,6 +42,10 @@ CarBooking.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 
 CarBooking.belongsTo(User, { foreignKey: 'requester_user_id', as: 'requester' });
 
+// Liên kết theo employee_id (không phải khoá chính) — cả 2 cột đều UNIQUE nên là quan hệ 1-1.
+// Dùng để gộp thông tin role/is_active của user (nếu đã từng đăng nhập) vào danh sách allowlist.
+AllowedEmployee.hasOne(User, { foreignKey: 'employee_id', sourceKey: 'employee_id', as: 'user', constraints: false });
+
 module.exports = {
   User,
   Room,
