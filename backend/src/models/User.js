@@ -9,7 +9,7 @@ const User = sequelize.define('users', {
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
     unique: true,
     validate: {
       isEmail: true
@@ -21,7 +21,8 @@ const User = sequelize.define('users', {
   },
   employee_id: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    unique: true
   },
   department: {
     type: DataTypes.STRING,

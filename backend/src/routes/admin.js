@@ -173,17 +173,15 @@ router.post('/promote', authMiddleware, adminMiddleware, async (req, res) => {
     if (!match) {
       return res.status(400).json({ error: { status: 400, message: 'MSNV chưa nằm trong danh sách được phép truy cập hệ thống. Thêm vào allowlist trước.' } });
     }
-    const email = match.email || `${employeeId}@ghn.vn`;
 
     let user = await User.findOne({ where: { employee_id: employeeId } });
-    if (!user) user = await User.findOne({ where: { email: { [Op.iLike]: email } } });
 
     if (!user) {
       user = await User.create({
-        email,
+        employee_id: employeeId,
+        email: match.email || null,
         full_name: match.full_name || employeeId,
         department: match.department || null,
-        employee_id: employeeId,
         role,
         is_active: true
       });
@@ -287,17 +285,15 @@ router.post('/ban', authMiddleware, adminMiddleware, async (req, res) => {
     if (!employeeId) return res.status(400).json({ error: { status: 400, message: 'MSNV không được để trống' } });
 
     const match = await AllowedEmployeeService.findMatch(employeeId, null);
-    const email = match?.email || `${employeeId}@ghn.vn`;
 
     let user = await User.findOne({ where: { employee_id: employeeId } });
-    if (!user) user = await User.findOne({ where: { email: { [Op.iLike]: email } } });
 
     if (!user) {
       user = await User.create({
-        email,
+        employee_id: employeeId,
+        email: match?.email || null,
         full_name: match?.full_name || employeeId,
         department: match?.department || null,
-        employee_id: employeeId,
         role: 'user',
         is_active: false
       });

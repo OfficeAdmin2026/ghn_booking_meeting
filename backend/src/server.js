@@ -26,6 +26,16 @@ const PORT = process.env.PORT || 5000;
       ALTER TABLE allowed_employees
         ADD COLUMN IF NOT EXISTS department VARCHAR(255),
         ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+      ALTER TABLE users
+        ALTER COLUMN email DROP NOT NULL;
+      DO $do$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'users_employee_id_unique'
+        ) THEN
+          ALTER TABLE users ADD CONSTRAINT users_employee_id_unique UNIQUE (employee_id);
+        END IF;
+      END $do$;
     `);
     console.log('✅ Booking columns migrated');
 
