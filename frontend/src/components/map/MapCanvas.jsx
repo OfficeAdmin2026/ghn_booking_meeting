@@ -27,6 +27,7 @@ export default function MapCanvas({
   selectedCode,
   focusRequest,
   showDirection,
+  dataReady = true,
   savedPathsByRoomId,
   activeDrawTool,
   drawingPoints,
@@ -70,7 +71,10 @@ export default function MapCanvas({
   useLayoutEffect(() => { directionPathRef.current = directionPath; }, [directionPath]);
 
   useEffect(() => {
-    if (!focusRequest || !transformRef.current) return;
+    // Đợi path/khung phòng/ảnh nền tải xong hết mới zoom — tránh trường hợp deep-link
+    // (focusRequest fire ngay khi mount) zoom sai lần 1 (chưa có dữ liệu) rồi zoom lại lần 2
+    // khi dữ liệu về sau, gây giật/lag. Chờ xong thì zoom thẳng 1 lần tới đúng vị trí.
+    if (!focusRequest || !transformRef.current || !dataReady) return;
     const path = directionPathRef.current;
     if (path && path.length >= 2) {
       // Zoom to fit the full direction path bbox instead of just the room
@@ -78,13 +82,7 @@ export default function MapCanvas({
     } else {
       transformRef.current.zoomToElement(focusRequest.domId, 1.3, 600);
     }
-    // directionPath re-triggers this so a deep link (focusRequest fires before
-    // savedPathsByRoomId finishes loading) re-fits once the real path arrives.
-    // Canvas width/height re-trigger this too: directionPath can keep the same
-    // array reference (e.g. saved path already loaded) while the SVG coordinate
-    // space itself still changes underneath it once the real floor background
-    // (fetched separately, can resolve later) replaces the fallback canvas size.
-  }, [focusRequest, directionPath, floorData?.canvas?.width, floorData?.canvas?.height]);
+  }, [focusRequest, directionPath, floorData?.canvas?.width, floorData?.canvas?.height, dataReady]);
 
   // Rect drag handlers (shape drawing mode)
   const handleMouseDown = (e) => {
@@ -144,6 +142,12 @@ export default function MapCanvas({
 
   return (
     <div ref={wrapperRef} className="relative flex-1 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+      {focusRequest && !dataReady && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-gray-50/90">
+          <ArrowPathIcon className="w-6 h-6 text-ghn-orange animate-spin" />
+          <p className="text-xs text-gray-500">Đang tải sơ đồ...</p>
+        </div>
+      )}
       <TransformWrapper
         key={floorKey}
         ref={transformRef}

@@ -65,6 +65,13 @@ export default function OfficeMapPage() {
       .finally(() => setRoomsLoading(false));
   }, []);
 
+  // Cờ báo dữ liệu path/shape/ảnh nền đã tải xong ít nhất 1 lần — dùng để trì hoãn animation
+  // zoom-vừa-khung (MapCanvas) tới khi có đủ dữ liệu, tránh zoom 2 lần liên tiếp (giật/lag)
+  // khi vào bằng deep-link từ "Xem hướng dẫn đến phòng".
+  const [pathsLoaded, setPathsLoaded] = useState(false);
+  const [shapesLoaded, setShapesLoaded] = useState(false);
+  const [backgroundsLoaded, setBackgroundsLoaded] = useState(false);
+
   const fetchSavedPaths = useCallback(() => {
     wayfindingApi
       .getAll()
@@ -73,7 +80,8 @@ export default function OfficeMapPage() {
         (res.data.data?.paths || []).forEach((p) => { map[p.room_id] = p.points; });
         setSavedPathsByRoomId(map);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setPathsLoaded(true));
   }, []);
 
   const fetchSavedShapes = useCallback(() => {
@@ -84,12 +92,14 @@ export default function OfficeMapPage() {
         (res.data.data?.shapes || []).forEach((s) => { map[s.room_id] = s.points; });
         setSavedShapesByRoomId(map);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setShapesLoaded(true));
   }, []);
 
   // Chỉ tải ảnh nền của đúng tầng đang xem (ảnh có thể vài trăm KB base64) —
   // tránh tải toàn bộ ảnh của mọi tầng mỗi lần vào trang, gây chậm.
   const fetchBackgrounds = useCallback(() => {
+    setBackgroundsLoaded(false);
     const key = getFloorKey(location_, floor);
     floorBackgroundsApi
       .getOne(location_, floor)
@@ -105,8 +115,12 @@ export default function OfficeMapPage() {
           return { ...prev, [key]: background };
         });
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setBackgroundsLoaded(true));
   }, [location_, floor]);
+
+  // Đủ dữ liệu để tính đúng bbox zoom (path + khung phòng + kích thước ảnh nền thật)
+  const mapDataReady = pathsLoaded && shapesLoaded && backgroundsLoaded;
 
   const fetchAnnotations = useCallback(() => {
     mapAnnotationsApi
@@ -462,6 +476,7 @@ export default function OfficeMapPage() {
             selectedCode={selectedCode}
             focusRequest={focusRequest}
             showDirection={panelOpen}
+            dataReady={mapDataReady}
             savedPathsByRoomId={savedPathsByRoomId}
             activeDrawTool={activeDrawTool}
             drawingPoints={drawingPoints}
