@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import LoginPage from './pages/LoginPage';
+import LogoutPage from './pages/LogoutPage';
 import CalendarPage from './pages/CalendarPage';
 import OfficeMapPage from './pages/OfficeMapPage';
 import DashboardPage from './pages/DashboardPage';
@@ -27,6 +28,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/logout" element={<LogoutPage />} />
           <Route path="/" element={
             <ProtectedRoute>
               <Layout fullHeight><CalendarPage /></Layout>

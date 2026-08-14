@@ -50,7 +50,7 @@ function fmtDuration(minutes) {
 
 async function exportExcel(bookings) {
   const XLSX = await import('xlsx');
-  const headers = ['STT', 'Phòng', 'Vị trí', 'Tiêu đề', 'MSNV', 'Họ và tên', 'Phòng ban', 'Email', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy'];
+  const headers = ['STT', 'Phòng', 'Vị trí', 'Tiêu đề', 'MSNV', 'Họ và tên', 'Phòng ban', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy'];
   const rows = bookings.map((b, i) => [
     i + 1,
     b.room?.name || '',
@@ -59,7 +59,6 @@ async function exportExcel(bookings) {
     b.user?.employee_id || '',
     b.user?.full_name || '',
     b.user?.department || '',
-    b.user?.email || '',
     toVNDateStr(b.start_time),
     toVNTimeStr(b.start_time),
     toVNTimeStr(b.end_time),
@@ -183,7 +182,7 @@ export default function AnalyticsPage() {
     if (colFilters.room)   list = list.filter(b => b.room?.name?.toLowerCase().includes(colFilters.room.toLowerCase()) || b.room?.location?.toLowerCase().includes(colFilters.room.toLowerCase()));
     if (colFilters.title)  list = list.filter(b => b.title?.toLowerCase().includes(colFilters.title.toLowerCase()));
     if (colFilters.employee_id) list = list.filter(b => b.user?.employee_id?.toLowerCase().includes(colFilters.employee_id.toLowerCase()));
-    if (colFilters.full_name)   list = list.filter(b => b.user?.full_name?.toLowerCase().includes(colFilters.full_name.toLowerCase()) || b.user?.email?.toLowerCase().includes(colFilters.full_name.toLowerCase()));
+    if (colFilters.full_name)   list = list.filter(b => b.user?.full_name?.toLowerCase().includes(colFilters.full_name.toLowerCase()));
     if (colFilters.department)  list = list.filter(b => b.user?.department?.toLowerCase().includes(colFilters.department.toLowerCase()));
     if (colFilters.status) list = list.filter(b => simpleStatus(b.status) === colFilters.status);
     if (colFilters.reason) list = list.filter(b => b.cancellation_message?.toLowerCase().includes(colFilters.reason.toLowerCase()));
@@ -408,19 +407,17 @@ export default function AnalyticsPage() {
                       <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">MSNV</th>
                       <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Họ và tên</th>
                       <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Phòng ban</th>
-                      <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Email</th>
                       <th className="text-right pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Đặt phòng</th>
                       <th className="text-right pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Đã hủy</th>
                     </tr>
                   </thead>
                   <tbody>
                     {metrics.top_users.map((u, i) => (
-                      <tr key={u.email} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <tr key={u.id || i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                         <td className="py-2.5 text-gray-400 text-xs font-medium">{i + 1}</td>
                         <td className="py-2.5 px-2 text-gray-500 text-xs">{u.employee_id || '—'}</td>
                         <td className="py-2.5 px-2 font-medium text-gray-800">{u.full_name}</td>
                         <td className="py-2.5 px-2 text-gray-500 text-xs">{u.department || '—'}</td>
-                        <td className="py-2.5 px-2 text-gray-500 text-xs">{u.email}</td>
                         <td className="py-2.5 px-2 text-right font-bold text-gray-800">{u.total}</td>
                         <td className="py-2.5 px-2 text-right">
                           {u.cancelled > 0
@@ -540,10 +537,7 @@ export default function AnalyticsPage() {
                       <div className="truncate font-medium text-gray-700">{b.title}</div>
                     </td>
                     <td className="py-3 px-2 text-gray-700">{b.user?.employee_id || '—'}</td>
-                    <td className="py-3 px-2">
-                      <div className="text-gray-700">{b.user?.full_name || '—'}</div>
-                      <div className="text-xs text-gray-400">{b.user?.email}</div>
-                    </td>
+                    <td className="py-3 px-2 text-gray-700">{b.user?.full_name || '—'}</td>
                     <td className="py-3 px-2 text-gray-700">{b.user?.department || '—'}</td>
                     <td className="py-3 px-2 whitespace-nowrap">
                       <div className="text-gray-700">{toVNDateStr(b.start_time)}</div>

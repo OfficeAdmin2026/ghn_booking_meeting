@@ -24,10 +24,10 @@ export function AuthProvider({ children }) {
     if (user) refreshSiteLock();
   }, [user, refreshSiteLock]);
 
-  const login = async (email, fullName) => {
+  const login = async (employeeId, fullName) => {
     setLoading(true);
     try {
-      const res = await authApi.login(email, fullName);
+      const res = await authApi.login(employeeId, fullName);
       const { token, user: userData } = res.data.data;
       localStorage.setItem('ghn_token', token);
       localStorage.setItem('ghn_user', JSON.stringify(userData));

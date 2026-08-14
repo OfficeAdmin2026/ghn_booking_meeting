@@ -79,13 +79,13 @@ export default function AdminPage() {
   // Role management
   const [elevatedUsers, setElevatedUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [promoteEmail, setPromoteEmail] = useState('');
+  const [promoteEmployeeId, setPromoteEmployeeId] = useState('');
   const [promoteRole, setPromoteRole] = useState('admin');
   const [promoteLoading, setPromoteLoading] = useState(false);
   const [roleActionLoading, setRoleActionLoading] = useState(null); // userId being changed
   const [roleActionError, setRoleActionError] = useState('');
   const [roleActionSuccess, setRoleActionSuccess] = useState('');
-  const [banEmail, setBanEmail] = useState('');
+  const [banEmployeeId, setBanEmployeeId] = useState('');
   const [banLoading, setBanLoading] = useState(false);
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('all'); // all | admin | vip
@@ -164,17 +164,17 @@ export default function AdminPage() {
   }, []);
 
   const handlePromote = async () => {
-    const email = promoteEmail.trim().toLowerCase();
-    if (!email) return;
+    const employeeId = promoteEmployeeId.trim();
+    if (!employeeId) return;
     setPromoteLoading(true);
     setRoleActionError('');
     setRoleActionSuccess('');
     try {
-      const res = await adminApi.promote(email, promoteRole);
+      const res = await adminApi.promote(employeeId, promoteRole);
       const u = res.data.data.user;
       await loadElevatedUsers();
-      setPromoteEmail('');
-      setRoleActionSuccess(`Đã cấp quyền ${promoteRole === 'admin' ? 'Admin' : 'VIP'} cho ${u.full_name || email}`);
+      setPromoteEmployeeId('');
+      setRoleActionSuccess(`Đã cấp quyền ${promoteRole === 'admin' ? 'Admin' : 'VIP'} cho ${u.full_name || employeeId}`);
       setTimeout(() => setRoleActionSuccess(''), 4000);
     } catch (err) {
       setRoleActionError(err.response?.data?.error?.message || 'Thất bại');
@@ -201,18 +201,18 @@ export default function AdminPage() {
   };
 
   const handleBan = async () => {
-    const email = banEmail.trim().toLowerCase();
-    if (!email) return;
-    if (!confirm(`Chặn truy cập email "${email}"? Người này sẽ không thể đăng nhập lại cho đến khi được bỏ chặn.`)) return;
+    const employeeId = banEmployeeId.trim();
+    if (!employeeId) return;
+    if (!confirm(`Chặn truy cập MSNV "${employeeId}"? Người này sẽ không thể đăng nhập lại cho đến khi được bỏ chặn.`)) return;
     setBanLoading(true);
     setRoleActionError('');
     setRoleActionSuccess('');
     try {
-      const res = await adminApi.banUser(email);
+      const res = await adminApi.banUser(employeeId);
       const u = res.data.data.user;
       await loadElevatedUsers();
-      setBanEmail('');
-      setRoleActionSuccess(`Đã chặn truy cập: ${u.full_name || email}`);
+      setBanEmployeeId('');
+      setRoleActionSuccess(`Đã chặn truy cập: ${u.full_name || employeeId}`);
       setTimeout(() => setRoleActionSuccess(''), 4000);
     } catch (err) {
       setRoleActionError(err.response?.data?.error?.message || 'Thất bại');
@@ -342,7 +342,9 @@ export default function AdminPage() {
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      // raw: false — đọc đúng text hiển thị trong file (giữ nguyên số 0 ở đầu MSNV nếu có),
+      // không để thư viện tự diễn giải ô số thành kiểu Number rồi làm mất định dạng gốc.
+      const raw = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
 
       const pickKey = (row, candidates) =>
         Object.keys(row).find(k => candidates.includes(k.trim().toLowerCase()));
@@ -531,7 +533,7 @@ export default function AdminPage() {
 
   const matchesQuery = (u, q) => {
     if (!q) return true;
-    return u.email.toLowerCase().includes(q) || (u.full_name || '').toLowerCase().includes(q);
+    return (u.employee_id || '').toLowerCase().includes(q) || (u.full_name || '').toLowerCase().includes(q);
   };
 
   const grantedUsers = elevatedUsers
@@ -838,22 +840,22 @@ export default function AdminPage() {
         <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Quản lý quyền người dùng</h2>
-            <p className="text-gray-500 mt-1">Cấp / thu hồi quyền Admin, VIP và chặn truy cập theo email (chỉ áp dụng với email @ghn.vn)</p>
+            <p className="text-gray-500 mt-1">Cấp / thu hồi quyền Admin, VIP và chặn truy cập theo MSNV (phải nằm trong danh sách "Truy cập theo MSNV")</p>
           </div>
 
           {/* Promote form */}
           <div className="card p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-1 inline-flex items-center gap-1.5">
-              <UserPlusIcon className="w-4 h-4" /> Cấp quyền theo email
+              <UserPlusIcon className="w-4 h-4" /> Cấp quyền theo MSNV
             </h3>
-            <p className="text-xs text-gray-400 mb-4">Chỉ email đuôi @ghn.vn.</p>
+            <p className="text-xs text-gray-400 mb-4">MSNV phải có sẵn trong danh sách được phép truy cập.</p>
             <div className="flex gap-3 flex-wrap">
               <input
-                type="email"
-                value={promoteEmail}
-                onChange={e => { setPromoteEmail(e.target.value); setRoleActionError(''); }}
+                type="text"
+                value={promoteEmployeeId}
+                onChange={e => { setPromoteEmployeeId(e.target.value); setRoleActionError(''); }}
                 onKeyDown={e => e.key === 'Enter' && handlePromote()}
-                placeholder="ten.nhanvien@ghn.vn"
+                placeholder="MSNV, ví dụ: 3091620"
                 className="input-field flex-1 min-w-[220px]"
               />
               <select
@@ -867,7 +869,7 @@ export default function AdminPage() {
               </select>
               <button
                 onClick={handlePromote}
-                disabled={promoteLoading || !promoteEmail.trim()}
+                disabled={promoteLoading || !promoteEmployeeId.trim()}
                 className="btn-primary px-6 disabled:opacity-50"
               >
                 {promoteLoading ? 'Đang xử lý...' : 'Cấp quyền'}
@@ -913,7 +915,7 @@ export default function AdminPage() {
                   type="text"
                   value={userSearch}
                   onChange={e => setUserSearch(e.target.value)}
-                  placeholder="Tìm theo tên hoặc email..."
+                  placeholder="Tìm theo tên hoặc MSNV..."
                   className="input-field pl-9 w-full"
                 />
               </div>
@@ -955,7 +957,7 @@ export default function AdminPage() {
                               </div>
                               <div>
                                 <p className="text-sm font-medium text-gray-800">{u.full_name}</p>
-                                <p className="text-xs text-gray-500">{u.employee_id ? `MSNV ${u.employee_id} · ` : ''}{u.email}{u.department ? ` · ${u.department}` : ''}</p>
+                                <p className="text-xs text-gray-500">{u.employee_id ? `MSNV ${u.employee_id}` : 'Chưa có MSNV'}{u.department ? ` · ${u.department}` : ''}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -985,7 +987,7 @@ export default function AdminPage() {
                                 {roleActionLoading === u.id ? '...' : 'Gỡ quyền'}
                               </button>
                               <button
-                                onClick={() => handleSetStatus(u.id, false, u.full_name || u.email)}
+                                onClick={() => handleSetStatus(u.id, false, u.full_name || u.employee_id)}
                                 disabled={roleActionLoading === u.id}
                                 className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
                               >
@@ -1005,23 +1007,23 @@ export default function AdminPage() {
           {/* Ban form */}
           <div className="card p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-1 inline-flex items-center gap-1.5">
-              <NoSymbolIcon className="w-4 h-4" /> Chặn truy cập theo email
+              <NoSymbolIcon className="w-4 h-4" /> Chặn truy cập theo MSNV
             </h3>
             <p className="text-xs text-gray-400 mb-4">
-              Email bị chặn sẽ không thể đăng nhập lại. Dùng khi người dùng đặt phòng nhiều lần rồi không đến.
+              MSNV bị chặn sẽ không thể đăng nhập lại. Dùng khi người dùng đặt phòng nhiều lần rồi không đến.
             </p>
             <div className="flex gap-3 flex-wrap">
               <input
-                type="email"
-                value={banEmail}
-                onChange={e => { setBanEmail(e.target.value); setRoleActionError(''); }}
+                type="text"
+                value={banEmployeeId}
+                onChange={e => { setBanEmployeeId(e.target.value); setRoleActionError(''); }}
                 onKeyDown={e => e.key === 'Enter' && handleBan()}
-                placeholder="ten.nhanvien@ghn.vn"
+                placeholder="MSNV, ví dụ: 3091620"
                 className="input-field flex-1 min-w-[220px]"
               />
               <button
                 onClick={handleBan}
-                disabled={banLoading || !banEmail.trim()}
+                disabled={banLoading || !banEmployeeId.trim()}
                 className="inline-flex items-center gap-1.5 px-6 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
               >
                 <NoSymbolIcon className="w-4 h-4" /> {banLoading ? 'Đang xử lý...' : 'Chặn truy cập'}
@@ -1055,7 +1057,7 @@ export default function AdminPage() {
                 type="text"
                 value={bannedSearch}
                 onChange={e => setBannedSearch(e.target.value)}
-                placeholder="Tìm theo tên hoặc email..."
+                placeholder="Tìm theo tên hoặc MSNV..."
                 className="input-field pl-9 w-full"
               />
             </div>
@@ -1079,11 +1081,11 @@ export default function AdminPage() {
                           {u.full_name}
                           <RoleBadge role={u.role} />
                         </p>
-                        <p className="text-xs text-gray-500">{u.employee_id ? `MSNV ${u.employee_id} · ` : ''}{u.email}{u.department ? ` · ${u.department}` : ''}</p>
+                        <p className="text-xs text-gray-500">{u.employee_id ? `MSNV ${u.employee_id}` : 'Chưa có MSNV'}{u.department ? ` · ${u.department}` : ''}</p>
                       </div>
                     </div>
                     <button
-                      onClick={() => handleSetStatus(u.id, true, u.full_name || u.email)}
+                      onClick={() => handleSetStatus(u.id, true, u.full_name || u.employee_id)}
                       disabled={roleActionLoading === u.id}
                       className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50"
                     >

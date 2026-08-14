@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 export default function LoginPage() {
   const { user, login, loading } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState(() => {
     const notice = sessionStorage.getItem('ghn_login_notice');
@@ -18,11 +18,11 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!email.endsWith('@ghn.vn')) {
-      setError('Vui lòng dùng email công ty @ghn.vn');
+    if (!employeeId.trim()) {
+      setError('Vui lòng nhập MSNV');
       return;
     }
-    const result = await login(email, fullName);
+    const result = await login(employeeId.trim(), fullName);
     if (result.success) {
       navigate('/');
     } else {
@@ -46,14 +46,14 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Email công ty
+                Mã số nhân viên (MSNV)
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={employeeId}
+                onChange={(e) => setEmployeeId(e.target.value)}
                 className="input-field"
-                placeholder="ten@ghn.vn"
+                placeholder="Ví dụ: 3091620"
                 required
                 autoFocus
               />

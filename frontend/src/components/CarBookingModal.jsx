@@ -90,7 +90,7 @@ function RequesterPicker({ selected, onSelect, onClear }) {
               >
                 <p className="text-sm font-medium text-gray-800">{u.full_name}</p>
                 <p className="text-xs text-gray-400">
-                  {[u.employee_id, u.department, u.email].filter(Boolean).join(' • ')}
+                  {[u.employee_id, u.department].filter(Boolean).join(' • ')}
                 </p>
               </button>
             ))

@@ -1,8 +1,8 @@
 import api from './axios';
 
 export const authApi = {
-  login: (email, fullName) =>
-    api.post('/auth/login', { email, full_name: fullName }),
+  login: (employeeId, fullName) =>
+    api.post('/auth/login', { employee_id: employeeId, full_name: fullName }),
 
   getMe: () => api.get('/auth/me'),
 };
@@ -80,9 +80,9 @@ export const adminApi = {
 
   setUserRole: (id, role) => api.patch(`/admin/users/${id}/role`, { role }),
 
-  promote: (email, role) => api.post('/admin/promote', { email, role }),
+  promote: (employeeId, role) => api.post('/admin/promote', { employee_id: employeeId, role }),
 
-  banUser: (email) => api.post('/admin/ban', { email }),
+  banUser: (employeeId) => api.post('/admin/ban', { employee_id: employeeId }),
 
   setUserStatus: (id, isActive) => api.patch(`/admin/users/${id}/status`, { is_active: isActive }),
 

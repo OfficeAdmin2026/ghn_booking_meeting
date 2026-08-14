@@ -17,7 +17,8 @@ const DEFAULT_TOPICS = [
   {
     id: 't1', icon: '🔑', title: 'Đăng nhập',
     items: [
-      'Truy cập web, nhập **email công ty (@ghn.vn)** và họ tên — không cần mật khẩu.',
+      'Truy cập web, nhập **MSNV (mã số nhân viên)** và họ tên — không cần mật khẩu.',
+      'MSNV cần nằm trong danh sách được cấp quyền truy cập (2 văn phòng có phòng họp). Chưa đăng nhập được thì liên hệ bộ phận quản trị để được thêm vào danh sách.',
       'Lần đầu đăng nhập, hệ thống tự động tạo tài khoản với quyền **User**. Muốn nâng quyền VIP/Admin, liên hệ bộ phận quản trị.',
     ],
   },

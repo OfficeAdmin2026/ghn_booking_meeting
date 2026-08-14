@@ -1,4 +1,5 @@
 const AuthService = require('../services/AuthService');
+const { isCompanyEmail } = require('../utils/companyEmail');
 
 /**
  * Controller layer cho authentication
@@ -8,33 +9,22 @@ const AuthService = require('../services/AuthService');
 class AuthController {
   /**
    * POST /api/auth/login
-   * Login bằng email (đơn giản, không cần verify)
+   * Login bằng MSNV — tra allowlist để lấy email đã liên kết, không cần mật khẩu.
    */
   static async login(req, res) {
     try {
-      const { email, full_name, employee_id } = req.body;
+      const { employee_id, full_name } = req.body;
 
-      if (!email) {
+      if (!employee_id || !String(employee_id).trim()) {
         return res.status(400).json({
           error: {
             status: 400,
-            message: 'Email is required'
+            message: 'Vui lòng nhập MSNV'
           }
         });
       }
 
-      // Validate email domain
-      if (!email.endsWith('@ghn.vn')) {
-        return res.status(400).json({
-          error: {
-            status: 400,
-            message: 'Only @ghn.vn email addresses are allowed'
-          }
-        });
-      }
-
-      // Login (tạo user nếu chưa tồn tại)
-      const result = await AuthService.login(email, full_name, employee_id);
+      const result = await AuthService.loginByEmployeeId(employee_id, full_name);
 
       res.json({
         status: 'success',
@@ -46,8 +36,13 @@ class AuthController {
     } catch (error) {
       console.error('Login error:', error);
 
-      // Tài khoản bị chặn truy cập / không nằm trong danh sách MSNV được phép
-      if (error.message.includes('khóa truy cập') || error.message.includes('cấp quyền truy cập')) {
+      // Các trường hợp từ chối có message rõ ràng cho user (chặn/không thuộc allowlist/thiếu email)
+      const isAccessDenied =
+        error.message.includes('khóa truy cập') ||
+        error.message.includes('quyền truy cập') ||
+        error.message.includes('MSNV') ||
+        error.message.includes('liên kết email');
+      if (isAccessDenied) {
         return res.status(403).json({
           error: {
             status: 403,
@@ -83,11 +78,11 @@ class AuthController {
       }
 
       // Validate email domain
-      if (!email.endsWith('@ghn.vn')) {
+      if (!isCompanyEmail(email)) {
         return res.status(400).json({
           error: {
             status: 400,
-            message: 'Only @ghn.vn email addresses are allowed'
+            message: 'Only company email addresses (@ghn.vn / @giaohangnhanh.vn) are allowed'
           }
         });
       }

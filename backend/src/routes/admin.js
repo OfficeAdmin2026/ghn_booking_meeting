@@ -158,26 +158,44 @@ router.get('/bookings', authMiddleware, adminMiddleware, BookingController.getAd
 // PATCH /api/admin/bookings/:id - Reschedule booking
 router.patch('/bookings/:id', authMiddleware, adminMiddleware, BookingController.adminUpdateBooking);
 
-// POST /api/admin/promote - Grant/revoke role by email in one shot
+// POST /api/admin/promote - Grant/revoke role by MSNV in one shot
 router.post('/promote', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const email = (req.body.email || '').trim().toLowerCase();
-    const role  = req.body.role || 'admin';
-    if (!email) return res.status(400).json({ error: { status: 400, message: 'Email không được để trống' } });
+    const employeeId = String(req.body.employee_id || '').trim();
+    const role = req.body.role || 'admin';
+    if (!employeeId) return res.status(400).json({ error: { status: 400, message: 'MSNV không được để trống' } });
     if (!['admin', 'vip', 'user'].includes(role))
       return res.status(400).json({ error: { status: 400, message: 'Role không hợp lệ' } });
-    if (!email.endsWith('@ghn.vn') && role !== 'user')
-      return res.status(400).json({ error: { status: 400, message: 'Chỉ email @ghn.vn mới được cấp quyền admin / VIP' } });
-    let user = await User.findOne({ where: { email: { [Op.iLike]: email } } });
+
+    // Cấp quyền cho người không truy cập được hệ thống thì vô nghĩa — bắt buộc MSNV đã có
+    // trong allowlist trước.
+    const match = await AllowedEmployeeService.findMatch(employeeId, null);
+    if (!match) {
+      return res.status(400).json({ error: { status: 400, message: 'MSNV chưa nằm trong danh sách được phép truy cập hệ thống. Thêm vào allowlist trước.' } });
+    }
+    const email = match.email || `${employeeId}@ghn.vn`;
+
+    let user = await User.findOne({ where: { employee_id: employeeId } });
+    if (!user) user = await User.findOne({ where: { email: { [Op.iLike]: email } } });
+
     if (!user) {
-      const defaultName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      user = await User.create({ email, full_name: defaultName, role, is_active: true });
+      user = await User.create({
+        email,
+        full_name: match.full_name || employeeId,
+        department: match.department || null,
+        employee_id: employeeId,
+        role,
+        is_active: true
+      });
     } else {
       if (user.id === req.user.id)
         return res.status(400).json({ error: { status: 400, message: 'Không thể thay đổi quyền của chính mình' } });
-      await user.update({ role, updated_at: new Date() });
+      await user.update({ role, employee_id: employeeId, updated_at: new Date() });
     }
-    res.json({ status: 'success', data: { user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role } } });
+    res.json({
+      status: 'success',
+      data: { user: { id: user.id, email: user.email, full_name: user.full_name, employee_id: user.employee_id, role: user.role } },
+    });
   } catch (err) {
     res.status(500).json({ error: { status: 500, message: err.message } });
   }
@@ -214,7 +232,7 @@ router.get('/users/search', authMiddleware, adminMiddleware, async (req, res) =>
           { email: { [Op.iLike]: `%${q}%` } },
         ],
       },
-      attributes: ['id', 'full_name', 'employee_id', 'department', 'email'],
+      attributes: ['id', 'full_name', 'employee_id', 'department'],
       order: [['full_name', 'ASC']],
       limit: 10,
     });
@@ -252,9 +270,6 @@ router.patch('/users/:id/role', authMiddleware, adminMiddleware, async (req, res
     }
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng' } });
-    if (!user.email.endsWith('@ghn.vn') && role !== 'user') {
-      return res.status(400).json({ error: { status: 400, message: 'Chỉ email @ghn.vn mới được cấp quyền admin / VIP' } });
-    }
     await user.update({ role, updated_at: new Date() });
     res.json({
       status: 'success',
@@ -265,21 +280,36 @@ router.patch('/users/:id/role', authMiddleware, adminMiddleware, async (req, res
   }
 });
 
-// POST /api/admin/ban - Block access by email (creates user record if not exists)
+// POST /api/admin/ban - Block access by MSNV (creates user record if not exists)
 router.post('/ban', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const email = (req.body.email || '').trim().toLowerCase();
-    if (!email) return res.status(400).json({ error: { status: 400, message: 'Email không được để trống' } });
-    let user = await User.findOne({ where: { email: { [Op.iLike]: email } } });
+    const employeeId = String(req.body.employee_id || '').trim();
+    if (!employeeId) return res.status(400).json({ error: { status: 400, message: 'MSNV không được để trống' } });
+
+    const match = await AllowedEmployeeService.findMatch(employeeId, null);
+    const email = match?.email || `${employeeId}@ghn.vn`;
+
+    let user = await User.findOne({ where: { employee_id: employeeId } });
+    if (!user) user = await User.findOne({ where: { email: { [Op.iLike]: email } } });
+
     if (!user) {
-      const defaultName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      user = await User.create({ email, full_name: defaultName, role: 'user', is_active: false });
+      user = await User.create({
+        email,
+        full_name: match?.full_name || employeeId,
+        department: match?.department || null,
+        employee_id: employeeId,
+        role: 'user',
+        is_active: false
+      });
     } else {
       if (user.id === req.user.id)
         return res.status(400).json({ error: { status: 400, message: 'Không thể tự chặn chính mình' } });
-      await user.update({ is_active: false, updated_at: new Date() });
+      await user.update({ is_active: false, employee_id: employeeId, updated_at: new Date() });
     }
-    res.json({ status: 'success', data: { user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, is_active: user.is_active } } });
+    res.json({
+      status: 'success',
+      data: { user: { id: user.id, email: user.email, full_name: user.full_name, employee_id: user.employee_id, role: user.role, is_active: user.is_active } },
+    });
   } catch (err) {
     res.status(500).json({ error: { status: 500, message: err.message } });
   }
