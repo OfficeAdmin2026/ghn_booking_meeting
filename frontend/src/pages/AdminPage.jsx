@@ -377,6 +377,69 @@ export default function AdminPage() {
     );
   });
 
+  // Tìm trong TOÀN BỘ allowlist (không chỉ Admin/VIP hiện có) — dùng để tìm và thêm quản trị
+  // viên mới ngay trong khối "Quản trị viên hiện tại", không cần kéo xuống bảng MSNV bên dưới.
+  const adminSearchMatches = userSearch.trim()
+    ? allowedEmployees
+        .filter((e) => {
+          const q = userSearch.trim().toLowerCase();
+          return e.employee_id.toLowerCase().includes(q) || (e.full_name || '').toLowerCase().includes(q);
+        })
+        .slice(0, 30)
+    : [];
+
+  // Dòng thao tác dùng chung cho cả khối "Quản trị viên hiện tại" (tìm kiếm) và bảng
+  // "Danh sách MSNV được phép" — đổi vai trò + khoá/bỏ khoá ngay tại chỗ.
+  const renderEmployeeActionRow = (e, { showCheckbox = false, showDelete = false } = {}) => (
+    <div key={e.id} className="flex items-center gap-3 py-2.5">
+      {showCheckbox && (
+        <input
+          type="checkbox"
+          checked={selectedEmployeeIds.has(e.id)}
+          onChange={() => toggleSelectEmployee(e.id)}
+          className="w-4 h-4 rounded border-gray-300 text-ghn-orange focus:ring-ghn-orange shrink-0"
+        />
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-gray-800">{e.employee_id}</p>
+        {(e.full_name || e.department || e.email) && (
+          <p className="text-xs text-gray-400 truncate">
+            {[e.full_name, e.department, e.email].filter(Boolean).join(' · ')}
+          </p>
+        )}
+      </div>
+      <select
+        value={e.user?.role || 'user'}
+        disabled={roleActionLoading === e.employee_id || (e.user && e.user.id === currentUser?.id)}
+        onChange={(ev) => handleSetRoleByEmployeeId(e.employee_id, ev.target.value, e.full_name)}
+        className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-ghn-orange bg-white disabled:opacity-50 shrink-0"
+      >
+        <option value="user">User</option>
+        <option value="vip">VIP</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button
+        onClick={() => handleToggleLockByRow(e.employee_id, e.user?.id || null, e.user ? !e.user.is_active : false, e.full_name || e.employee_id)}
+        disabled={roleActionLoading === e.employee_id || (e.user && e.user.id === currentUser?.id)}
+        title={!e.user ? 'MSNV chưa từng đăng nhập' : undefined}
+        className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-50 shrink-0 ${
+          e.user && !e.user.is_active ? 'border-green-200 text-green-700 hover:bg-green-50' : 'border-red-200 text-red-600 hover:bg-red-50'
+        }`}
+      >
+        {roleActionLoading === e.employee_id ? '...' : e.user && !e.user.is_active ? 'Bỏ khoá' : 'Khoá'}
+      </button>
+      {showDelete && (
+        <button
+          onClick={() => handleRemoveEmployee(e.id, e.full_name || e.employee_id)}
+          disabled={removeEmployeeLoading === e.id}
+          className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 shrink-0"
+        >
+          <TrashIcon className="w-3.5 h-3.5" /> {removeEmployeeLoading === e.id ? '...' : 'Xoá'}
+        </button>
+      )}
+    </div>
+  );
+
   const openCreate = () => {
     setEditRoom(null);
     setForm(EMPTY_FORM);
@@ -853,22 +916,34 @@ export default function AdminPage() {
                   type="text"
                   value={userSearch}
                   onChange={e => setUserSearch(e.target.value)}
-                  placeholder="Tìm theo tên hoặc MSNV..."
+                  placeholder="Tìm theo tên hoặc MSNV để xem hoặc cấp quyền..."
                   className="input-field pl-9 w-full"
                 />
               </div>
-              <select
-                value={userRoleFilter}
-                onChange={e => setUserRoleFilter(e.target.value)}
-                className="input-field w-40"
-              >
-                <option value="all">Tất cả</option>
-                <option value="admin">Admin</option>
-                <option value="vip">VIP (BOD)</option>
-              </select>
+              {!userSearch.trim() && (
+                <select
+                  value={userRoleFilter}
+                  onChange={e => setUserRoleFilter(e.target.value)}
+                  className="input-field w-40"
+                >
+                  <option value="all">Tất cả</option>
+                  <option value="admin">Admin</option>
+                  <option value="vip">VIP (BOD)</option>
+                </select>
+              )}
             </div>
 
-            {usersLoading ? (
+            {userSearch.trim() ? (
+              // Tìm trong toàn bộ danh sách MSNV được phép — cho phép cấp quyền Admin/VIP
+              // ngay tại đây thay vì phải kéo xuống bảng "Danh sách MSNV được phép" bên dưới.
+              adminSearchMatches.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">Không tìm thấy MSNV nào phù hợp trong danh sách được phép</div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {adminSearchMatches.map((e) => renderEmployeeActionRow(e))}
+                </div>
+              )
+            ) : usersLoading ? (
               <div className="text-center py-8 text-gray-400">Đang tải...</div>
             ) : grantedUsers.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
@@ -942,10 +1017,10 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* Import Excel */}
+          {/* Import thông tin nhân viên */}
           <div className="card p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-1 inline-flex items-center gap-1.5">
-              <DocumentArrowUpIcon className="w-4 h-4" /> Import từ file Excel
+              <DocumentArrowUpIcon className="w-4 h-4" /> Import thông tin nhân viên
             </h3>
             <p className="text-xs text-gray-400 mb-4">
               File .xlsx/.xls/.csv có cột "Mã nhân viên"/"MSNV", "Họ và tên", "Department", "Email" — chỉ cột MSNV là bắt buộc, các cột còn lại tuỳ chọn. Có Email thì tài khoản đăng nhập trùng email đó sẽ tự đồng bộ đủ MSNV/Họ tên/Phòng ban ngay cả khi chưa có SSO.
@@ -976,59 +1051,58 @@ export default function AdminPage() {
                 {importError}
               </div>
             )}
-          </div>
 
-          {/* Thêm 1 MSNV thủ công */}
-          <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-1 inline-flex items-center gap-1.5">
-              <IdentificationIcon className="w-4 h-4" /> Thêm 1 MSNV
-            </h3>
-            <div className="flex gap-3 flex-wrap mt-3">
-              <input
-                type="text"
-                value={newEmployeeId}
-                onChange={e => { setNewEmployeeId(e.target.value); setAddEmployeeError(''); }}
-                onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
-                placeholder="MSNV, ví dụ: 3091620"
-                className="input-field flex-1 min-w-[160px]"
-              />
-              <input
-                type="text"
-                value={newEmployeeName}
-                onChange={e => setNewEmployeeName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
-                placeholder="Họ và tên (tuỳ chọn)"
-                className="input-field flex-1 min-w-[200px]"
-              />
-              <input
-                type="text"
-                value={newEmployeeDept}
-                onChange={e => setNewEmployeeDept(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
-                placeholder="Department (tuỳ chọn)"
-                className="input-field flex-1 min-w-[180px]"
-              />
-              <input
-                type="email"
-                value={newEmployeeEmail}
-                onChange={e => setNewEmployeeEmail(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
-                placeholder="Email (tuỳ chọn, dùng để đăng nhập trước khi có SSO)"
-                className="input-field flex-1 min-w-[240px]"
-              />
-              <button
-                onClick={handleAddEmployee}
-                disabled={addEmployeeLoading || !newEmployeeId.trim()}
-                className="btn-primary px-6 disabled:opacity-50"
-              >
-                {addEmployeeLoading ? 'Đang thêm...' : 'Thêm'}
-              </button>
-            </div>
-            {addEmployeeError && (
-              <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                {addEmployeeError}
+            <div className="border-t border-gray-100 mt-5 pt-5">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 inline-flex items-center gap-1.5">
+                <IdentificationIcon className="w-3.5 h-3.5" /> Hoặc thêm 1 MSNV
+              </h4>
+              <div className="flex gap-3 flex-wrap">
+                <input
+                  type="text"
+                  value={newEmployeeId}
+                  onChange={e => { setNewEmployeeId(e.target.value); setAddEmployeeError(''); }}
+                  onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
+                  placeholder="MSNV, ví dụ: 3091620"
+                  className="input-field flex-1 min-w-[160px]"
+                />
+                <input
+                  type="text"
+                  value={newEmployeeName}
+                  onChange={e => setNewEmployeeName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
+                  placeholder="Họ và tên (tuỳ chọn)"
+                  className="input-field flex-1 min-w-[200px]"
+                />
+                <input
+                  type="text"
+                  value={newEmployeeDept}
+                  onChange={e => setNewEmployeeDept(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
+                  placeholder="Department (tuỳ chọn)"
+                  className="input-field flex-1 min-w-[180px]"
+                />
+                <input
+                  type="email"
+                  value={newEmployeeEmail}
+                  onChange={e => setNewEmployeeEmail(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddEmployee()}
+                  placeholder="Email (tuỳ chọn, dùng để đăng nhập trước khi có SSO)"
+                  className="input-field flex-1 min-w-[240px]"
+                />
+                <button
+                  onClick={handleAddEmployee}
+                  disabled={addEmployeeLoading || !newEmployeeId.trim()}
+                  className="btn-primary px-6 disabled:opacity-50"
+                >
+                  {addEmployeeLoading ? 'Đang thêm...' : 'Thêm'}
+                </button>
               </div>
-            )}
+              {addEmployeeError && (
+                <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                  {addEmployeeError}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Danh sách */}
@@ -1093,51 +1167,7 @@ export default function AdminPage() {
                   );
                 })()}
                 <div className="divide-y divide-gray-100 max-h-[28rem] overflow-y-auto">
-                  {filteredAllowedEmployees.map((e) => (
-                    <div key={e.id} className="flex items-center gap-3 py-2.5">
-                      <input
-                        type="checkbox"
-                        checked={selectedEmployeeIds.has(e.id)}
-                        onChange={() => toggleSelectEmployee(e.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-ghn-orange focus:ring-ghn-orange shrink-0"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-800">{e.employee_id}</p>
-                        {(e.full_name || e.department || e.email) && (
-                          <p className="text-xs text-gray-400 truncate">
-                            {[e.full_name, e.department, e.email].filter(Boolean).join(' · ')}
-                          </p>
-                        )}
-                      </div>
-                      <select
-                        value={e.user?.role || 'user'}
-                        disabled={roleActionLoading === e.employee_id || (e.user && e.user.id === currentUser?.id)}
-                        onChange={(ev) => handleSetRoleByEmployeeId(e.employee_id, ev.target.value, e.full_name)}
-                        className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-ghn-orange bg-white disabled:opacity-50 shrink-0"
-                      >
-                        <option value="user">User</option>
-                        <option value="vip">VIP</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                      <button
-                        onClick={() => handleToggleLockByRow(e.employee_id, e.user?.id || null, e.user ? !e.user.is_active : false, e.full_name || e.employee_id)}
-                        disabled={roleActionLoading === e.employee_id || (e.user && e.user.id === currentUser?.id)}
-                        title={!e.user ? 'MSNV chưa từng đăng nhập' : undefined}
-                        className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-50 shrink-0 ${
-                          e.user && !e.user.is_active ? 'border-green-200 text-green-700 hover:bg-green-50' : 'border-red-200 text-red-600 hover:bg-red-50'
-                        }`}
-                      >
-                        {roleActionLoading === e.employee_id ? '...' : e.user && !e.user.is_active ? 'Bỏ khoá' : 'Khoá'}
-                      </button>
-                      <button
-                        onClick={() => handleRemoveEmployee(e.id, e.full_name || e.employee_id)}
-                        disabled={removeEmployeeLoading === e.id}
-                        className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 shrink-0"
-                      >
-                        <TrashIcon className="w-3.5 h-3.5" /> {removeEmployeeLoading === e.id ? '...' : 'Xoá'}
-                      </button>
-                    </div>
-                  ))}
+                  {filteredAllowedEmployees.map((e) => renderEmployeeActionRow(e, { showCheckbox: true, showDelete: true }))}
                 </div>
               </>
             )}
