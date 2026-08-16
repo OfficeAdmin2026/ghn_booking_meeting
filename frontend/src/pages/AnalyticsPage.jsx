@@ -50,7 +50,7 @@ function fmtDuration(minutes) {
 
 async function exportExcel(bookings) {
   const XLSX = await import('xlsx');
-  const headers = ['STT', 'Phòng', 'Vị trí', 'Tiêu đề', 'MSNV', 'Họ và tên', 'Phòng ban', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy'];
+  const headers = ['STT', 'Phòng', 'Vị trí', 'Tiêu đề', 'MSNV', 'Họ và tên', 'Chức danh', 'Phòng ban', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy'];
   const rows = bookings.map((b, i) => [
     i + 1,
     b.room?.name || '',
@@ -58,6 +58,7 @@ async function exportExcel(bookings) {
     b.title || '',
     b.user?.employee_id || '',
     b.user?.full_name || '',
+    b.user?.job_title || '',
     b.user?.department || '',
     toVNDateStr(b.start_time),
     toVNTimeStr(b.start_time),
@@ -130,7 +131,7 @@ export default function AnalyticsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [sortCol,      setSortCol]      = useState('start_time');
   const [sortDir,      setSortDir]      = useState('desc');
-  const [colFilters,   setColFilters]   = useState({ room: '', title: '', employee_id: '', full_name: '', department: '', status: '', reason: '' });
+  const [colFilters,   setColFilters]   = useState({ room: '', title: '', employee_id: '', full_name: '', job_title: '', department: '', status: '', reason: '' });
   const setCol = (key, val) => setColFilters(prev => ({ ...prev, [key]: val }));
 
   const fetchData = useCallback(async () => {
@@ -168,6 +169,7 @@ export default function AnalyticsPage() {
       case 'title':      return b.title || '';
       case 'employee_id': return b.user?.employee_id || '';
       case 'full_name':   return b.user?.full_name || '';
+      case 'job_title':   return b.user?.job_title || '';
       case 'department':  return b.user?.department || '';
       case 'start_time': return new Date(b.start_time).getTime();
       case 'duration':   return new Date(b.end_time) - new Date(b.start_time);
@@ -183,6 +185,7 @@ export default function AnalyticsPage() {
     if (colFilters.title)  list = list.filter(b => b.title?.toLowerCase().includes(colFilters.title.toLowerCase()));
     if (colFilters.employee_id) list = list.filter(b => b.user?.employee_id?.toLowerCase().includes(colFilters.employee_id.toLowerCase()));
     if (colFilters.full_name)   list = list.filter(b => b.user?.full_name?.toLowerCase().includes(colFilters.full_name.toLowerCase()));
+    if (colFilters.job_title)   list = list.filter(b => b.user?.job_title?.toLowerCase().includes(colFilters.job_title.toLowerCase()));
     if (colFilters.department)  list = list.filter(b => b.user?.department?.toLowerCase().includes(colFilters.department.toLowerCase()));
     if (colFilters.status) list = list.filter(b => simpleStatus(b.status) === colFilters.status);
     if (colFilters.reason) list = list.filter(b => b.cancellation_message?.toLowerCase().includes(colFilters.reason.toLowerCase()));
@@ -406,6 +409,7 @@ export default function AnalyticsPage() {
                       <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">#</th>
                       <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">MSNV</th>
                       <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Họ và tên</th>
+                      <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Chức danh</th>
                       <th className="text-left pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Phòng ban</th>
                       <th className="text-right pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Đặt phòng</th>
                       <th className="text-right pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-2">Đã hủy</th>
@@ -417,6 +421,7 @@ export default function AnalyticsPage() {
                         <td className="py-2.5 text-gray-400 text-xs font-medium">{i + 1}</td>
                         <td className="py-2.5 px-2 text-gray-500 text-xs">{u.employee_id || '—'}</td>
                         <td className="py-2.5 px-2 font-medium text-gray-800">{u.full_name}</td>
+                        <td className="py-2.5 px-2 text-gray-500 text-xs">{u.job_title || '—'}</td>
                         <td className="py-2.5 px-2 text-gray-500 text-xs">{u.department || '—'}</td>
                         <td className="py-2.5 px-2 text-right font-bold text-gray-800">{u.total}</td>
                         <td className="py-2.5 px-2 text-right">
@@ -465,6 +470,7 @@ export default function AnalyticsPage() {
                   { col: 'title',       label: 'Tiêu đề',    align: 'left'  },
                   { col: 'employee_id', label: 'MSNV',       align: 'left'  },
                   { col: 'full_name',   label: 'Họ và tên',  align: 'left'  },
+                  { col: 'job_title',   label: 'Chức danh',  align: 'left'  },
                   { col: 'department',  label: 'Phòng ban',  align: 'left'  },
                   { col: 'start_time',  label: 'Thời gian',  align: 'left'  },
                   { col: 'duration',   label: 'TL',         align: 'right' },
@@ -501,6 +507,9 @@ export default function AnalyticsPage() {
                   <input value={colFilters.full_name} onChange={e => setCol('full_name', e.target.value)} placeholder="Lọc họ tên..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
                 </td>
                 <td className="pb-2 px-2">
+                  <input value={colFilters.job_title} onChange={e => setCol('job_title', e.target.value)} placeholder="Lọc chức danh..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
+                </td>
+                <td className="pb-2 px-2">
                   <input value={colFilters.department} onChange={e => setCol('department', e.target.value)} placeholder="Lọc phòng ban..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
                 </td>
                 <td className="pb-2 px-2" />
@@ -520,7 +529,7 @@ export default function AnalyticsPage() {
             <tbody>
               {filteredReport.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center text-gray-400 py-8">
+                  <td colSpan={11} className="text-center text-gray-400 py-8">
                     {loading ? 'Đang tải...' : 'Không có dữ liệu trong kỳ này'}
                   </td>
                 </tr>
@@ -538,6 +547,7 @@ export default function AnalyticsPage() {
                     </td>
                     <td className="py-3 px-2 text-gray-700">{b.user?.employee_id || '—'}</td>
                     <td className="py-3 px-2 text-gray-700">{b.user?.full_name || '—'}</td>
+                    <td className="py-3 px-2 text-gray-700">{b.user?.job_title || '—'}</td>
                     <td className="py-3 px-2 text-gray-700">{b.user?.department || '—'}</td>
                     <td className="py-3 px-2 whitespace-nowrap">
                       <div className="text-gray-700">{toVNDateStr(b.start_time)}</div>

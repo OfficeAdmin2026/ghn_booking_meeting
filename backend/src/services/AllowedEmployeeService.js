@@ -37,7 +37,7 @@ class AllowedEmployeeService {
     return null;
   }
 
-  static async add(employeeId, fullName, department, email, addedBy) {
+  static async add(employeeId, fullName, department, email, addedBy, jobTitle) {
     const id = String(employeeId || '').trim();
     if (!id) throw new Error('MSNV không được để trống');
 
@@ -46,6 +46,7 @@ class AllowedEmployeeService {
       defaults: {
         full_name: fullName ? String(fullName).trim() : null,
         department: department ? String(department).trim() : null,
+        job_title: jobTitle ? String(jobTitle).trim() : null,
         email: email ? String(email).trim().toLowerCase() : null,
         added_by: addedBy || null
       }
@@ -53,13 +54,14 @@ class AllowedEmployeeService {
     return record;
   }
 
-  // rows: [{ employee_id, full_name, department, email }] — dùng cho import từ Excel (đã parse ở frontend)
+  // rows: [{ employee_id, full_name, department, job_title, email }] — dùng cho import từ Excel (đã parse ở frontend)
   static async bulkImport(rows, addedBy) {
     const cleaned = rows
       .map((r) => ({
         employee_id: String(r.employee_id || '').trim(),
         full_name: r.full_name ? String(r.full_name).trim() : null,
         department: r.department ? String(r.department).trim() : null,
+        job_title: r.job_title ? String(r.job_title).trim() : null,
         email: r.email ? String(r.email).trim().toLowerCase() : null
       }))
       .filter((r) => r.employee_id);

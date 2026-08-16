@@ -90,8 +90,8 @@ export const adminApi = {
 
   getAllowedEmployees: () => api.get('/admin/allowed-employees'),
 
-  addAllowedEmployee: (employeeId, fullName, department, email) =>
-    api.post('/admin/allowed-employees', { employee_id: employeeId, full_name: fullName, department, email }),
+  addAllowedEmployee: (employeeId, fullName, jobTitle, department, email) =>
+    api.post('/admin/allowed-employees', { employee_id: employeeId, full_name: fullName, job_title: jobTitle, department, email }),
 
   bulkImportAllowedEmployees: (rows) => api.post('/admin/allowed-employees/bulk', { rows }),
 

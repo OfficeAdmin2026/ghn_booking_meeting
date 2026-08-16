@@ -1577,6 +1577,10 @@ export default function CalendarPage() {
                         <p className="text-sm font-semibold text-gray-800">{cancelModal.user?.employee_id || '—'}</p>
                       </div>
                       <div>
+                        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Chức danh</p>
+                        <p className="text-sm font-semibold text-gray-800">{cancelModal.user?.job_title || '—'}</p>
+                      </div>
+                      <div>
                         <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Phòng ban</p>
                         <p className="text-sm font-semibold text-gray-800">{cancelModal.user?.department || '—'}</p>
                       </div>

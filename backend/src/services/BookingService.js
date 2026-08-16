@@ -34,6 +34,10 @@ class BookingService {
                 attributes: ['amenity']
               }
             ]
+          },
+          {
+            model: User,
+            attributes: ['id', 'email', 'full_name', 'employee_id', 'department', 'job_title']
           }
         ],
         order: [['start_time', 'DESC']]
@@ -64,7 +68,7 @@ class BookingService {
           },
           {
             model: User,
-            attributes: ['id', 'email', 'full_name', 'employee_id', 'department']
+            attributes: ['id', 'email', 'full_name', 'employee_id', 'department', 'job_title']
           }
         ]
       });
@@ -97,7 +101,7 @@ class BookingService {
         include: [
           {
             model: User,
-            attributes: ['id', 'full_name', 'email', 'employee_id', 'department']
+            attributes: ['id', 'full_name', 'email', 'employee_id', 'department', 'job_title']
           },
           {
             model: Room,
@@ -510,7 +514,7 @@ class BookingService {
       const bookings = await Booking.findAll({
         where,
         include: [
-          { model: User, attributes: ['id', 'full_name', 'email', 'employee_id', 'department'] },
+          { model: User, attributes: ['id', 'full_name', 'email', 'employee_id', 'department', 'job_title'] },
           { model: Room, attributes: ['id', 'name', 'code', 'location', 'floor'] }
         ],
         order: [['start_time', 'DESC']],

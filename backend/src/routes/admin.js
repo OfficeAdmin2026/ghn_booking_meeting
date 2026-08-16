@@ -182,6 +182,7 @@ router.post('/promote', authMiddleware, adminMiddleware, async (req, res) => {
         email: match.email || null,
         full_name: match.full_name || employeeId,
         department: match.department || null,
+        job_title: match.job_title || null,
         role,
         is_active: true
       });
@@ -206,7 +207,7 @@ router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
     if (req.query.role) where.role = req.query.role;
     const users = await User.findAll({
       where,
-      attributes: ['id', 'email', 'full_name', 'employee_id', 'department', 'role', 'is_active', 'last_login', 'created_at'],
+      attributes: ['id', 'email', 'full_name', 'employee_id', 'department', 'job_title', 'role', 'is_active', 'last_login', 'created_at'],
       order: [['role', 'ASC'], ['full_name', 'ASC']],
     });
     res.json({ status: 'success', data: { users } });
@@ -230,7 +231,7 @@ router.get('/users/search', authMiddleware, adminMiddleware, async (req, res) =>
           { email: { [Op.iLike]: `%${q}%` } },
         ],
       },
-      attributes: ['id', 'full_name', 'employee_id', 'department'],
+      attributes: ['id', 'full_name', 'employee_id', 'department', 'job_title'],
       order: [['full_name', 'ASC']],
       limit: 10,
     });
@@ -247,7 +248,7 @@ router.post('/users/by-email', authMiddleware, adminMiddleware, async (req, res)
     if (!email) return res.status(400).json({ error: { status: 400, message: 'Email không được để trống' } });
     const user = await User.findOne({
       where: { email: { [Op.iLike]: email } },
-      attributes: ['id', 'email', 'full_name', 'department', 'role', 'is_active'],
+      attributes: ['id', 'email', 'full_name', 'department', 'job_title', 'role', 'is_active'],
     });
     if (!user) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng với email này' } });
     res.json({ status: 'success', data: { user } });
@@ -294,6 +295,7 @@ router.post('/ban', authMiddleware, adminMiddleware, async (req, res) => {
         email: match?.email || null,
         full_name: match?.full_name || employeeId,
         department: match?.department || null,
+        job_title: match?.job_title || null,
         role: 'user',
         is_active: false
       });
@@ -361,8 +363,8 @@ router.get('/allowed-employees', authMiddleware, adminMiddleware, async (req, re
 // POST /api/admin/allowed-employees - Thêm 1 MSNV
 router.post('/allowed-employees', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { employee_id, full_name, department, email } = req.body;
-    const record = await AllowedEmployeeService.add(employee_id, full_name, department, email, req.user.id);
+    const { employee_id, full_name, department, email, job_title } = req.body;
+    const record = await AllowedEmployeeService.add(employee_id, full_name, department, email, req.user.id, job_title);
     res.json({ status: 'success', data: { employee: record } });
   } catch (err) {
     res.status(400).json({ error: { status: 400, message: err.message } });

@@ -84,22 +84,25 @@ class AuthService {
     }
 
     if (!user) {
+      // Set last_login ngay trong INSERT — tránh phải UPDATE lại ngay sau đó (đỡ 1 round-trip DB).
       user = await User.create({
         employee_id: id,
         email: match.email || null,
         full_name: fullName || match.full_name || id,
         department: match.department || null,
+        job_title: match.job_title || null,
         role: 'user',
-        is_active: true
+        is_active: true,
+        last_login: new Date()
       });
     } else {
       if (match.email && match.email !== user.email) user.email = match.email;
       if (match.full_name) user.full_name = match.full_name;
       if (match.department) user.department = match.department;
+      if (match.job_title) user.job_title = match.job_title;
+      user.last_login = new Date();
+      await user.save();
     }
-
-    user.last_login = new Date();
-    await user.save();
 
     const token = this.generateToken(user);
 

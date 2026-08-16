@@ -22,6 +22,10 @@ const AllowedEmployee = sequelize.define('allowed_employees', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  job_title: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   email: {
     type: DataTypes.STRING,
     allowNull: true

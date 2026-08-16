@@ -51,7 +51,7 @@ function RequesterPicker({ selected, onSelect, onClear }) {
         <div className="min-w-0">
           <p className="text-sm font-medium text-gray-800 truncate">{selected.full_name}</p>
           <p className="text-xs text-gray-400">
-            {[selected.employee_id, selected.department].filter(Boolean).join(' • ') || '—'}
+            {[selected.employee_id, selected.job_title, selected.department].filter(Boolean).join(' • ') || '—'}
           </p>
         </div>
         <button type="button" onClick={onClear} className="shrink-0 text-gray-400 hover:text-red-500 transition-colors">
@@ -90,7 +90,7 @@ function RequesterPicker({ selected, onSelect, onClear }) {
               >
                 <p className="text-sm font-medium text-gray-800">{u.full_name}</p>
                 <p className="text-xs text-gray-400">
-                  {[u.employee_id, u.department].filter(Boolean).join(' • ')}
+                  {[u.employee_id, u.job_title, u.department].filter(Boolean).join(' • ')}
                 </p>
               </button>
             ))
@@ -232,6 +232,10 @@ export default function CarBookingModal({ car, booking, startTime, endTime, onCl
                     <div>
                       <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">MSNV</p>
                       <p className="text-sm font-semibold text-gray-800">{booking.requester.employee_id || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Chức danh</p>
+                      <p className="text-sm font-semibold text-gray-800">{booking.requester.job_title || '—'}</p>
                     </div>
                     <div>
                       <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Phòng ban</p>

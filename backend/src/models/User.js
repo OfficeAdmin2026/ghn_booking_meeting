@@ -28,6 +28,10 @@ const User = sequelize.define('users', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  job_title: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   role: {
     type: DataTypes.ENUM('user', 'admin', 'vip'),
     defaultValue: 'user'

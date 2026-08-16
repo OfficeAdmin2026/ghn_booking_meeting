@@ -168,13 +168,13 @@ router.get('/metrics', authMiddleware, adminMiddleware, async (req, res) => {
 
     // Top 5 users by booking count
     const topUsers = await sequelize.query(
-      `SELECT u.id, u.full_name, u.employee_id, u.department,
+      `SELECT u.id, u.full_name, u.employee_id, u.department, u.job_title,
               COUNT(b.id) FILTER (WHERE b.status != 'cancelled') AS total,
               COUNT(b.id) FILTER (WHERE b.status = 'cancelled') AS cancelled
        FROM users u
        JOIN bookings b ON u.id = b.user_id
          AND b.start_time BETWEEN :from AND :to
-       GROUP BY u.id, u.full_name, u.employee_id, u.department
+       GROUP BY u.id, u.full_name, u.employee_id, u.department, u.job_title
        ORDER BY total DESC
        LIMIT 5`,
       { replacements: { from, to }, type: sequelize.QueryTypes.SELECT }
@@ -206,6 +206,7 @@ router.get('/metrics', authMiddleware, adminMiddleware, async (req, res) => {
           full_name:   r.full_name,
           employee_id: r.employee_id,
           department:  r.department,
+          job_title:   r.job_title,
           total:       parseInt(r.total),
           cancelled:   parseInt(r.cancelled),
         })),
@@ -228,7 +229,7 @@ router.get('/report', authMiddleware, adminMiddleware, async (req, res) => {
       where,
       include: [
         { model: Room, attributes: ['name', 'location', 'floor', 'capacity'] },
-        { model: User, attributes: ['full_name', 'email', 'employee_id', 'department', 'role'] },
+        { model: User, attributes: ['full_name', 'email', 'employee_id', 'department', 'job_title', 'role'] },
       ],
       order: [['start_time', 'ASC']],
     });
@@ -351,8 +352,8 @@ router.get('/car-report', authMiddleware, adminMiddleware, async (req, res) => {
       where,
       include: [
         { model: Car, attributes: ['name', 'license_plate', 'seats'] },
-        { model: User, as: 'creator', attributes: ['full_name', 'employee_id', 'department', 'email'] },
-        { model: User, as: 'requester', attributes: ['full_name', 'employee_id', 'department', 'email'] },
+        { model: User, as: 'creator', attributes: ['full_name', 'employee_id', 'department', 'job_title', 'email'] },
+        { model: User, as: 'requester', attributes: ['full_name', 'employee_id', 'department', 'job_title', 'email'] },
       ],
       order: [['start_time', 'ASC']],
     });
