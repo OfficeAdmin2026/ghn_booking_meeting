@@ -142,6 +142,21 @@ router.put('/car-contact-note', authMiddleware, adminMiddleware, async (req, res
   }
 });
 
+// GET /api/admin/car-contact-admins - All authenticated users can read. Danh sách admin đang
+// hoạt động để nhân viên liên hệ đặt xe (thấy khung giờ trống thì nhắn/copy MSNV hoặc tên admin).
+router.get('/car-contact-admins', authMiddleware, async (req, res) => {
+  try {
+    const admins = await User.findAll({
+      where: { role: 'admin', is_active: true },
+      attributes: ['id', 'full_name', 'employee_id'],
+      order: [['full_name', 'ASC']],
+    });
+    res.json({ status: 'success', data: { admins } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
 // GET /api/admin/site-lock - All authenticated users can read (used to gate the UI for 'user' role)
 router.get('/site-lock', authMiddleware, async (req, res) => {
   try {

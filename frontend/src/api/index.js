@@ -70,6 +70,8 @@ export const adminApi = {
 
   updateCarContactNote: (note) => api.put('/admin/car-contact-note', { note }),
 
+  getCarContactAdmins: () => api.get('/admin/car-contact-admins'),
+
   getSiteLock: () => api.get('/admin/site-lock'),
 
   getUsers: (params) => api.get('/admin/users', { params }),

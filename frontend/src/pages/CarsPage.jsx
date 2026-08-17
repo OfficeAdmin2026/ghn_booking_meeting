@@ -11,6 +11,7 @@ import {
   PencilIcon,
   Square2StackIcon,
   CheckIcon,
+  ClipboardDocumentIcon,
 } from '@heroicons/react/24/outline';
 
 export default function CarsPage() {
@@ -34,6 +35,9 @@ export default function CarsPage() {
   const [noteEditing, setNoteEditing] = useState(false);
   const [noteDraft, setNoteDraft] = useState('');
   const [noteSaving, setNoteSaving] = useState(false);
+
+  const [contactAdmins, setContactAdmins] = useState([]);
+  const [copiedKey, setCopiedKey] = useState('');
 
   const fetchCars = useCallback(() => {
     setCarsLoading(true);
@@ -63,6 +67,9 @@ export default function CarsPage() {
     adminApi.getCarContactNote()
       .then((res) => setContactNote(res.data.data?.note || ''))
       .catch(() => {});
+    adminApi.getCarContactAdmins()
+      .then((res) => setContactAdmins(res.data.data?.admins || []))
+      .catch(() => {});
   }, []);
 
   const fetchBookings = useCallback(() => {
@@ -85,6 +92,14 @@ export default function CarsPage() {
       .then(() => { setDetailsVisible(next); fetchBookings(); })
       .catch(() => {})
       .finally(() => setSavingVisibility(false));
+  };
+
+  const handleCopy = (key, value) => {
+    if (!value) return;
+    navigator.clipboard.writeText(value).then(() => {
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey((k) => (k === key ? '' : k)), 1500);
+    }).catch(() => {});
   };
 
   const handleEditNote = () => { setNoteDraft(contactNote); setNoteEditing(true); };
@@ -200,6 +215,40 @@ export default function CarsPage() {
                 </div>
               )}
             </div>
+
+            {!isAdmin && contactAdmins.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
+                <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Liên hệ Admin</p>
+                {contactAdmins.map((a) => (
+                  <div key={a.id} className="text-[11px] text-gray-600 space-y-0.5">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="truncate">{a.full_name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(`name-${a.id}`, a.full_name)}
+                        title="Copy tên"
+                        className="shrink-0 inline-flex items-center gap-0.5 text-gray-300 hover:text-ghn-orange transition-colors"
+                      >
+                        {copiedKey === `name-${a.id}` ? <CheckIcon className="w-3 h-3 text-green-500" /> : <ClipboardDocumentIcon className="w-3 h-3" />}
+                      </button>
+                    </div>
+                    {a.employee_id && (
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="text-gray-400">MSNV {a.employee_id}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(`msnv-${a.id}`, a.employee_id)}
+                          title="Copy MSNV"
+                          className="shrink-0 inline-flex items-center gap-0.5 text-gray-300 hover:text-ghn-orange transition-colors"
+                        >
+                          {copiedKey === `msnv-${a.id}` ? <CheckIcon className="w-3 h-3 text-green-500" /> : <ClipboardDocumentIcon className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <CarRulesPanel />
