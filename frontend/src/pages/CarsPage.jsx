@@ -38,6 +38,7 @@ export default function CarsPage() {
   const [noteSaving, setNoteSaving] = useState(false);
 
   const [contactAdmins, setContactAdmins] = useState([]);
+  const [contactAdminsLoaded, setContactAdminsLoaded] = useState(false);
   const [copiedKey, setCopiedKey] = useState('');
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminMsnv, setNewAdminMsnv] = useState('');
@@ -73,7 +74,8 @@ export default function CarsPage() {
       .catch(() => {});
     adminApi.getCarContactAdmins()
       .then((res) => setContactAdmins(res.data.data?.admins || []))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setContactAdminsLoaded(true));
   }, []);
 
   const fetchBookings = useCallback(() => {
@@ -91,6 +93,9 @@ export default function CarsPage() {
 
   const handleToggleVisibility = () => {
     const next = !detailsVisible;
+    if (next && !confirm('Bật hiển thị chi tiết sẽ cho MỌI nhân viên thấy tiêu đề, người đặt và ghi chú của tất cả lịch đặt xe (không chỉ lịch của họ). Bạn chắc chắn muốn bật?')) {
+      return;
+    }
     setSavingVisibility(true);
     adminApi.updateSettings({ car_booking_details_visible: next })
       .then(() => { setDetailsVisible(next); fetchBookings(); })
@@ -116,13 +121,14 @@ export default function CarsPage() {
 
   const handleAddContactAdmin = () => {
     const name = newAdminName.trim();
-    if (!name) return;
+    if (!name || !contactAdminsLoaded) return;
     saveContactAdmins([...contactAdmins, { id: crypto.randomUUID(), full_name: name, employee_id: newAdminMsnv.trim() }]);
     setNewAdminName('');
     setNewAdminMsnv('');
   };
 
   const handleRemoveContactAdmin = (id) => {
+    if (!contactAdminsLoaded) return;
     saveContactAdmins(contactAdmins.filter((a) => a.id !== id));
   };
 
@@ -265,8 +271,9 @@ export default function CarsPage() {
                           <button
                             type="button"
                             onClick={() => handleRemoveContactAdmin(a.id)}
+                            disabled={!contactAdminsLoaded || contactAdminsSaving}
                             title="Xoá"
-                            className="text-gray-300 hover:text-red-500 transition-colors"
+                            className="text-gray-300 hover:text-red-500 transition-colors disabled:opacity-40"
                           >
                             <XMarkIcon className="w-3.5 h-3.5" />
                           </button>
@@ -310,10 +317,10 @@ export default function CarsPage() {
                     <button
                       type="button"
                       onClick={handleAddContactAdmin}
-                      disabled={contactAdminsSaving || !newAdminName.trim()}
+                      disabled={!contactAdminsLoaded || contactAdminsSaving || !newAdminName.trim()}
                       className="w-full inline-flex items-center justify-center gap-1 text-xs font-semibold text-white bg-ghn-orange rounded-lg px-2 py-1 hover:bg-ghn-orange-dark disabled:opacity-40 transition-colors"
                     >
-                      <PlusIcon className="w-3.5 h-3.5" /> {contactAdminsSaving ? 'Đang lưu...' : 'Thêm người phụ trách'}
+                      <PlusIcon className="w-3.5 h-3.5" /> {!contactAdminsLoaded ? 'Đang tải...' : contactAdminsSaving ? 'Đang lưu...' : 'Thêm người phụ trách'}
                     </button>
                   </div>
                 )}
