@@ -7,6 +7,7 @@ const DEFAULTS = {
   car_booking_details_visible: 'false',
   car_booking_rules: '',
   car_booking_contact_note: 'Thấy khung giờ trống? Nhắn Admin để đặt xe.',
+  car_booking_contact_admins: '[]', // JSON: [{ id, full_name, employee_id }] — admin tự thêm/xoá thủ công
   site_locked_for_users: 'false',
   site_lock_message: 'Hệ thống đặt phòng đang tạm khoá để phục vụ demo. Vui lòng quay lại sau.',
 };
@@ -121,6 +122,7 @@ class AdminSettingService {
       'car_booking_details_visible',
       'car_booking_rules',
       'car_booking_contact_note',
+      'car_booking_contact_admins',
       'site_locked_for_users',
       'site_lock_message',
       'usage_guide',

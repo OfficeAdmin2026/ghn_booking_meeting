@@ -12,6 +12,7 @@ import {
   Square2StackIcon,
   CheckIcon,
   ClipboardDocumentIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 
 export default function CarsPage() {
@@ -38,6 +39,9 @@ export default function CarsPage() {
 
   const [contactAdmins, setContactAdmins] = useState([]);
   const [copiedKey, setCopiedKey] = useState('');
+  const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminMsnv, setNewAdminMsnv] = useState('');
+  const [contactAdminsSaving, setContactAdminsSaving] = useState(false);
 
   const fetchCars = useCallback(() => {
     setCarsLoading(true);
@@ -100,6 +104,26 @@ export default function CarsPage() {
       setCopiedKey(key);
       setTimeout(() => setCopiedKey((k) => (k === key ? '' : k)), 1500);
     }).catch(() => {});
+  };
+
+  const saveContactAdmins = (next) => {
+    setContactAdminsSaving(true);
+    adminApi.updateCarContactAdmins(next)
+      .then(() => setContactAdmins(next))
+      .catch(() => {})
+      .finally(() => setContactAdminsSaving(false));
+  };
+
+  const handleAddContactAdmin = () => {
+    const name = newAdminName.trim();
+    if (!name) return;
+    saveContactAdmins([...contactAdmins, { id: crypto.randomUUID(), full_name: name, employee_id: newAdminMsnv.trim() }]);
+    setNewAdminName('');
+    setNewAdminMsnv('');
+  };
+
+  const handleRemoveContactAdmin = (id) => {
+    saveContactAdmins(contactAdmins.filter((a) => a.id !== id));
   };
 
   const handleEditNote = () => { setNoteDraft(contactNote); setNoteEditing(true); };
@@ -216,37 +240,83 @@ export default function CarsPage() {
               )}
             </div>
 
-            {!isAdmin && contactAdmins.length > 0 && (
+            {(isAdmin || contactAdmins.length > 0) && (
               <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
                 <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Liên hệ Admin</p>
+                {contactAdmins.length === 0 && isAdmin && (
+                  <p className="text-[11px] text-gray-400">Chưa có người phụ trách — thêm bên dưới.</p>
+                )}
                 {contactAdmins.map((a) => (
                   <div key={a.id} className="text-[11px] text-gray-600 space-y-0.5">
                     <div className="flex items-center justify-between gap-1.5">
                       <span className="truncate">{a.full_name}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(`name-${a.id}`, a.full_name)}
-                        title="Copy tên"
-                        className="shrink-0 inline-flex items-center gap-0.5 text-gray-300 hover:text-ghn-orange transition-colors"
-                      >
-                        {copiedKey === `name-${a.id}` ? <CheckIcon className="w-3 h-3 text-green-500" /> : <ClipboardDocumentIcon className="w-3 h-3" />}
-                      </button>
+                      <div className="shrink-0 flex items-center gap-1">
+                        {!isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(`name-${a.id}`, a.full_name)}
+                            title="Copy tên"
+                            className="text-gray-300 hover:text-ghn-orange transition-colors"
+                          >
+                            {copiedKey === `name-${a.id}` ? <CheckIcon className="w-3 h-3 text-green-500" /> : <ClipboardDocumentIcon className="w-3 h-3" />}
+                          </button>
+                        )}
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveContactAdmin(a.id)}
+                            title="Xoá"
+                            className="text-gray-300 hover:text-red-500 transition-colors"
+                          >
+                            <XMarkIcon className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {a.employee_id && (
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-gray-400">MSNV {a.employee_id}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(`msnv-${a.id}`, a.employee_id)}
-                          title="Copy MSNV"
-                          className="shrink-0 inline-flex items-center gap-0.5 text-gray-300 hover:text-ghn-orange transition-colors"
-                        >
-                          {copiedKey === `msnv-${a.id}` ? <CheckIcon className="w-3 h-3 text-green-500" /> : <ClipboardDocumentIcon className="w-3 h-3" />}
-                        </button>
+                        {!isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(`msnv-${a.id}`, a.employee_id)}
+                            title="Copy MSNV"
+                            className="shrink-0 inline-flex items-center gap-0.5 text-gray-300 hover:text-ghn-orange transition-colors"
+                          >
+                            {copiedKey === `msnv-${a.id}` ? <CheckIcon className="w-3 h-3 text-green-500" /> : <ClipboardDocumentIcon className="w-3 h-3" />}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
                 ))}
+
+                {isAdmin && (
+                  <div className="pt-1.5 space-y-1.5">
+                    <input
+                      type="text"
+                      value={newAdminName}
+                      onChange={(e) => setNewAdminName(e.target.value)}
+                      placeholder="Họ và tên"
+                      className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-ghn-orange"
+                    />
+                    <input
+                      type="text"
+                      value={newAdminMsnv}
+                      onChange={(e) => setNewAdminMsnv(e.target.value)}
+                      placeholder="MSNV (tuỳ chọn)"
+                      className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-ghn-orange"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddContactAdmin}
+                      disabled={contactAdminsSaving || !newAdminName.trim()}
+                      className="w-full inline-flex items-center justify-center gap-1 text-xs font-semibold text-white bg-ghn-orange rounded-lg px-2 py-1 hover:bg-ghn-orange-dark disabled:opacity-40 transition-colors"
+                    >
+                      <PlusIcon className="w-3.5 h-3.5" /> {contactAdminsSaving ? 'Đang lưu...' : 'Thêm người phụ trách'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

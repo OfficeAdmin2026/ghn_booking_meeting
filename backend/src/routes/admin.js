@@ -6,6 +6,7 @@ const AllowedEmployeeService = require('../services/AllowedEmployeeService');
 const BookingController = require('../controllers/BookingController');
 const { User } = require('../models');
 const { Op } = require('sequelize');
+const { randomUUID } = require('crypto');
 
 // GET /api/admin/settings
 router.get('/settings', authMiddleware, adminMiddleware, async (req, res) => {
@@ -142,16 +143,33 @@ router.put('/car-contact-note', authMiddleware, adminMiddleware, async (req, res
   }
 });
 
-// GET /api/admin/car-contact-admins - All authenticated users can read. Danh sách admin đang
-// hoạt động để nhân viên liên hệ đặt xe (thấy khung giờ trống thì nhắn/copy MSNV hoặc tên admin).
+// GET /api/admin/car-contact-admins - All authenticated users can read. Danh sách người phụ
+// trách xe do admin tự thêm/xoá thủ công (không suy ra từ role, vì người phụ trách đổi theo
+// thời điểm) — để nhân viên liên hệ khi thấy khung giờ trống (nhắn/copy MSNV hoặc tên).
 router.get('/car-contact-admins', authMiddleware, async (req, res) => {
   try {
-    const admins = await User.findAll({
-      where: { role: 'admin', is_active: true },
-      attributes: ['id', 'full_name', 'employee_id'],
-      order: [['full_name', 'ASC']],
-    });
+    const settings = await AdminSettingService.getAll();
+    let admins = [];
+    try { admins = JSON.parse(settings.car_booking_contact_admins || '[]'); } catch { admins = []; }
     res.json({ status: 'success', data: { admins } });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
+// PUT /api/admin/car-contact-admins - Admin only. Ghi đè toàn bộ danh sách người phụ trách xe.
+router.put('/car-contact-admins', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const admins = Array.isArray(req.body.admins) ? req.body.admins : [];
+    const cleaned = admins
+      .map((a) => ({
+        id: a.id || randomUUID(),
+        full_name: a.full_name ? String(a.full_name).trim() : '',
+        employee_id: a.employee_id ? String(a.employee_id).trim() : '',
+      }))
+      .filter((a) => a.full_name || a.employee_id);
+    await AdminSettingService.updateSettings({ car_booking_contact_admins: JSON.stringify(cleaned) });
+    res.json({ status: 'success', data: { admins: cleaned } });
   } catch (err) {
     res.status(500).json({ error: { status: 500, message: err.message } });
   }

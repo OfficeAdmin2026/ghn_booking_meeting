@@ -72,6 +72,8 @@ export const adminApi = {
 
   getCarContactAdmins: () => api.get('/admin/car-contact-admins'),
 
+  updateCarContactAdmins: (admins) => api.put('/admin/car-contact-admins', { admins }),
+
   getSiteLock: () => api.get('/admin/site-lock'),
 
   getUsers: (params) => api.get('/admin/users', { params }),
