@@ -76,7 +76,10 @@ class CarBookingService {
    */
   static async createBooking(adminUserId, bookingData) {
     try {
-      const { car_id, title, start_time, end_time, notes, requester_user_id } = bookingData;
+      const {
+        car_id, title, start_time, end_time, notes, requester_user_id,
+        requester_employee_id, requester_full_name, requester_job_title, requester_department
+      } = bookingData;
 
       if (!car_id || !title || !start_time || !end_time) {
         throw new Error('Missing required fields');
@@ -105,6 +108,10 @@ class CarBookingService {
             car_id,
             created_by: adminUserId,
             requester_user_id: requester_user_id || null,
+            requester_employee_id: requester_employee_id || null,
+            requester_full_name: requester_full_name || null,
+            requester_job_title: requester_job_title || null,
+            requester_department: requester_department || null,
             title,
             start_time: startTime,
             end_time: endTime,
@@ -130,7 +137,10 @@ class CarBookingService {
         throw new Error('Car booking not found');
       }
 
-      const { title, notes, start_time, end_time, requester_user_id } = updateData;
+      const {
+        title, notes, start_time, end_time, requester_user_id,
+        requester_employee_id, requester_full_name, requester_job_title, requester_department
+      } = updateData;
       const newStart = start_time ? new Date(start_time) : new Date(booking.start_time);
       const newEnd = end_time ? new Date(end_time) : new Date(booking.end_time);
 
@@ -149,6 +159,10 @@ class CarBookingService {
       if (title !== undefined) booking.title = title;
       if (notes !== undefined) booking.notes = notes;
       if (requester_user_id !== undefined) booking.requester_user_id = requester_user_id || null;
+      if (requester_employee_id !== undefined) booking.requester_employee_id = requester_employee_id || null;
+      if (requester_full_name !== undefined) booking.requester_full_name = requester_full_name || null;
+      if (requester_job_title !== undefined) booking.requester_job_title = requester_job_title || null;
+      if (requester_department !== undefined) booking.requester_department = requester_department || null;
       booking.start_time = newStart;
       booking.end_time = newEnd;
 

@@ -30,7 +30,24 @@ const CarBooking = sequelize.define('car_bookings', {
       model: 'users',
       key: 'id'
     },
-    comment: 'Nhân viên thực tế sử dụng xe (admin chọn lúc đặt hộ)'
+    comment: 'Nhân viên thực tế sử dụng xe (admin chọn từ danh sách MSNV lúc đặt hộ)'
+  },
+  requester_employee_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    comment: 'MSNV người sử dụng xe — admin nhập thủ công khi người này chưa có trong hệ thống'
+  },
+  requester_full_name: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  requester_job_title: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  requester_department: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   title: {
     type: DataTypes.STRING,

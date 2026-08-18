@@ -30,6 +30,11 @@ const PORT = process.env.PORT || 5000;
       ALTER TABLE users
         ALTER COLUMN email DROP NOT NULL,
         ADD COLUMN IF NOT EXISTS job_title VARCHAR(255);
+      ALTER TABLE car_bookings
+        ADD COLUMN IF NOT EXISTS requester_employee_id VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS requester_full_name VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS requester_job_title VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS requester_department VARCHAR(255);
       DO $do$
       BEGIN
         IF NOT EXISTS (

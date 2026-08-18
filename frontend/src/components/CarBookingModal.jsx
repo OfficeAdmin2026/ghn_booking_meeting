@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { carBookingsApi, adminApi } from '../api';
-import { XMarkIcon, ClockIcon, ExclamationTriangleIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ClockIcon, ExclamationTriangleIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, PlusIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 function toVNTimeStr(isoStr) {
   return new Date(isoStr).toLocaleTimeString('vi-VN', {
@@ -24,12 +24,17 @@ function fmtTime(isoStr) {
   });
 }
 
-/** Ô tìm & chọn người sử dụng xe (autocomplete theo tên/MSNV/email) */
+const EMPTY_MANUAL = { employee_id: '', full_name: '', job_title: '', department: '' };
+
+/** Ô tìm & chọn người sử dụng xe (autocomplete theo tên/MSNV/email), hoặc nhập thủ công
+ * nếu người này chưa có trong danh sách MSNV của hệ thống (VD: chưa được import cho phòng họp). */
 function RequesterPicker({ selected, onSelect, onClear }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [manualMode, setManualMode] = useState(false);
+  const [manualDraft, setManualDraft] = useState(EMPTY_MANUAL);
   const debounceRef = useRef(null);
 
   useEffect(() => {
@@ -57,6 +62,69 @@ function RequesterPicker({ selected, onSelect, onClear }) {
         <button type="button" onClick={onClear} className="shrink-0 text-gray-400 hover:text-red-500 transition-colors">
           <XMarkIcon className="w-4 h-4" />
         </button>
+      </div>
+    );
+  }
+
+  if (manualMode) {
+    const canConfirm = manualDraft.full_name.trim().length > 0;
+    return (
+      <div className="border border-gray-200 rounded-lg p-3 space-y-2">
+        <input
+          type="text"
+          value={manualDraft.employee_id}
+          onChange={(e) => setManualDraft((d) => ({ ...d, employee_id: e.target.value }))}
+          placeholder="MSNV (tuỳ chọn)"
+          className="input-field text-sm"
+        />
+        <input
+          type="text"
+          value={manualDraft.full_name}
+          onChange={(e) => setManualDraft((d) => ({ ...d, full_name: e.target.value }))}
+          placeholder="Họ và tên *"
+          className="input-field text-sm"
+        />
+        <input
+          type="text"
+          value={manualDraft.job_title}
+          onChange={(e) => setManualDraft((d) => ({ ...d, job_title: e.target.value }))}
+          placeholder="Chức danh (tuỳ chọn)"
+          className="input-field text-sm"
+        />
+        <input
+          type="text"
+          value={manualDraft.department}
+          onChange={(e) => setManualDraft((d) => ({ ...d, department: e.target.value }))}
+          placeholder="Phòng ban (tuỳ chọn)"
+          className="input-field text-sm"
+        />
+        <div className="flex gap-2 pt-0.5">
+          <button
+            type="button"
+            disabled={!canConfirm}
+            onClick={() => {
+              onSelect({
+                id: null,
+                employee_id: manualDraft.employee_id.trim(),
+                full_name: manualDraft.full_name.trim(),
+                job_title: manualDraft.job_title.trim(),
+                department: manualDraft.department.trim(),
+              });
+              setManualDraft(EMPTY_MANUAL);
+              setManualMode(false);
+            }}
+            className="flex-1 inline-flex items-center justify-center gap-1 text-xs font-semibold text-white bg-ghn-orange rounded-lg px-2 py-1.5 hover:bg-ghn-orange-dark disabled:opacity-40 transition-colors"
+          >
+            <CheckIcon className="w-3.5 h-3.5" /> Xác nhận
+          </button>
+          <button
+            type="button"
+            onClick={() => { setManualDraft(EMPTY_MANUAL); setManualMode(false); }}
+            className="flex-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg px-2 py-1.5 hover:bg-gray-50 transition-colors"
+          >
+            Huỷ
+          </button>
+        </div>
       </div>
     );
   }
@@ -97,8 +165,31 @@ function RequesterPicker({ selected, onSelect, onClear }) {
           )}
         </div>
       )}
+      <button
+        type="button"
+        onClick={() => { setOpen(false); setManualMode(true); }}
+        className="mt-1.5 inline-flex items-center gap-1 text-xs text-gray-400 hover:text-ghn-orange transition-colors"
+      >
+        <PlusIcon className="w-3.5 h-3.5" /> Không tìm thấy? Nhập thủ công
+      </button>
     </div>
   );
+}
+
+/** Chuẩn hoá thông tin người sử dụng xe từ 1 booking — ưu tiên các trường snapshot lưu ngay
+ * trên booking (requester_*, luôn có kể cả khi nhập thủ công), rơi về User đã join (requester)
+ * cho các booking cũ trước khi có snapshot. */
+function buildRequesterState(booking) {
+  if (!booking) return null;
+  const full_name = booking.requester_full_name || booking.requester?.full_name || '';
+  if (!full_name) return null;
+  return {
+    id: booking.requester_user_id || booking.requester?.id || null,
+    employee_id: booking.requester_employee_id || booking.requester?.employee_id || '',
+    full_name,
+    job_title: booking.requester_job_title || booking.requester?.job_title || '',
+    department: booking.requester_department || booking.requester?.department || '',
+  };
 }
 
 export default function CarBookingModal({ car, booking, startTime, endTime, onClose, onSaved }) {
@@ -115,7 +206,7 @@ export default function CarBookingModal({ car, booking, startTime, endTime, onCl
   const [endInput, setEndInput] = useState(() => toVNTimeStr(initialEnd));
   const [title, setTitle] = useState(booking?.title || '');
   const [notes, setNotes] = useState(booking?.notes || '');
-  const [requester, setRequester] = useState(booking?.requester || null);
+  const [requester, setRequester] = useState(() => buildRequesterState(booking));
   const [cancelMessage, setCancelMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -141,7 +232,7 @@ export default function CarBookingModal({ car, booking, startTime, endTime, onCl
     setEndInput(toVNTimeStr(booking.end_time));
     setTitle(booking.title || '');
     setNotes(booking.notes || '');
-    setRequester(booking.requester || null);
+    setRequester(buildRequesterState(booking));
     setError('');
     setMode('form');
   };
@@ -155,6 +246,10 @@ export default function CarBookingModal({ car, booking, startTime, endTime, onCl
       const payload = {
         title, notes, start_time: actualStart, end_time: actualEnd,
         requester_user_id: requester?.id || null,
+        requester_employee_id: requester?.employee_id || null,
+        requester_full_name: requester?.full_name || null,
+        requester_job_title: requester?.job_title || null,
+        requester_department: requester?.department || null,
       };
       if (isEdit) {
         await carBookingsApi.update(booking.id, payload);
@@ -225,21 +320,21 @@ export default function CarBookingModal({ car, booking, startTime, endTime, onCl
                 </div>
                 <div>
                   <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Người sử dụng xe</p>
-                  <p className="text-sm font-semibold text-gray-800">{booking.requester?.full_name || '—'}</p>
+                  <p className="text-sm font-semibold text-gray-800">{booking.requester_full_name || booking.requester?.full_name || '—'}</p>
                 </div>
-                {booking.requester && (
+                {(booking.requester_full_name || booking.requester) && (
                   <>
                     <div>
                       <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">MSNV</p>
-                      <p className="text-sm font-semibold text-gray-800">{booking.requester.employee_id || '—'}</p>
+                      <p className="text-sm font-semibold text-gray-800">{booking.requester_employee_id || booking.requester?.employee_id || '—'}</p>
                     </div>
                     <div>
                       <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Chức danh</p>
-                      <p className="text-sm font-semibold text-gray-800">{booking.requester.job_title || '—'}</p>
+                      <p className="text-sm font-semibold text-gray-800">{booking.requester_job_title || booking.requester?.job_title || '—'}</p>
                     </div>
                     <div>
                       <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">Phòng ban</p>
-                      <p className="text-sm font-semibold text-gray-800">{booking.requester.department || '—'}</p>
+                      <p className="text-sm font-semibold text-gray-800">{booking.requester_department || booking.requester?.department || '—'}</p>
                     </div>
                   </>
                 )}
