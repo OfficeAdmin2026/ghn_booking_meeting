@@ -138,7 +138,7 @@ function RequesterPicker({ selected, onSelect, onClear }) {
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
-          placeholder="Tìm theo tên, MSNV hoặc email..."
+          placeholder="Tìm theo tên hoặc MSNV..."
           className="input-field pl-9"
         />
       </div>

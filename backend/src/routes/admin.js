@@ -4,7 +4,7 @@ const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const AdminSettingService = require('../services/AdminSettingService');
 const AllowedEmployeeService = require('../services/AllowedEmployeeService');
 const BookingController = require('../controllers/BookingController');
-const { User } = require('../models');
+const { User, AllowedEmployee } = require('../models');
 const { Op } = require('sequelize');
 const { randomUUID } = require('crypto');
 
@@ -249,25 +249,34 @@ router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/admin/users/search?q= - Tìm nhanh user theo tên/MSNV/email (dùng cho autocomplete
-// chọn "người sử dụng xe" khi admin đặt xe hộ). Đặt trước /users/:id-style routes nếu có.
+// GET /api/admin/users/search?q= - Tìm nhanh theo tên/MSNV (dùng cho autocomplete chọn "người
+// sử dụng xe" khi admin đặt xe hộ). Tìm trên TOÀN BỘ danh sách MSNV được phép (849 người, nguồn
+// dùng chung với phòng họp) — không chỉ những ai đã từng đăng nhập — để đặt hộ được cho bất kỳ
+// ai trong danh sách mà không cần nhập tay. id = user account nếu MSNV đó đã có tài khoản (đăng
+// nhập ít nhất 1 lần), null nếu chưa — khi đó chỉ lưu snapshot MSNV/tên/chức danh/phòng ban.
+// Đặt trước /users/:id-style routes nếu có.
 router.get('/users/search', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const q = (req.query.q || '').trim();
     if (q.length < 2) return res.json({ status: 'success', data: { users: [] } });
-    const users = await User.findAll({
+    const employees = await AllowedEmployee.findAll({
       where: {
-        is_active: true,
         [Op.or]: [
           { full_name: { [Op.iLike]: `%${q}%` } },
           { employee_id: { [Op.iLike]: `%${q}%` } },
-          { email: { [Op.iLike]: `%${q}%` } },
         ],
       },
-      attributes: ['id', 'full_name', 'employee_id', 'department', 'job_title'],
+      include: [{ model: User, as: 'user', attributes: ['id'], required: false }],
       order: [['full_name', 'ASC']],
       limit: 10,
     });
+    const users = employees.map((e) => ({
+      id: e.user?.id || null,
+      full_name: e.full_name,
+      employee_id: e.employee_id,
+      department: e.department,
+      job_title: e.job_title,
+    }));
     res.json({ status: 'success', data: { users } });
   } catch (err) {
     res.status(500).json({ error: { status: 500, message: err.message } });
