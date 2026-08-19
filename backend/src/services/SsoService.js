@@ -101,11 +101,20 @@ class SsoService {
     if (!decoded) throw new Error('ID token SSO không hợp lệ');
 
     const publicKey = await getSigningKey(decoded.header);
-    const claims = jwt.verify(idToken, publicKey, {
-      issuer: `${SSO_BASE_URL}/public-api`,
-      audience: SSO_CLIENT_ID,
-      algorithms: ['RS256'],
-    });
+    let claims;
+    try {
+      claims = jwt.verify(idToken, publicKey, {
+        issuer: `${SSO_BASE_URL}/public-api`,
+        audience: SSO_CLIENT_ID,
+        algorithms: ['RS256'],
+      });
+    } catch (err) {
+      // TẠM THỜI: lộ rõ claims thực tế của id_token khi verify lỗi, để chẩn đoán lúc mới tích
+      // hợp (chưa rõ GHN SSO trả iss/aud đúng định dạng nào) — bỏ dòng debugInfo này sau khi
+      // xác nhận đăng nhập thật hoạt động ổn định.
+      const debugInfo = `iss=${JSON.stringify(decoded.payload.iss)} aud=${JSON.stringify(decoded.payload.aud)}`;
+      throw new Error(`${err.message} | thực tế: ${debugInfo}`);
+    }
 
     if (claims.nonce !== expectedNonce) {
       throw new Error('Nonce của SSO không khớp — vui lòng đăng nhập lại');
