@@ -18,6 +18,19 @@ class AuthController {
    */
   static async login(req, res) {
     try {
+      // LỖ HỔNG NGHIÊM TRỌNG đã vá: khi SSO bật, đây là backend duy nhất còn xác thực danh
+      // tính thật (mật khẩu + 2FA) — trước đây route này vẫn mở song song, chỉ ẩn form ở
+      // frontend, nên bất kỳ ai biết 1 MSNV bất kỳ (kể cả admin) đều tự cấp được token hợp lệ
+      // cho MSNV đó mà không cần xác thực gì. Chặn hẳn route này ở backend khi SSO bật.
+      if (SsoService.isEnabled()) {
+        return res.status(403).json({
+          error: {
+            status: 403,
+            message: 'Vui lòng đăng nhập bằng GHN SSO.'
+          }
+        });
+      }
+
       const { employee_id, full_name } = req.body;
 
       if (!employee_id || !String(employee_id).trim()) {
@@ -133,6 +146,16 @@ class AuthController {
    */
   static async register(req, res) {
     try {
+      // Endpoint cũ từ trước khi có allowlist MSNV — chỉ check domain email, KHÔNG check danh
+      // sách 849 MSNV được phép, nên tự nó đã là lỗ hổng (bất kỳ ai gõ email @ghn.vn/... bất kỳ
+      // đều tạo được tài khoản). Không còn được frontend gọi tới (đã chuyển hẳn sang MSNV/SSO)
+      // — chặn hẳn khi SSO bật để không còn đường bypass nào song song với SSO.
+      if (SsoService.isEnabled()) {
+        return res.status(403).json({
+          error: { status: 403, message: 'Vui lòng đăng nhập bằng GHN SSO.' }
+        });
+      }
+
       const { email, full_name, department } = req.body;
 
       if (!email || !full_name) {
