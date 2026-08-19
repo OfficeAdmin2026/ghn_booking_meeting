@@ -4,21 +4,32 @@ const AllowedEmployeeService = require('../services/AllowedEmployeeService');
 const { User } = require('../models');
 
 const authMiddleware = async (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({
+      error: {
+        status: 401,
+        message: 'No token provided'
+      }
+    });
+  }
+
+  let decoded;
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    // Chỉ token thật sự sai/hết hạn mới trả 401 — frontend coi 401 là "đăng xuất".
+    return res.status(401).json({
+      error: {
+        status: 401,
+        message: 'Invalid or expired token'
+      }
+    });
+  }
+  req.user = decoded;
 
-    if (!token) {
-      return res.status(401).json({
-        error: {
-          status: 401,
-          message: 'No token provided'
-        }
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-
+  try {
     // Kiểm tra allowlist MSNV mỗi request (không dựa vào JWT tĩnh) — admin gỡ
     // quyền của ai đó thì có hiệu lực ngay, không cần đợi họ đăng nhập lại.
     const user = await User.findByPk(decoded.id, { attributes: ['employee_id'] });
@@ -31,13 +42,17 @@ const authMiddleware = async (req, res, next) => {
         }
       });
     }
-
     next();
   } catch (error) {
-    return res.status(401).json({
+    // Lỗi DB tạm thời (mất kết nối/timeout) khi kiểm tra allowlist — KHÔNG được trả 401, vì
+    // trước đây gộp chung try/catch với jwt.verify() nên bug này khiến user bị đá về trang
+    // login mỗi khi Neon có chút chập chờn, dù token vẫn còn hợp lệ. Trả 500 để frontend chỉ
+    // báo lỗi thử lại, không xoá phiên đăng nhập.
+    console.error('authMiddleware allowlist check error:', error);
+    return res.status(500).json({
       error: {
-        status: 401,
-        message: 'Invalid or expired token'
+        status: 500,
+        message: 'Lỗi hệ thống, vui lòng thử lại'
       }
     });
   }
