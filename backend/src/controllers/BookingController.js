@@ -137,7 +137,9 @@ class BookingController {
       console.error('Create booking error:', error);
 
       let statusCode = 500;
-      if (
+      if (error.message.includes('đã có người đặt')) {
+        statusCode = 409;
+      } else if (
         error.message.includes('Missing') ||
         error.message.includes('required') ||
         error.message.includes('after') ||
@@ -145,8 +147,7 @@ class BookingController {
         error.message.includes('duration') ||
         error.message.includes('advance') ||
         error.message.includes('VIP') ||
-        error.message.includes('frozen') ||
-        error.message.includes('already booked')
+        error.message.includes('frozen')
       ) {
         statusCode = 400;
       } else if (error.message.includes('not found')) {
@@ -201,12 +202,14 @@ class BookingController {
       console.error('Update booking error:', error);
 
       let statusCode = 500;
-      if (
+      if (error.message.includes('đã có người đặt')) {
+        statusCode = 409;
+      } else if (
         error.message.includes('required') ||
         error.message.includes('after') ||
         error.message.includes('Invalid action') ||
         error.message.includes('duration') ||
-        error.message.includes('conflicts')
+        error.message.includes('quá khứ')
       ) {
         statusCode = 400;
       } else if (error.message.includes('not found')) {
@@ -357,10 +360,11 @@ class BookingController {
         statusCode = 403;
       } else if (error.message.includes('not found')) {
         statusCode = 404;
+      } else if (error.message.includes('đã có người đặt')) {
+        statusCode = 409;
       } else if (
         error.message.includes('after') ||
-        error.message.includes('duration') ||
-        error.message.includes('conflict')
+        error.message.includes('duration')
       ) {
         statusCode = 400;
       }

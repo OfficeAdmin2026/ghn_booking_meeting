@@ -9,7 +9,17 @@ require('dotenv').config();
  * Xử lý: create, list, update, delete bookings + conflict detection
  */
 
+const ROOM_CONFLICT_MESSAGE = 'Phòng đã có người đặt trong khung giờ này';
+
 class BookingService {
+  // Postgres báo lỗi 40001 (serialization_failure) khi 2 transaction SERIALIZABLE cùng đặt
+  // 1 khung giờ trống trước đó chưa có booking nào để lock — SELECT FOR UPDATE không khoá được
+  // "sự vắng mặt" của 1 dòng, nên phải tự bắt lỗi này và trả về message thân thiện thay vì để
+  // lộ nguyên văn lỗi kỹ thuật của DB ra ngoài.
+  static isSerializationFailure(error) {
+    return error?.original?.code === '40001' || error?.parent?.code === '40001';
+  }
+
   /**
    * Lấy danh sách booking của user
    */
@@ -303,27 +313,33 @@ class BookingService {
       }
 
       // Dùng transaction SERIALIZABLE + SELECT FOR UPDATE để tránh race condition đặt trùng
-      const booking = await sequelize.transaction(
-        { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE },
-        async (t) => {
-          const conflict = await this.checkTimeConflict(room_id, startTime, endTime, null, t);
-          if (conflict) {
-            throw new Error(`Room is already booked for this time slot`);
+      let booking;
+      try {
+        booking = await sequelize.transaction(
+          { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE },
+          async (t) => {
+            const conflict = await this.checkTimeConflict(room_id, startTime, endTime, null, t);
+            if (conflict) {
+              throw new Error(ROOM_CONFLICT_MESSAGE);
+            }
+            return Booking.create({
+              room_id,
+              user_id: userId,
+              title,
+              participants_count: 1,
+              start_time: startTime,
+              end_time: endTime,
+              status: 'confirmed',
+              recurring: recurring || 'none',
+              notes,
+              is_admin_hidden: isAdminHidden
+            }, { transaction: t });
           }
-          return Booking.create({
-            room_id,
-            user_id: userId,
-            title,
-            participants_count: 1,
-            start_time: startTime,
-            end_time: endTime,
-            status: 'confirmed',
-            recurring: recurring || 'none',
-            notes,
-            is_admin_hidden: isAdminHidden
-          }, { transaction: t });
-        }
-      );
+        );
+      } catch (err) {
+        if (this.isSerializationFailure(err)) throw new Error(ROOM_CONFLICT_MESSAGE);
+        throw err;
+      }
 
       return await this.getBookingById(booking.id);
     } catch (error) {
@@ -336,73 +352,90 @@ class BookingService {
    */
   static async updateBooking(bookingId, updateData) {
     try {
-      const booking = await Booking.findByPk(bookingId);
-      if (!booking) {
-        throw new Error('Booking not found');
-      }
+      let resultId;
+      try {
+        // SERIALIZABLE + SELECT FOR UPDATE — sửa/gia hạn cũng cần chống race giống lúc tạo mới,
+        // vì trước đây 2 booking khác nhau bị sửa đồng thời sang giờ đè lên nhau vẫn được lưu
+        // thành công cả 2, tạo double-book âm thầm mà không báo lỗi cho ai.
+        resultId = await sequelize.transaction(
+          { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE },
+          async (t) => {
+            const booking = await Booking.findByPk(bookingId, { transaction: t });
+            if (!booking) {
+              throw new Error('Booking not found');
+            }
 
-      const { action, new_end_time } = updateData;
+            const { action, new_end_time } = updateData;
 
-      if (action === 'edit') {
-        const { title, notes, start_time, end_time, participants_count } = updateData;
-        const newStart = start_time ? new Date(start_time) : new Date(booking.start_time);
-        const newEnd   = end_time   ? new Date(end_time)   : new Date(booking.end_time);
+            if (action === 'edit') {
+              const { title, notes, start_time, end_time, participants_count } = updateData;
+              const newStart = start_time ? new Date(start_time) : new Date(booking.start_time);
+              const newEnd   = end_time   ? new Date(end_time)   : new Date(booking.end_time);
 
-        if (newEnd <= newStart) {
-          throw new Error('Giờ kết thúc phải sau giờ bắt đầu');
-        }
+              if (newEnd <= newStart) {
+                throw new Error('Giờ kết thúc phải sau giờ bắt đầu');
+              }
 
-        const now = new Date();
-        if (new Date(booking.start_time) < now) {
-          throw new Error('Không thể chỉnh sửa lịch đặt đã qua');
-        }
-        if (newStart < now) {
-          throw new Error('Không thể đặt lịch với thời gian trong quá khứ');
-        }
+              const now = new Date();
+              if (new Date(booking.start_time) < now) {
+                throw new Error('Không thể chỉnh sửa lịch đặt đã qua');
+              }
+              if (newStart < now) {
+                throw new Error('Không thể đặt lịch với thời gian trong quá khứ');
+              }
 
-        // Check conflict
-        const conflict = await this.checkTimeConflict(booking.room_id, newStart, newEnd, bookingId);
-        if (conflict) {
-          throw new Error('Phòng đã có người đặt trong khung giờ này');
-        }
+              // Check conflict
+              const conflict = await this.checkTimeConflict(booking.room_id, newStart, newEnd, bookingId, t);
+              if (conflict) {
+                throw new Error(ROOM_CONFLICT_MESSAGE);
+              }
 
-        if (title !== undefined)             booking.title              = title;
-        if (notes !== undefined)             booking.notes              = notes;
-        if (participants_count !== undefined) booking.participants_count = participants_count;
-        booking.start_time = newStart;
-        booking.end_time   = newEnd;
-      } else if (action === 'extend') {
-        if (!new_end_time) {
-          throw new Error('new_end_time is required for extend action');
-        }
+              if (title !== undefined)             booking.title              = title;
+              if (notes !== undefined)             booking.notes              = notes;
+              if (participants_count !== undefined) booking.participants_count = participants_count;
+              booking.start_time = newStart;
+              booking.end_time   = newEnd;
+            } else if (action === 'extend') {
+              if (!new_end_time) {
+                throw new Error('new_end_time is required for extend action');
+              }
 
-        const newEndTime = new Date(new_end_time);
-        const currentEndTime = new Date(booking.end_time);
+              const newEndTime = new Date(new_end_time);
+              const currentEndTime = new Date(booking.end_time);
 
-        if (newEndTime <= currentEndTime) {
-          throw new Error('new_end_time must be after current end_time');
-        }
+              if (newEndTime <= currentEndTime) {
+                throw new Error('new_end_time must be after current end_time');
+              }
 
-        // Check conflict với next booking
-        const conflict = await this.checkTimeConflict(
-          booking.room_id,
-          currentEndTime,
-          newEndTime,
-          bookingId
+              // Check conflict với next booking
+              const conflict = await this.checkTimeConflict(
+                booking.room_id,
+                currentEndTime,
+                newEndTime,
+                bookingId,
+                t
+              );
+              if (conflict) {
+                throw new Error('Không thể gia hạn — khung giờ tiếp theo đã có người đặt');
+              }
+
+              booking.end_time = newEndTime;
+            } else if (action === 'early_finish') {
+              booking.status = 'completed';
+            } else {
+              throw new Error('Invalid action. Use "extend" or "early_finish"');
+            }
+
+            await booking.save({ transaction: t });
+            return booking.id;
+          }
         );
-        if (conflict) {
-          throw new Error('Cannot extend: next booking conflicts');
-        }
-
-        booking.end_time = newEndTime;
-      } else if (action === 'early_finish') {
-        booking.status = 'completed';
-      } else {
-        throw new Error('Invalid action. Use "extend" or "early_finish"');
+      } catch (err) {
+        if (this.isSerializationFailure(err)) throw new Error(ROOM_CONFLICT_MESSAGE);
+        throw err;
       }
 
-      await booking.save();
-      return await this.getBookingById(bookingId);
+      return await this.getBookingById(resultId);
     } catch (error) {
       throw error;
     }
@@ -458,38 +491,52 @@ class BookingService {
         throw new Error('Only admins can update bookings');
       }
 
-      const booking = await Booking.findByPk(bookingId);
-      if (!booking) {
-        throw new Error('Booking not found');
+      let resultId;
+      try {
+        resultId = await sequelize.transaction(
+          { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE },
+          async (t) => {
+            const booking = await Booking.findByPk(bookingId, { transaction: t });
+            if (!booking) {
+              throw new Error('Booking not found');
+            }
+
+            const { start_time, end_time } = updateData;
+
+            // Update times if provided
+            if (start_time) {
+              booking.start_time = new Date(start_time);
+            }
+            if (end_time) {
+              booking.end_time = new Date(end_time);
+            }
+
+            // Validate times
+            if (booking.end_time <= booking.start_time) {
+              throw new Error('end_time must be after start_time');
+            }
+
+            const conflict = await this.checkTimeConflict(
+              booking.room_id,
+              booking.start_time,
+              booking.end_time,
+              bookingId,
+              t
+            );
+            if (conflict) {
+              throw new Error(ROOM_CONFLICT_MESSAGE);
+            }
+
+            await booking.save({ transaction: t });
+            return booking.id;
+          }
+        );
+      } catch (err) {
+        if (this.isSerializationFailure(err)) throw new Error(ROOM_CONFLICT_MESSAGE);
+        throw err;
       }
 
-      const { start_time, end_time } = updateData;
-      
-      // Update times if provided
-      if (start_time) {
-        booking.start_time = new Date(start_time);
-      }
-      if (end_time) {
-        booking.end_time = new Date(end_time);
-      }
-
-      // Validate times
-      if (booking.end_time <= booking.start_time) {
-        throw new Error('end_time must be after start_time');
-      }
-
-      const conflict = await this.checkTimeConflict(
-        booking.room_id,
-        booking.start_time,
-        booking.end_time,
-        bookingId
-      );
-      if (conflict) {
-        throw new Error(`Room is already booked for this new time slot`);
-      }
-
-      await booking.save();
-      return await this.getBookingById(bookingId);
+      return await this.getBookingById(resultId);
     } catch (error) {
       throw error;
     }
