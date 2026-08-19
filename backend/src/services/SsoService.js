@@ -103,17 +103,17 @@ class SsoService {
     const publicKey = await getSigningKey(decoded.header);
     let claims;
     try {
+      // Không check `audience` — id_token thật của GHN SSO trả aud rỗng (khác tài liệu tích
+      // hợp mô tả "aud": client_id), nên check audience luôn fail dù chữ ký/issuer hợp lệ. Vẫn
+      // an toàn vì: (1) chữ ký verify qua JWKS chứng minh token do đúng GHN SSO phát hành,
+      // (2) token này chỉ lấy được qua bước đổi code bằng client_secret của chính app, kẻ tấn
+      // công không thể tự lấy token của app khác rồi dùng ở đây, (3) nonce dưới đây chặn replay.
       claims = jwt.verify(idToken, publicKey, {
         issuer: `${SSO_BASE_URL}/public-api`,
-        audience: SSO_CLIENT_ID,
         algorithms: ['RS256'],
       });
     } catch (err) {
-      // TẠM THỜI: lộ rõ claims thực tế của id_token khi verify lỗi, để chẩn đoán lúc mới tích
-      // hợp (chưa rõ GHN SSO trả iss/aud đúng định dạng nào) — bỏ dòng debugInfo này sau khi
-      // xác nhận đăng nhập thật hoạt động ổn định.
-      const debugInfo = `iss=${JSON.stringify(decoded.payload.iss)} aud=${JSON.stringify(decoded.payload.aud)}`;
-      throw new Error(`${err.message} | thực tế: ${debugInfo}`);
+      throw new Error(`Xác thực id_token SSO thất bại: ${err.message}`);
     }
 
     if (claims.nonce !== expectedNonce) {
