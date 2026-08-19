@@ -6,6 +6,15 @@ const AuthController = require('../controllers/AuthController');
 // POST /api/auth/login - Login with email
 router.post('/login', AuthController.login);
 
+// GET /api/auth/sso/status - Frontend check nếu SSO đã bật
+router.get('/sso/status', AuthController.ssoStatus);
+
+// GET /api/auth/sso/login - Redirect sang GHN SSO
+router.get('/sso/login', AuthController.ssoLogin);
+
+// GET /api/auth/sso/callback - GHN SSO redirect về đây sau khi user đăng nhập
+router.get('/sso/callback', AuthController.ssoCallback);
+
 // POST /api/auth/register - Register new user
 router.post('/register', AuthController.register);
 

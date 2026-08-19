@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import LoginPage from './pages/LoginPage';
 import LogoutPage from './pages/LogoutPage';
+import SsoCompletePage from './pages/SsoCompletePage';
 import CalendarPage from './pages/CalendarPage';
 import OfficeMapPage from './pages/OfficeMapPage';
 import DashboardPage from './pages/DashboardPage';
@@ -29,6 +30,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/logout" element={<LogoutPage />} />
+          <Route path="/sso-complete" element={<SsoCompletePage />} />
           <Route path="/" element={
             <ProtectedRoute>
               <Layout fullHeight><CalendarPage /></Layout>

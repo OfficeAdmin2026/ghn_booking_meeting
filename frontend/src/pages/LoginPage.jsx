@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { authApi } from '../api';
 
 export default function LoginPage() {
   const { user, login, loading } = useAuth();
@@ -12,6 +13,15 @@ export default function LoginPage() {
     if (notice) sessionStorage.removeItem('ghn_login_notice');
     return notice || '';
   });
+
+  // SSO tắt (mặc định, chưa cấu hình key) → giữ nguyên form MSNV/tên như hiện tại.
+  // SSO bật → thay thế hoàn toàn bằng nút đăng nhập SSO (không hiện form nhập tay nữa).
+  const [ssoEnabled, setSsoEnabled] = useState(null); // null = đang kiểm tra
+  useEffect(() => {
+    authApi.getSsoStatus()
+      .then((res) => setSsoEnabled(!!res.data.data?.enabled))
+      .catch(() => setSsoEnabled(false)); // lỗi kiểm tra → an toàn về form nhập tay
+  }, []);
 
   if (user) return <Navigate to="/" replace />;
 
@@ -42,57 +52,75 @@ export default function LoginPage() {
             <p className="text-sm text-gray-500 mt-1">Hệ thống nội bộ GiaoHangNhanh</p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Mã số nhân viên (MSNV)
-              </label>
-              <input
-                type="text"
-                value={employeeId}
-                onChange={(e) => setEmployeeId(e.target.value)}
-                className="input-field"
-                placeholder="Ví dụ: 3091620"
-                required
-                autoFocus
-              />
+          {ssoEnabled === null ? (
+            <div className="text-center py-6 text-sm text-gray-400">Đang tải...</div>
+          ) : ssoEnabled ? (
+            <div className="space-y-4">
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+              <a
+                href={authApi.ssoLoginUrl()}
+                className="btn-primary w-full text-base py-3 flex items-center justify-center gap-2"
+              >
+                Đăng nhập bằng GHN SSO
+              </a>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Họ tên <span className="text-gray-400 font-normal">(tùy chọn - lần đầu đăng nhập)</span>
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="input-field"
-                placeholder="Nguyễn Văn A"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-                {error}
+          ) : (
+            /* Form MSNV/tên — mặc định khi chưa cấu hình SSO */
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Mã số nhân viên (MSNV)
+                </label>
+                <input
+                  type="text"
+                  value={employeeId}
+                  onChange={(e) => setEmployeeId(e.target.value)}
+                  className="input-field"
+                  placeholder="Ví dụ: 3091620"
+                  required
+                  autoFocus
+                />
               </div>
-            )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Họ tên <span className="text-gray-400 font-normal">(tùy chọn - lần đầu đăng nhập)</span>
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="input-field"
+                  placeholder="Nguyễn Văn A"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full text-base py-3"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Đang đăng nhập...
-                </span>
-              ) : 'Đăng nhập'}
-            </button>
-          </form>
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full text-base py-3"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Đang đăng nhập...
+                  </span>
+                ) : 'Đăng nhập'}
+              </button>
+            </form>
+          )}
 
         </div>
       </div>

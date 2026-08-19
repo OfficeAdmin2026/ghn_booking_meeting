@@ -119,6 +119,66 @@ class AuthService {
   }
 
   /**
+   * Đăng nhập qua GHN SSO (đã verify id_token + userinfo ở SsoService). SSO xác thực toàn công
+   * ty (~20k người) nên vẫn phải khớp MSNV với allowlist mới cho vào — SSO chỉ thay cách xác
+   * minh danh tính, không thay điều kiện truy cập hệ thống đặt phòng (chỉ 2 văn phòng, 849
+   * MSNV). Họ tên/chức danh/phòng ban lấy trực tiếp từ SSO (nguồn sống) và luôn ghi đè, khác
+   * với loginByEmployeeId chỉ đồng bộ từ allowlist tĩnh khi có dữ liệu.
+   */
+  static async loginFromSso(claims) {
+    const id = String(claims.employee_id || '').trim();
+    if (!id) {
+      throw new Error('SSO không trả về MSNV hợp lệ');
+    }
+
+    const match = await AllowedEmployeeService.findMatch(id, null);
+    if (!match) {
+      throw new Error('MSNV không nằm trong danh sách được phép truy cập hệ thống đặt phòng. Vui lòng liên hệ quản trị viên.');
+    }
+
+    let user = await User.findOne({ where: { employee_id: id } });
+
+    if (user && !user.is_active) {
+      throw new Error('Tài khoản của bạn đã bị khóa truy cập. Vui lòng liên hệ quản trị viên.');
+    }
+
+    const fullName = claims.name || match.full_name || id;
+    const jobTitle = claims.jobtitle_name || match.job_title || null;
+    const department = claims.team_name || match.department || null;
+
+    if (!user) {
+      user = await User.create({
+        employee_id: id,
+        full_name: fullName,
+        department,
+        job_title: jobTitle,
+        role: 'user',
+        is_active: true,
+        last_login: new Date()
+      });
+    } else {
+      user.full_name = fullName;
+      user.department = department;
+      user.job_title = jobTitle;
+      user.last_login = new Date();
+      await user.save();
+    }
+
+    const token = this.generateToken(user);
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        employee_id: user.employee_id,
+        role: user.role
+      }
+    };
+  }
+
+  /**
    * Tạo admin account (dùng cho testing)
    */
   static async createAdminAccount(email, fullName = 'Admin User') {

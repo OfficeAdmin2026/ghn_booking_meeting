@@ -1,5 +1,10 @@
 const AuthService = require('../services/AuthService');
+const SsoService = require('../services/SsoService');
 const { isCompanyEmail } = require('../utils/companyEmail');
+
+// Trang frontend nhận lại token sau khi SSO login xong (redirect-based, không phải XHR nên
+// không thể trả JSON trực tiếp — token được gắn vào query string của URL redirect).
+const SSO_FRONTEND_URL = (process.env.SSO_FRONTEND_URL || (process.env.ALLOWED_ORIGINS || '').split(',')[0] || '').replace(/\/$/, '');
 
 /**
  * Controller layer cho authentication
@@ -57,6 +62,68 @@ class AuthController {
           message: error.message || 'Login failed'
         }
       });
+    }
+  }
+
+  /**
+   * GET /api/auth/sso/status
+   * Cho frontend biết SSO đã bật chưa để quyết định hiện nút SSO hay form MSNV/tên.
+   */
+  static ssoStatus(req, res) {
+    res.json({ status: 'success', data: { enabled: SsoService.isEnabled() } });
+  }
+
+  /**
+   * GET /api/auth/sso/login
+   * Redirect trình duyệt sang trang đăng nhập GHN SSO.
+   */
+  static ssoLogin(req, res) {
+    if (!SsoService.isEnabled()) {
+      return res.status(503).json({
+        error: { status: 503, message: 'Đăng nhập SSO chưa được cấu hình. Vui lòng liên hệ quản trị viên.' }
+      });
+    }
+    res.redirect(SsoService.createAuthorizationUrl());
+  }
+
+  /**
+   * GET /api/auth/sso/callback
+   * GHN SSO redirect về đây kèm ?code&state (hoặc ?error). Đổi code lấy token, verify id_token,
+   * lấy userinfo, đăng nhập/đồng bộ user, rồi redirect trình duyệt về frontend kèm app token.
+   */
+  static async ssoCallback(req, res) {
+    const redirectWithError = (message) => {
+      const url = new URL(`${SSO_FRONTEND_URL}/sso-complete`);
+      url.searchParams.set('error', message);
+      res.redirect(url.toString());
+    };
+
+    if (!SsoService.isEnabled()) {
+      return redirectWithError('Đăng nhập SSO chưa được cấu hình');
+    }
+
+    try {
+      const { code, state, error, error_description } = req.query;
+      if (error) {
+        throw new Error(error_description || 'Đăng nhập SSO thất bại hoặc bị huỷ');
+      }
+      if (!code || !state) {
+        throw new Error('Thiếu thông tin phản hồi từ SSO');
+      }
+
+      const { nonce } = SsoService.verifyState(state);
+      const tokens = await SsoService.exchangeCodeForTokens(code);
+      const idClaims = await SsoService.verifyIdToken(tokens.id_token, nonce);
+      const userInfo = await SsoService.getUserInfo(tokens.access_token);
+
+      const result = await AuthService.loginFromSso({ ...idClaims, ...userInfo });
+
+      const url = new URL(`${SSO_FRONTEND_URL}/sso-complete`);
+      url.searchParams.set('token', result.token);
+      res.redirect(url.toString());
+    } catch (err) {
+      console.error('SSO callback error:', err);
+      redirectWithError(err.message || 'Đăng nhập SSO thất bại');
     }
   }
 
@@ -153,6 +220,8 @@ class AuthController {
             id: user.id,
             email: user.email,
             full_name: user.full_name,
+            employee_id: user.employee_id,
+            job_title: user.job_title,
             role: user.role,
             department: user.department,
             is_active: user.is_active,

@@ -41,6 +41,23 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Dùng cho luồng SSO — backend redirect trình duyệt về kèm token trên URL (không phải XHR
+  // trả JSON như login thường), nên phải tự lưu token rồi gọi /auth/me lấy lại user.
+  const loginWithToken = async (token) => {
+    localStorage.setItem('ghn_token', token);
+    try {
+      const res = await authApi.getMe();
+      const userData = res.data.data.user;
+      localStorage.setItem('ghn_user', JSON.stringify(userData));
+      setUser(userData);
+      return { success: true };
+    } catch (err) {
+      localStorage.removeItem('ghn_token');
+      const msg = err.response?.data?.error?.message || 'Đăng nhập thất bại';
+      return { success: false, message: msg };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('ghn_token');
     localStorage.removeItem('ghn_user');
@@ -51,7 +68,7 @@ export function AuthProvider({ children }) {
   const isVip = user?.role === 'vip' || user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin, isVip, siteLock, refreshSiteLock }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithToken, logout, isAdmin, isVip, siteLock, refreshSiteLock }}>
       {children}
     </AuthContext.Provider>
   );

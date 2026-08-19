@@ -1,10 +1,17 @@
 import api from './axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
 export const authApi = {
   login: (employeeId, fullName) =>
     api.post('/auth/login', { employee_id: employeeId, full_name: fullName }),
 
   getMe: () => api.get('/auth/me'),
+
+  getSsoStatus: () => api.get('/auth/sso/status'),
+
+  // Điều hướng cả trang (không phải XHR) sang GHN SSO — không dùng instance axios.
+  ssoLoginUrl: () => `${API_BASE_URL}/auth/sso/login`,
 };
 
 export const roomsApi = {
