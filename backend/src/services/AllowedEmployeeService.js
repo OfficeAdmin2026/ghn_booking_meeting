@@ -9,10 +9,23 @@ const { sequelize } = require('../config/database');
  * record lúc đăng nhập (khớp theo email, vì chưa có SSO gửi MSNV trực tiếp).
  */
 class AllowedEmployeeService {
+  // Danh sách MSNV được phép để hiển thị ở Admin — allowlist là bảng admin tự nhập tay nên
+  // thường trống Chức danh/Phòng ban cho tới khi có ai đó chỉnh sửa; trong khi đó nếu người đó
+  // đã từng đăng nhập SSO thì `users` đã có sẵn dữ liệu thật, mới hơn (VD: booking hiển thị
+  // đúng chức danh dù allowlist chưa có). Ưu tiên hiển thị dữ liệu thật từ `users` khi allowlist
+  // đang trống ở trường đó, không cần admin phải tự tay nhập lại.
   static async list() {
-    return await AllowedEmployee.findAll({
+    const rows = await AllowedEmployee.findAll({
       order: [['created_at', 'DESC']],
-      include: [{ model: User, as: 'user', attributes: ['id', 'role', 'is_active'], required: false }]
+      include: [{ model: User, as: 'user', attributes: ['id', 'role', 'is_active', 'full_name', 'department', 'job_title'], required: false }]
+    });
+    return rows.map((r) => {
+      const plain = r.get({ plain: true });
+      return {
+        ...plain,
+        job_title: plain.job_title || plain.user?.job_title || null,
+        department: plain.department || plain.user?.department || null
+      };
     });
   }
 
