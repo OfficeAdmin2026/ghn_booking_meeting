@@ -50,7 +50,7 @@ function fmtDuration(minutes) {
 
 async function exportExcel(bookings) {
   const XLSX = await import('xlsx');
-  const headers = ['STT', 'Phòng', 'Vị trí', 'Tiêu đề', 'MSNV', 'Họ và tên', 'Chức danh', 'Phòng ban', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy'];
+  const headers = ['STT', 'Phòng', 'Vị trí', 'Tiêu đề', 'MSNV', 'Họ và tên', 'Chức danh', 'Phòng ban', 'Ngày', 'Bắt đầu', 'Kết thúc', 'Thời lượng (phút)', 'Trạng thái', 'Lý do hủy', 'Ngày giờ đặt'];
   const rows = bookings.map((b, i) => [
     i + 1,
     b.room?.name || '',
@@ -66,6 +66,7 @@ async function exportExcel(bookings) {
     Math.round((new Date(b.end_time) - new Date(b.start_time)) / 60000),
     statusLabel(b.status),
     b.status === 'cancelled' ? (b.cancellation_message || '') : '',
+    b.created_at ? `${toVNDateStr(b.created_at)} ${toVNTimeStr(b.created_at)}` : '',
   ]);
   const sheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
   const workbook = XLSX.utils.book_new();
@@ -175,6 +176,7 @@ export default function AnalyticsPage() {
       case 'duration':   return new Date(b.end_time) - new Date(b.start_time);
       case 'status':     return simpleStatus(b.status);
       case 'reason':     return b.cancellation_message || '';
+      case 'created_at': return new Date(b.created_at).getTime();
       default: return '';
     }
   };
@@ -476,6 +478,7 @@ export default function AnalyticsPage() {
                   { col: 'duration',   label: 'TL',         align: 'right' },
                   { col: 'status',     label: 'Trạng thái', align: 'left'  },
                   { col: 'reason',     label: 'Lý do hủy',  align: 'left'  },
+                  { col: 'created_at', label: 'Giờ đặt',    align: 'left'  },
                 ].map(({ col, label, align }) => (
                   <th
                     key={col}
@@ -524,12 +527,13 @@ export default function AnalyticsPage() {
                 <td className="pb-2 px-2">
                   <input value={colFilters.reason} onChange={e => setCol('reason', e.target.value)} placeholder="Lọc lý do..." className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-ghn-orange" />
                 </td>
+                <td className="pb-2 px-2" />
               </tr>
             </thead>
             <tbody>
               {filteredReport.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="text-center text-gray-400 py-8">
+                  <td colSpan={12} className="text-center text-gray-400 py-8">
                     {loading ? 'Đang tải...' : 'Không có dữ liệu trong kỳ này'}
                   </td>
                 </tr>
@@ -564,6 +568,10 @@ export default function AnalyticsPage() {
                         ? <span className="text-xs text-red-500 leading-snug">"{b.cancellation_message}"</span>
                         : <span className="text-gray-300">—</span>
                       }
+                    </td>
+                    <td className="py-3 px-2 whitespace-nowrap">
+                      <div className="text-gray-700">{toVNDateStr(b.created_at)}</div>
+                      <div className="text-xs text-gray-400">{toVNTimeStr(b.created_at)}</div>
                     </td>
                   </tr>
                 );
