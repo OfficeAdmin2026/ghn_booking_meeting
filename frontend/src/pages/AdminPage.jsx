@@ -85,6 +85,7 @@ export default function AdminPage() {
   const [newEmployeeEmail, setNewEmployeeEmail] = useState('');
   const [addEmployeeLoading, setAddEmployeeLoading] = useState(false);
   const [addEmployeeError, setAddEmployeeError] = useState('');
+  const [addEmployeeSuccess, setAddEmployeeSuccess] = useState('');
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
@@ -257,6 +258,7 @@ export default function AdminPage() {
     if (!id) return;
     setAddEmployeeLoading(true);
     setAddEmployeeError('');
+    setAddEmployeeSuccess('');
     try {
       await adminApi.addAllowedEmployee(id, newEmployeeName.trim(), newEmployeeJobTitle.trim(), newEmployeeDept.trim(), newEmployeeEmail.trim());
       await loadAllowedEmployees();
@@ -265,6 +267,8 @@ export default function AdminPage() {
       setNewEmployeeJobTitle('');
       setNewEmployeeDept('');
       setNewEmployeeEmail('');
+      setAddEmployeeSuccess(`Đã lưu thông tin MSNV ${id}`);
+      setTimeout(() => setAddEmployeeSuccess(''), 4000);
     } catch (err) {
       setAddEmployeeError(err.response?.data?.error?.message || 'Thêm thất bại');
       setTimeout(() => setAddEmployeeError(''), 5000);
@@ -358,8 +362,11 @@ export default function AdminPage() {
       }
 
       const res = await adminApi.bulkImportAllowedEmployees(rows);
-      const { inserted, skipped } = res.data.data;
-      setImportSuccess(`Đã thêm ${inserted} MSNV mới${skipped ? `, bỏ qua ${skipped} MSNV đã có sẵn` : ''}.`);
+      const { inserted, updated, skipped } = res.data.data;
+      const parts = [`thêm ${inserted} MSNV mới`];
+      if (updated) parts.push(`cập nhật ${updated} MSNV đã có`);
+      if (skipped) parts.push(`bỏ qua ${skipped} MSNV không đổi`);
+      setImportSuccess(`Đã ${parts.join(', ')}.`);
       setTimeout(() => setImportSuccess(''), 6000);
       await loadAllowedEmployees();
     } catch (err) {
@@ -1110,6 +1117,11 @@ export default function AdminPage() {
                   {addEmployeeLoading ? 'Đang thêm...' : 'Thêm'}
                 </button>
               </div>
+              {addEmployeeSuccess && (
+                <div className="mt-3 px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm inline-flex items-center gap-1.5">
+                  <CheckCircleIcon className="w-4 h-4" /> {addEmployeeSuccess}
+                </div>
+              )}
               {addEmployeeError && (
                 <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
                   {addEmployeeError}

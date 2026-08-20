@@ -41,17 +41,43 @@ class AllowedEmployeeService {
     const id = String(employeeId || '').trim();
     if (!id) throw new Error('MSNV không được để trống');
 
-    const [record] = await AllowedEmployee.findOrCreate({
-      where: { employee_id: id },
-      defaults: {
-        full_name: fullName ? String(fullName).trim() : null,
-        department: department ? String(department).trim() : null,
-        job_title: jobTitle ? String(jobTitle).trim() : null,
-        email: email ? String(email).trim().toLowerCase() : null,
-        added_by: addedBy || null
-      }
-    });
+    const fields = {
+      full_name: fullName ? String(fullName).trim() : null,
+      department: department ? String(department).trim() : null,
+      job_title: jobTitle ? String(jobTitle).trim() : null,
+      email: email ? String(email).trim().toLowerCase() : null
+    };
+
+    let record = await AllowedEmployee.findOne({ where: { employee_id: id } });
+    if (record) {
+      // MSNV đã có sẵn trong danh sách — trước đây dùng findOrCreate() nên defaults bị bỏ qua
+      // khi bản ghi đã tồn tại: admin sửa lại thông tin (VD: bổ sung chức danh còn thiếu) qua
+      // form "Thêm MSNV" bị âm thầm không có tác dụng gì dù giao diện báo thành công. Giờ cập
+      // nhật các trường được nhập vào bản ghi đã có.
+      if (fields.full_name) record.full_name = fields.full_name;
+      if (fields.department) record.department = fields.department;
+      if (fields.job_title) record.job_title = fields.job_title;
+      if (fields.email) record.email = fields.email;
+      await record.save();
+    } else {
+      record = await AllowedEmployee.create({ employee_id: id, ...fields, added_by: addedBy || null });
+    }
+
+    await AllowedEmployeeService._syncToUser(id, fields);
     return record;
+  }
+
+  // Đẩy ngay thông tin vừa sửa/thêm vào bản ghi users tương ứng (nếu người đó đã từng đăng
+  // nhập) — không đợi tới lần đăng nhập kế tiếp mới đồng bộ.
+  static async _syncToUser(employeeId, fields) {
+    const user = await User.findOne({ where: { employee_id: employeeId } });
+    if (!user) return;
+    let changed = false;
+    if (fields.full_name && user.full_name !== fields.full_name) { user.full_name = fields.full_name; changed = true; }
+    if (fields.department && user.department !== fields.department) { user.department = fields.department; changed = true; }
+    if (fields.job_title && user.job_title !== fields.job_title) { user.job_title = fields.job_title; changed = true; }
+    if (fields.email && user.email !== fields.email) { user.email = fields.email; changed = true; }
+    if (changed) await user.save();
   }
 
   // rows: [{ employee_id, full_name, department, job_title, email }] — dùng cho import từ Excel (đã parse ở frontend)
@@ -70,26 +96,48 @@ class AllowedEmployeeService {
       throw new Error('Không tìm thấy MSNV hợp lệ nào trong file');
     }
 
-    const existing = await AllowedEmployee.findAll({
-      where: { employee_id: cleaned.map((r) => r.employee_id) },
-      attributes: ['employee_id']
-    });
-    const existingSet = new Set(existing.map((e) => e.employee_id));
-    const toInsert = cleaned.filter((r) => !existingSet.has(r.employee_id));
-
     // Cùng 1 MSNV lặp lại nhiều dòng trong file — chỉ giữ dòng đầu
     const seen = new Set();
-    const deduped = toInsert.filter((r) => {
+    const deduped = cleaned.filter((r) => {
       if (seen.has(r.employee_id)) return false;
       seen.add(r.employee_id);
       return true;
     });
 
-    if (deduped.length > 0) {
-      await AllowedEmployee.bulkCreate(deduped.map((r) => ({ ...r, added_by: addedBy || null })));
+    const existing = await AllowedEmployee.findAll({
+      where: { employee_id: deduped.map((r) => r.employee_id) }
+    });
+    const existingMap = new Map(existing.map((e) => [e.employee_id, e]));
+
+    // MSNV đã có sẵn trong danh sách — trước đây bị bỏ qua hoàn toàn khi re-import, nên sửa
+    // dữ liệu sai (VD: bổ sung chức danh còn thiếu) bằng cách import lại Excel không có tác
+    // dụng gì. Giờ cập nhật các trường có giá trị trong file cho bản ghi đã có.
+    const toInsert = [];
+    let updated = 0;
+    for (const r of deduped) {
+      const found = existingMap.get(r.employee_id);
+      if (!found) {
+        toInsert.push(r);
+        continue;
+      }
+      let changed = false;
+      if (r.full_name) { found.full_name = r.full_name; changed = true; }
+      if (r.department) { found.department = r.department; changed = true; }
+      if (r.job_title) { found.job_title = r.job_title; changed = true; }
+      if (r.email) { found.email = r.email; changed = true; }
+      if (changed) {
+        await found.save();
+        await AllowedEmployeeService._syncToUser(r.employee_id, r);
+        updated++;
+      }
     }
 
-    return { inserted: deduped.length, skipped: cleaned.length - deduped.length };
+    if (toInsert.length > 0) {
+      await AllowedEmployee.bulkCreate(toInsert.map((r) => ({ ...r, added_by: addedBy || null })));
+      await Promise.all(toInsert.map((r) => AllowedEmployeeService._syncToUser(r.employee_id, r)));
+    }
+
+    return { inserted: toInsert.length, updated, skipped: deduped.length - toInsert.length - updated };
   }
 
   static async remove(id) {
