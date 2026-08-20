@@ -1,7 +1,14 @@
 const jwt = require('jsonwebtoken');
 const AdminSettingService = require('../services/AdminSettingService');
 const AllowedEmployeeService = require('../services/AllowedEmployeeService');
+const SsoService = require('../services/SsoService');
 const { User } = require('../models');
+
+// Token phát hành TRƯỚC mốc vá lỗ hổng /auth/login|register bỏ qua SSO (deploy xong
+// 2026-08-19T12:14Z, cộng đệm thời gian rollout) không đáng tin — có thể tới từ 1 phiên khai
+// thác lỗ hổng đó (đăng nhập giả danh bất kỳ MSNV nào mà không cần xác thực thật qua SSO).
+// Ép các token cũ này đăng nhập lại để xác minh danh tính thật qua SSO.
+const SSO_ENFORCEMENT_CUTOVER_SEC = Math.floor(new Date('2026-08-19T14:00:00Z').getTime() / 1000);
 
 const authMiddleware = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -27,6 +34,16 @@ const authMiddleware = async (req, res, next) => {
       }
     });
   }
+
+  if (SsoService.isEnabled() && decoded.iat && decoded.iat < SSO_ENFORCEMENT_CUTOVER_SEC) {
+    return res.status(401).json({
+      error: {
+        status: 401,
+        message: 'Phiên đăng nhập đã cũ, vui lòng đăng nhập lại'
+      }
+    });
+  }
+
   req.user = decoded;
 
   try {
