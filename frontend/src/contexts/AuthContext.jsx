@@ -28,9 +28,11 @@ export function AuthProvider({ children }) {
   // giao diện người đó không đổi gì cho tới khi họ tự đăng xuất/đăng nhập lại, vì user chỉ được
   // set 1 lần lúc login rồi giữ nguyên suốt phiên. Bị khoá (is_active=false) đã có interceptor
   // ở axios.js tự đăng xuất khi gặp 403 — refresh này lo phần còn lại (đổi role/thông tin).
+  // Poll mỗi 15s (thay vì 60s) + refresh ngay khi tab được focus lại, vì cách test/dùng thực tế
+  // phổ biến là admin đổi quyền ở 1 tab rồi chuyển sang tab của user đó xem ngay lập tức.
   useEffect(() => {
     if (!user?.id) return;
-    const interval = setInterval(() => {
+    const refresh = () => {
       authApi.getMe()
         .then((res) => {
           const fresh = res.data.data.user;
@@ -41,8 +43,18 @@ export function AuthProvider({ children }) {
           });
         })
         .catch(() => {}); // lỗi (kể cả 403 khoá) đã được axios interceptor xử lý riêng
-    }, 60000);
-    return () => clearInterval(interval);
+    };
+    const interval = setInterval(refresh, 15000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
   }, [user?.id]);
 
   const login = async (employeeId, fullName) => {
