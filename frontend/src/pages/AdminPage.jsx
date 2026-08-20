@@ -86,6 +86,8 @@ export default function AdminPage() {
   const [addEmployeeLoading, setAddEmployeeLoading] = useState(false);
   const [addEmployeeError, setAddEmployeeError] = useState('');
   const [addEmployeeSuccess, setAddEmployeeSuccess] = useState('');
+  const [syncUsersLoading, setSyncUsersLoading] = useState(false);
+  const [syncUsersMessage, setSyncUsersMessage] = useState('');
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
@@ -321,6 +323,24 @@ export default function AdminPage() {
       setTimeout(() => setImportError(''), 5000);
     } finally {
       setBulkDeleteLoading(false);
+    }
+  };
+
+  // Đẩy ngay Họ tên/Phòng ban/Chức danh từ danh sách MSNV vào toàn bộ tài khoản đã đăng nhập,
+  // không cần đợi từng người tự đăng nhập lại — dùng để vá dữ liệu đã lệch từ trước.
+  const handleSyncAllToUsers = async () => {
+    setSyncUsersLoading(true);
+    setSyncUsersMessage('');
+    try {
+      const res = await adminApi.syncAllowedEmployeesToUsers();
+      const { updated } = res.data.data;
+      setSyncUsersMessage(updated > 0 ? `Đã đồng bộ ${updated} tài khoản.` : 'Tất cả tài khoản đã khớp với danh sách MSNV, không có gì cần đồng bộ.');
+      setTimeout(() => setSyncUsersMessage(''), 6000);
+    } catch (err) {
+      setSyncUsersMessage(err.response?.data?.error?.message || 'Đồng bộ thất bại');
+      setTimeout(() => setSyncUsersMessage(''), 6000);
+    } finally {
+      setSyncUsersLoading(false);
     }
   };
 
@@ -1149,6 +1169,15 @@ export default function AdminPage() {
                   </button>
                 )}
                 <button
+                  onClick={handleSyncAllToUsers}
+                  disabled={syncUsersLoading}
+                  title="Điền ngay Phòng ban/Chức danh từ danh sách MSNV vào các tài khoản đang thiếu thông tin (không ghi đè dữ liệu đã có sẵn), không cần đợi họ đăng nhập lại"
+                  className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-ghn-orange border border-gray-200 px-3 py-1.5 rounded-lg hover:border-ghn-orange transition-colors disabled:opacity-50"
+                >
+                  <ArrowPathIcon className={`w-3.5 h-3.5 ${syncUsersLoading ? 'animate-spin' : ''}`} />
+                  {syncUsersLoading ? 'Đang đồng bộ...' : 'Đồng bộ vào tài khoản'}
+                </button>
+                <button
                   onClick={loadAllowedEmployees}
                   className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-ghn-orange border border-gray-200 px-3 py-1.5 rounded-lg hover:border-ghn-orange transition-colors"
                 >
@@ -1156,6 +1185,12 @@ export default function AdminPage() {
                 </button>
               </div>
             </div>
+
+            {syncUsersMessage && (
+              <div className="mb-4 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-sm inline-flex items-center gap-1.5">
+                <CheckCircleIcon className="w-4 h-4" /> {syncUsersMessage}
+              </div>
+            )}
 
             <div className="relative mb-4">
               <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />

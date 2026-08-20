@@ -424,6 +424,17 @@ router.post('/allowed-employees/bulk', authMiddleware, adminMiddleware, async (r
   }
 });
 
+// POST /api/admin/allowed-employees/sync-users - Đồng bộ ngay Họ tên/Phòng ban/Chức danh từ
+// allowlist vào toàn bộ users hiện có, không cần đợi từng người đăng nhập lại
+router.post('/allowed-employees/sync-users', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const result = await AllowedEmployeeService.syncAllToUsers();
+    res.json({ status: 'success', data: result });
+  } catch (err) {
+    res.status(500).json({ error: { status: 500, message: err.message } });
+  }
+});
+
 // DELETE /api/admin/allowed-employees/:id - Xoá 1 MSNV khỏi danh sách
 router.delete('/allowed-employees/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {

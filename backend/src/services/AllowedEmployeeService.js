@@ -1,5 +1,6 @@
 const { AllowedEmployee, User } = require('../models');
 const { Op } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 /**
  * Danh sách MSNV được phép truy cập hệ thống — allowlist độc lập, admin tự
@@ -138,6 +139,30 @@ class AllowedEmployeeService {
     }
 
     return { inserted: toInsert.length, updated, skipped: deduped.length - toInsert.length - updated };
+  }
+
+  // Điền ngay Phòng ban/Chức danh từ allowlist vào các users đang thiếu (NULL) — dùng để "vá"
+  // trường hợp allowlist đã có dữ liệu (admin vừa bổ sung) nhưng user chưa đăng nhập lại từ lúc
+  // đó. Chỉ điền vào chỗ TRỐNG, không bao giờ ghi đè giá trị user đã có sẵn — vì dữ liệu hiện
+  // có trong users có thể đến từ SSO (nguồn sống, mới hơn allowlist tĩnh), ghi đè vô điều kiện
+  // có thể khiến dữ liệu mới hơn bị thay bằng dữ liệu cũ hơn của allowlist. Không đụng đến
+  // full_name vì cột này luôn có giá trị sẵn (allowNull: false), không có "chỗ trống" để điền.
+  static async syncAllToUsers() {
+    const [result] = await sequelize.query(`
+      UPDATE users u
+      SET
+        department = COALESCE(u.department, ae.department),
+        job_title = COALESCE(u.job_title, ae.job_title),
+        updated_at = NOW()
+      FROM allowed_employees ae
+      WHERE u.employee_id = ae.employee_id
+        AND (
+          (u.department IS NULL AND ae.department IS NOT NULL) OR
+          (u.job_title IS NULL AND ae.job_title IS NOT NULL)
+        )
+      RETURNING u.id
+    `);
+    return { updated: result.length };
   }
 
   static async remove(id) {

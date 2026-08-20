@@ -106,6 +106,8 @@ export const adminApi = {
 
   bulkImportAllowedEmployees: (rows) => api.post('/admin/allowed-employees/bulk', { rows }),
 
+  syncAllowedEmployeesToUsers: () => api.post('/admin/allowed-employees/sync-users'),
+
   removeAllowedEmployee: (id) => api.delete(`/admin/allowed-employees/${id}`),
 
   bulkRemoveAllowedEmployees: (ids) => api.post('/admin/allowed-employees/bulk-delete', { ids }),
