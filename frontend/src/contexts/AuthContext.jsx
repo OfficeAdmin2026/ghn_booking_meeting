@@ -24,6 +24,27 @@ export function AuthProvider({ children }) {
     if (user) refreshSiteLock();
   }, [user, refreshSiteLock]);
 
+  // Tự làm mới role/thông tin user định kỳ — trước đây admin đổi quyền (VD: user → admin) thì
+  // giao diện người đó không đổi gì cho tới khi họ tự đăng xuất/đăng nhập lại, vì user chỉ được
+  // set 1 lần lúc login rồi giữ nguyên suốt phiên. Bị khoá (is_active=false) đã có interceptor
+  // ở axios.js tự đăng xuất khi gặp 403 — refresh này lo phần còn lại (đổi role/thông tin).
+  useEffect(() => {
+    if (!user?.id) return;
+    const interval = setInterval(() => {
+      authApi.getMe()
+        .then((res) => {
+          const fresh = res.data.data.user;
+          setUser((prev) => {
+            if (!prev || JSON.stringify(prev) === JSON.stringify(fresh)) return prev;
+            localStorage.setItem('ghn_user', JSON.stringify(fresh));
+            return fresh;
+          });
+        })
+        .catch(() => {}); // lỗi (kể cả 403 khoá) đã được axios interceptor xử lý riêng
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   const login = async (employeeId, fullName) => {
     setLoading(true);
     try {

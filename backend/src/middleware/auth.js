@@ -30,10 +30,21 @@ const authMiddleware = async (req, res, next) => {
   req.user = decoded;
 
   try {
-    // Kiểm tra allowlist MSNV mỗi request (không dựa vào JWT tĩnh) — admin gỡ
-    // quyền của ai đó thì có hiệu lực ngay, không cần đợi họ đăng nhập lại.
-    const user = await User.findByPk(decoded.id, { attributes: ['employee_id'] });
-    const allowed = user && (await AllowedEmployeeService.isAllowed(user.employee_id));
+    // Đọc lại role/is_active/allowlist từ DB mỗi request thay vì tin JWT tĩnh (chỉ chứa role
+    // tại thời điểm đăng nhập) — trước đây đổi quyền hoặc khoá 1 admin/user giữa phiên KHÔNG
+    // có hiệu lực gì cho tới khi họ tự đăng xuất/đăng nhập lại hoặc token hết hạn (7 ngày):
+    // adminMiddleware/vipMiddleware vẫn đọc role cũ từ req.user (JWT), và tài khoản bị "Khoá"
+    // vẫn dùng app bình thường vì is_active chỉ được check lúc đăng nhập, không check lại sau.
+    const user = await User.findByPk(decoded.id, { attributes: ['employee_id', 'role', 'is_active'] });
+    if (!user || !user.is_active) {
+      return res.status(403).json({
+        error: {
+          status: 403,
+          message: 'Tài khoản của bạn đã bị khóa truy cập. Vui lòng liên hệ quản trị viên.'
+        }
+      });
+    }
+    const allowed = await AllowedEmployeeService.isAllowed(user.employee_id);
     if (!allowed) {
       return res.status(403).json({
         error: {
@@ -42,6 +53,7 @@ const authMiddleware = async (req, res, next) => {
         }
       });
     }
+    req.user.role = user.role; // ghi đè role trong JWT bằng role thật hiện tại trong DB
     next();
   } catch (error) {
     // Lỗi DB tạm thời (mất kết nối/timeout) khi kiểm tra allowlist — KHÔNG được trả 401, vì
