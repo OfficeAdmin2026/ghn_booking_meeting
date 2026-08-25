@@ -17,21 +17,25 @@ Internal meeting room booking system for GHN (Giao Hàng Nhanh).
 
 | Service    | URL |
 |------------|-----|
-| GitHub     | https://github.com/OfficeAdmin2026/ghn_booking_meeting |
+| **GitLab (deploy source)** | `https://gitlab.ghn.vn/ex/dat-phong-hop.git` — remote name `gitlab`, branch `master`. Vercel/Render are wired to **this**, not GitHub. |
+| GitHub (mirror, no longer wired to deploy) | https://github.com/OfficeAdmin2026/ghn_booking_meeting — remote name `origin`, branch `main`. CLAUDE.md used to say this was the deploy source; it isn't anymore (found out 2026-08-25 when a push to GitHub didn't trigger a Render deploy). Keep pushing here too unless told otherwise, but it is not sufficient on its own. |
 | Frontend   | https://ghn-booking-meeting-seven.vercel.app |
 | Backend    | https://ghn-booking-meeting-l0op.onrender.com |
 | Database   | Supabase (PostgreSQL 15, project: `ghn-booking-meeting`) |
 | Report     | https://tilo2402.github.io/ghn_booking_meeting/ (GitHub Pages, `docs/index.html`) |
 
+> `gitlab.ghn.vn` is only reachable from GHN's internal network/VPN. Claude Code's sandboxed Bash tool cannot connect to it (`git fetch gitlab` fails with a connection timeout) — pushing there has to happen from a machine on the GHN network, outside the sandbox.
+
 ---
 
 ## Auto-Deploy Workflow
 
-Vercel (frontend) and Render (backend) both auto-deploy on push to `main` — pushing **is** the deploy step, there is no separate deploy action.
+Vercel (frontend) and Render (backend) both auto-deploy on push to **GitLab `master`** (remote `gitlab`) — pushing there **is** the deploy step, there is no separate deploy action. Pushing to GitHub `main` alone does **not** deploy anything.
 
-When the user asks for a code change (fix, feature, content/copy update, etc.) in a normal chat turn:
-1. Implement it, review related areas it touches, and verify (lint/build, and a real run-through for UI changes when a browser tool is available).
-2. Commit with a clear message and **push to `main` right away, without pausing to ask for confirmation first** — the user has pre-authorized this so requested changes go live without an extra round trip. This applies even when no browser tool is available to visually confirm a UI change (e.g. CSS/Tailwind class tweaks) — lint/build passing and correct code review are sufficient; don't pause to ask the user to preview locally first unless they ask to.
+Because the GitLab remote isn't reachable from this environment:
+1. Implement the change, review related areas it touches, and verify (lint/build, and a real run-through for UI changes when a browser tool is available).
+2. Commit with a clear message and push to GitHub `origin main` right away (this part still works from the sandbox and keeps the mirror current) — same "don't pause to ask first" policy as before for normal changes.
+3. Tell the user the commit is ready and give them the exact command to sync it to GitLab from their own machine, e.g. `git push gitlab main:master` — do not claim the change is live until they've done that (or confirmed some other sync mechanism did it), and don't assume Render/Vercel have picked it up just because GitHub shows the commit.
 
 Still stop and ask before proceeding when:
 - The action is destructive or hard to reverse (force-push, `git reset --hard`, rewriting history, deleting branches, dropping/altering production DB data).
