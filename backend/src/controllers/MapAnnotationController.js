@@ -1,4 +1,5 @@
 const MapAnnotationService = require('../services/MapAnnotationService');
+const { sendServerError } = require('../utils/sendServerError');
 
 /**
  * Controller layer cho khu vực chung (thang máy, WC, pantry...) vẽ tay
@@ -15,7 +16,7 @@ class MapAnnotationController {
       res.json({ status: 'success', data: { annotations } });
     } catch (error) {
       console.error('List map annotations error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 
@@ -58,7 +59,7 @@ class MapAnnotationController {
       res.json({ status: 'success', message: 'Đã xoá khu vực' });
     } catch (error) {
       console.error('Remove map annotation error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 }

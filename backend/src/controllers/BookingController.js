@@ -1,4 +1,5 @@
 const BookingService = require('../services/BookingService');
+const { sendServerError } = require('../utils/sendServerError');
 
 /**
  * Controller layer cho booking management
@@ -257,9 +258,7 @@ class BookingController {
       });
     } catch (error) {
       console.error('Get room bookings error:', error);
-      res.status(500).json({
-        error: { status: 500, message: error.message || 'Failed to get room bookings' }
-      });
+      sendServerError(res, error, 'Failed to get room bookings');
     }
   }
 
@@ -316,7 +315,7 @@ class BookingController {
       res.json({ status: 'success', data: { bookings, count: bookings.length } });
     } catch (error) {
       console.error('Get admin bookings error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 

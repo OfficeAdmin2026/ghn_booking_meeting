@@ -1,6 +1,7 @@
 const AuthService = require('../services/AuthService');
 const SsoService = require('../services/SsoService');
 const { isCompanyEmail } = require('../utils/companyEmail');
+const { sendServerError } = require('../utils/sendServerError');
 
 // Trang frontend nhận lại token sau khi SSO login xong (redirect-based, không phải XHR nên
 // không thể trả JSON trực tiếp — token được gắn vào query string của URL redirect).
@@ -69,12 +70,7 @@ class AuthController {
         });
       }
 
-      res.status(500).json({
-        error: {
-          status: 500,
-          message: error.message || 'Login failed'
-        }
-      });
+      sendServerError(res, error, 'Login failed');
     }
   }
 
@@ -208,12 +204,7 @@ class AuthController {
         });
       }
 
-      res.status(500).json({
-        error: {
-          status: 500,
-          message: error.message || 'Registration failed'
-        }
-      });
+      sendServerError(res, error, 'Registration failed');
     }
   }
 
@@ -274,63 +265,6 @@ class AuthController {
     });
   }
 
-  /**
-   * POST /api/auth/admin (TESTING ONLY)
-   * Tạo admin account để test
-   */
-  static async createAdminForTesting(req, res) {
-    try {
-      const { email, full_name } = req.body;
-
-      if (!email) {
-        return res.status(400).json({
-          error: {
-            status: 400,
-            message: 'Email is required'
-          }
-        });
-      }
-
-      // Kiểm tra environment
-      if (process.env.NODE_ENV === 'production') {
-        return res.status(403).json({
-          error: {
-            status: 403,
-            message: 'This endpoint is not available in production'
-          }
-        });
-      }
-
-      const admin = await AuthService.createAdminAccount(
-        email,
-        full_name || 'Admin User'
-      );
-
-      const token = AuthService.generateToken(admin);
-
-      res.json({
-        status: 'success',
-        message: 'Admin account created/updated',
-        data: {
-          token,
-          user: {
-            id: admin.id,
-            email: admin.email,
-            full_name: admin.full_name,
-            role: admin.role
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Create admin error:', error);
-      res.status(500).json({
-        error: {
-          status: 500,
-          message: error.message || 'Failed to create admin'
-        }
-      });
-    }
-  }
 }
 
 module.exports = AuthController;

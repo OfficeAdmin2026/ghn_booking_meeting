@@ -1,8 +1,25 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const app = require('./app');
 const { sequelize } = require('./config/database');
+const SsoService = require('./services/SsoService');
 
 const PORT = process.env.PORT || 5000;
+
+// Nếu production mà SSO chưa cấu hình đủ, /api/auth/login sẽ âm thầm mở lại chế độ đăng nhập
+// chỉ-bằng-MSNV, không mật khẩu, cho BẤT KỲ MSNV nào kể cả admin — không log, không cảnh báo,
+// chỉ có nút SSO biến mất khỏi trang login. Thà chặn hẳn lúc khởi động còn hơn để lỗ hổng đó
+// âm thầm mở ra vì thiếu 1 biến môi trường. ALLOW_LOGIN_WITHOUT_SSO=true để tắt rào chắn này
+// (vd: giai đoạn đầu triển khai, trước khi SSO có redirect_uri chính thức).
+if (
+  process.env.NODE_ENV === 'production' &&
+  !SsoService.isEnabled() &&
+  process.env.ALLOW_LOGIN_WITHOUT_SSO !== 'true'
+) {
+  console.error('❌ Production nhưng SSO chưa cấu hình đủ (SSO_ENABLED/SSO_BASE_URL/SSO_CLIENT_ID/SSO_CLIENT_SECRET/SSO_REDIRECT_URI).');
+  console.error('   Thiếu bất kỳ biến nào ở trên sẽ mở lại đăng nhập không mật khẩu cho mọi MSNV.');
+  console.error('   Đặt ALLOW_LOGIN_WITHOUT_SSO=true nếu đây là chủ ý.');
+  process.exit(1);
+}
 
 // Initialize database and start server
 (async () => {

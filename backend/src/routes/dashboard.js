@@ -4,6 +4,7 @@ const { Op } = require('sequelize');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const { Booking, Room, User, Car, CarBooking } = require('../models');
 const { sequelize } = require('../config/database');
+const { sendServerError } = require('../utils/sendServerError');
 
 function getDateRange(query) {
   const now = new Date();
@@ -214,7 +215,7 @@ router.get('/metrics', authMiddleware, adminMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('[dashboard/metrics]', err);
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -237,7 +238,7 @@ router.get('/report', authMiddleware, adminMiddleware, async (req, res) => {
     res.json({ data: { count: bookings.length, bookings } });
   } catch (err) {
     console.error('[dashboard/report]', err);
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -337,7 +338,7 @@ router.get('/car-metrics', authMiddleware, adminMiddleware, async (req, res) => 
     });
   } catch (err) {
     console.error('[dashboard/car-metrics]', err);
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -361,7 +362,7 @@ router.get('/car-report', authMiddleware, adminMiddleware, async (req, res) => {
     res.json({ data: { count: bookings.length, bookings } });
   } catch (err) {
     console.error('[dashboard/car-report]', err);
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 

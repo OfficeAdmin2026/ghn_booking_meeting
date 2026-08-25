@@ -179,38 +179,11 @@ class AuthService {
   }
 
   /**
-   * Tạo admin account (dùng cho testing)
-   */
-  static async createAdminAccount(email, fullName = 'Admin User') {
-    try {
-      const existingUser = await this.findUserByEmail(email);
-      if (existingUser) {
-        // Nếu tồn tại, update role thành admin
-        existingUser.role = 'admin';
-        await existingUser.save();
-        return existingUser;
-      }
-
-      // Tạo admin mới
-      const admin = await this.createUser(
-        email,
-        fullName,
-        'IT',
-        'admin'
-      );
-
-      return admin;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
    * Verify token
    */
   static verifyToken(token) {
     try {
-      return jwt.verify(token, process.env.JWT_SECRET);
+      return jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     } catch (error) {
       throw new Error('Invalid or expired token');
     }

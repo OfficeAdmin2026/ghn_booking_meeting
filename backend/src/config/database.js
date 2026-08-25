@@ -19,7 +19,11 @@ const sequelize = process.env.DATABASE_URL
       logging: false,
       pool,
       dialectOptions: {
-        ssl: { require: true, rejectUnauthorized: false }
+        // rejectUnauthorized: true theo mặc định — xác minh chứng chỉ CA của DB thay vì chỉ mã
+        // hoá đường truyền mù. Nếu Render báo lỗi kết nối SELF_SIGNED_CERT_IN_CHAIN sau khi
+        // deploy (CA của nhà cung cấp DB không nằm trong root store của Node), đặt tạm
+        // DB_SSL_INSECURE=true để quay về hành vi cũ trong lúc điều tra CA cho đúng.
+        ssl: { require: true, rejectUnauthorized: process.env.DB_SSL_INSECURE !== 'true' }
       },
       define: {
         timestamps: true,

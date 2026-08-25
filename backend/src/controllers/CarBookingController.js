@@ -1,4 +1,5 @@
 const CarBookingService = require('../services/CarBookingService');
+const { sendServerError } = require('../utils/sendServerError');
 
 /**
  * Controller layer cho đặt xe công ty.
@@ -35,9 +36,7 @@ class CarBookingController {
       });
     } catch (error) {
       console.error('Get car bookings error:', error);
-      res.status(500).json({
-        error: { status: 500, message: error.message || 'Failed to get car bookings' }
-      });
+      sendServerError(res, error, 'Failed to get car bookings');
     }
   }
 

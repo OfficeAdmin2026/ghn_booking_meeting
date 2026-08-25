@@ -24,7 +24,7 @@ const authMiddleware = async (req, res, next) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
   } catch (error) {
     // Chỉ token thật sự sai/hết hạn mới trả 401 — frontend coi 401 là "đăng xuất".
     return res.status(401).json({

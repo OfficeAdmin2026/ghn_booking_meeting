@@ -1,12 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
+const auditLogMiddleware = require('../middleware/auditLog');
 const AdminSettingService = require('../services/AdminSettingService');
 const AllowedEmployeeService = require('../services/AllowedEmployeeService');
 const BookingController = require('../controllers/BookingController');
 const { User, AllowedEmployee } = require('../models');
 const { Op } = require('sequelize');
 const { randomUUID } = require('crypto');
+const { sendServerError } = require('../utils/sendServerError');
+
+// Ghi audit log cho mọi hành động ghi (POST/PUT/PATCH/DELETE) dưới /api/admin — đặt sau khi mỗi
+// route tự xác thực/phân quyền (authMiddleware/adminMiddleware ở từng route bên dưới), nhưng
+// trước handler, nên vẫn log được cả các lượt gọi bị handler từ chối (status 400/403/404...).
+router.use(auditLogMiddleware);
 
 // GET /api/admin/settings
 router.get('/settings', authMiddleware, adminMiddleware, async (req, res) => {
@@ -14,7 +21,7 @@ router.get('/settings', authMiddleware, adminMiddleware, async (req, res) => {
     const settings = await AdminSettingService.getAll();
     res.json({ status: 'success', data: { settings } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -53,7 +60,7 @@ router.put('/settings', authMiddleware, adminMiddleware, async (req, res) => {
     const settings = await AdminSettingService.updateSettings(data);
     res.json({ status: 'success', data: { settings } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -63,7 +70,7 @@ router.get('/rules', authMiddleware, async (req, res) => {
     const settings = await AdminSettingService.getAll();
     res.json({ status: 'success', data: { rules: settings.meeting_room_rules || '' } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -76,7 +83,7 @@ router.put('/rules', authMiddleware, adminMiddleware, async (req, res) => {
     res.json({ status: 'success', data: { rules: rules ?? '' } });
   } catch (err) {
     console.error('[admin/rules] save error:', err);
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -86,7 +93,7 @@ router.get('/guide', authMiddleware, async (req, res) => {
     const settings = await AdminSettingService.getAll();
     res.json({ status: 'success', data: { guide: settings.usage_guide || '' } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -97,7 +104,7 @@ router.put('/guide', authMiddleware, adminMiddleware, async (req, res) => {
     await AdminSettingService.updateSettings({ usage_guide: guide ?? '' });
     res.json({ status: 'success', data: { guide: guide ?? '' } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -107,7 +114,7 @@ router.get('/car-rules', authMiddleware, async (req, res) => {
     const settings = await AdminSettingService.getAll();
     res.json({ status: 'success', data: { rules: settings.car_booking_rules || '' } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -118,7 +125,7 @@ router.put('/car-rules', authMiddleware, adminMiddleware, async (req, res) => {
     await AdminSettingService.updateSettings({ car_booking_rules: rules ?? '' });
     res.json({ status: 'success', data: { rules: rules ?? '' } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -128,7 +135,7 @@ router.get('/car-contact-note', authMiddleware, async (req, res) => {
     const settings = await AdminSettingService.getAll();
     res.json({ status: 'success', data: { note: settings.car_booking_contact_note ?? '' } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -139,7 +146,7 @@ router.put('/car-contact-note', authMiddleware, adminMiddleware, async (req, res
     await AdminSettingService.updateSettings({ car_booking_contact_note: note ?? '' });
     res.json({ status: 'success', data: { note: note ?? '' } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -153,7 +160,7 @@ router.get('/car-contact-admins', authMiddleware, async (req, res) => {
     try { admins = JSON.parse(settings.car_booking_contact_admins || '[]'); } catch { admins = []; }
     res.json({ status: 'success', data: { admins } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -171,7 +178,7 @@ router.put('/car-contact-admins', authMiddleware, adminMiddleware, async (req, r
     await AdminSettingService.updateSettings({ car_booking_contact_admins: JSON.stringify(cleaned) });
     res.json({ status: 'success', data: { admins: cleaned } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -181,7 +188,7 @@ router.get('/site-lock', authMiddleware, async (req, res) => {
     const status = await AdminSettingService.getSiteLockStatus();
     res.json({ status: 'success', data: status });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -229,7 +236,7 @@ router.post('/promote', authMiddleware, adminMiddleware, async (req, res) => {
       data: { user: { id: user.id, email: user.email, full_name: user.full_name, employee_id: user.employee_id, role: user.role } },
     });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -245,7 +252,7 @@ router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
     });
     res.json({ status: 'success', data: { users } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -279,7 +286,7 @@ router.get('/users/search', authMiddleware, adminMiddleware, async (req, res) =>
     }));
     res.json({ status: 'success', data: { users } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -295,7 +302,7 @@ router.post('/users/by-email', authMiddleware, adminMiddleware, async (req, res)
     if (!user) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy người dùng với email này' } });
     res.json({ status: 'success', data: { user } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -317,7 +324,7 @@ router.patch('/users/:id/role', authMiddleware, adminMiddleware, async (req, res
       data: { user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role } },
     });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -351,7 +358,7 @@ router.post('/ban', authMiddleware, adminMiddleware, async (req, res) => {
       data: { user: { id: user.id, email: user.email, full_name: user.full_name, employee_id: user.employee_id, role: user.role, is_active: user.is_active } },
     });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -370,7 +377,7 @@ router.patch('/users/:id/status', authMiddleware, adminMiddleware, async (req, r
     await user.update({ is_active, updated_at: new Date() });
     res.json({ status: 'success', data: { user: { id: user.id, email: user.email, full_name: user.full_name, role: user.role, is_active: user.is_active } } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -386,7 +393,7 @@ router.patch('/users/:id/employee-id', authMiddleware, adminMiddleware, async (r
       data: { user: { id: user.id, email: user.email, full_name: user.full_name, employee_id: user.employee_id } },
     });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -398,7 +405,7 @@ router.get('/allowed-employees', authMiddleware, adminMiddleware, async (req, re
     const employees = await AllowedEmployeeService.list();
     res.json({ status: 'success', data: { employees } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -431,7 +438,7 @@ router.post('/allowed-employees/sync-users', authMiddleware, adminMiddleware, as
     const result = await AllowedEmployeeService.syncAllToUsers();
     res.json({ status: 'success', data: result });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -442,7 +449,7 @@ router.delete('/allowed-employees/:id', authMiddleware, adminMiddleware, async (
     if (!removed) return res.status(404).json({ error: { status: 404, message: 'Không tìm thấy' } });
     res.json({ status: 'success' });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 
@@ -453,7 +460,7 @@ router.post('/allowed-employees/bulk-delete', authMiddleware, adminMiddleware, a
     const deleted = await AllowedEmployeeService.removeMany(ids);
     res.json({ status: 'success', data: { deleted } });
   } catch (err) {
-    res.status(500).json({ error: { status: 500, message: err.message } });
+    sendServerError(res, err);
   }
 });
 

@@ -10,15 +10,15 @@ router.get('/', authMiddleware, RoomController.getAllRooms);
 router.get('/search', authMiddleware, RoomController.searchRooms);
 
 // POST /api/rooms - Create room (admin only)
-router.post('/', authMiddleware, RoomController.createRoom);
+router.post('/', authMiddleware, adminMiddleware, RoomController.createRoom);
 
 // GET /api/rooms/:id - Get room details
 router.get('/:id', authMiddleware, RoomController.getRoomById);
 
 // PUT /api/rooms/:id - Update room (admin only)
-router.put('/:id', authMiddleware, RoomController.updateRoom);
+router.put('/:id', authMiddleware, adminMiddleware, RoomController.updateRoom);
 
 // DELETE /api/rooms/:id - Delete room (admin only)
-router.delete('/:id', authMiddleware, RoomController.deleteRoom);
+router.delete('/:id', authMiddleware, adminMiddleware, RoomController.deleteRoom);
 
 module.exports = router;

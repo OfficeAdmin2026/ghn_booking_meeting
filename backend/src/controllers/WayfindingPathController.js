@@ -1,4 +1,5 @@
 const WayfindingPathService = require('../services/WayfindingPathService');
+const { sendServerError } = require('../utils/sendServerError');
 
 /**
  * Controller layer cho đường chỉ dẫn vẽ tay trên Bản đồ văn phòng.
@@ -14,7 +15,7 @@ class WayfindingPathController {
       res.json({ status: 'success', data: { paths } });
     } catch (error) {
       console.error('List wayfinding paths error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 
@@ -43,7 +44,7 @@ class WayfindingPathController {
       res.json({ status: 'success', message: 'Đã xoá đường chỉ dẫn' });
     } catch (error) {
       console.error('Remove wayfinding path error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 
@@ -56,7 +57,7 @@ class WayfindingPathController {
       res.json({ status: 'success', message: `Đã xoá ${count} đường chỉ dẫn` });
     } catch (error) {
       console.error('Remove all wayfinding paths error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 }

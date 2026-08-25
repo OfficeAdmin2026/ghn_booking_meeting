@@ -66,7 +66,7 @@ class SsoService {
   /** Verify + giải mã `state` — trả về { nonce } đã ký lúc tạo authorization URL. */
   static verifyState(state) {
     try {
-      return jwt.verify(state, STATE_SECRET);
+      return jwt.verify(state, STATE_SECRET, { algorithms: ['HS256'] });
     } catch {
       throw new Error('Phiên đăng nhập SSO không hợp lệ hoặc đã hết hạn, vui lòng thử lại');
     }

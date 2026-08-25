@@ -1,4 +1,5 @@
 const CarService = require('../services/CarService');
+const { sendServerError } = require('../utils/sendServerError');
 
 /**
  * Controller layer cho quản lý xe công ty.
@@ -22,9 +23,7 @@ class CarController {
       });
     } catch (error) {
       console.error('Get cars error:', error);
-      res.status(500).json({
-        error: { status: 500, message: error.message || 'Failed to get cars' }
-      });
+      sendServerError(res, error, 'Failed to get cars');
     }
   }
 

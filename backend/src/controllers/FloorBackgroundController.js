@@ -1,4 +1,5 @@
 const FloorBackgroundService = require('../services/FloorBackgroundService');
+const { sendServerError } = require('../utils/sendServerError');
 
 /**
  * Controller layer cho ảnh sơ đồ tầng.
@@ -14,7 +15,7 @@ class FloorBackgroundController {
       res.json({ status: 'success', data: { backgrounds } });
     } catch (error) {
       console.error('List floor backgrounds error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 
@@ -29,7 +30,7 @@ class FloorBackgroundController {
       res.json({ status: 'success', data: { background } });
     } catch (error) {
       console.error('Get floor background error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 
@@ -71,7 +72,7 @@ class FloorBackgroundController {
       res.json({ status: 'success', message: 'Đã xoá ảnh nền' });
     } catch (error) {
       console.error('Remove floor background error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 }

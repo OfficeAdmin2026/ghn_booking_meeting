@@ -1,8 +1,17 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
+
+// Render/nginx ngồi trước app dưới dạng 1 hop reverse proxy — không set cái này thì
+// req.ip luôn là IP nội bộ của proxy, làm rate limit và log truy cập vô nghĩa (tính
+// chung mọi request thành 1 "IP" duy nhất).
+app.set('trust proxy', 1);
+
+app.use(helmet());
 
 // Middleware
 const rawAllowedOrigins = (process.env.ALLOWED_ORIGINS || '').trim();
@@ -54,10 +63,12 @@ app.use('/api/car-bookings', require('./routes/carBookings'));
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err);
-  
+
   const status = err.status || 500;
-  const message = err.message || 'Internal Server Error';
-  
+  // 500 = lỗi không lường trước (thường là lỗi DB/nội bộ) — không trả err.message nguyên văn
+  // ra ngoài (L-02). Lỗi có status riêng (400/403/404...) là message cố ý cho user nên giữ nguyên.
+  const message = status === 500 ? 'Internal Server Error' : (err.message || 'Internal Server Error');
+
   res.status(status).json({
     error: {
       status,

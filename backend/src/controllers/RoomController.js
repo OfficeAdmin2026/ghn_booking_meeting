@@ -1,4 +1,5 @@
 const RoomService = require('../services/RoomService');
+const { sendServerError } = require('../utils/sendServerError');
 
 /**
  * Controller layer cho room management
@@ -34,12 +35,7 @@ class RoomController {
       });
     } catch (error) {
       console.error('Get rooms error:', error);
-      res.status(500).json({
-        error: {
-          status: 500,
-          message: error.message || 'Failed to get rooms'
-        }
-      });
+      sendServerError(res, error, 'Failed to get rooms');
     }
   }
 
@@ -80,17 +76,10 @@ class RoomController {
     } catch (error) {
       console.error('Search rooms error:', error);
 
-      let statusCode = 500;
       if (error.message.includes('required') || error.message.includes('after')) {
-        statusCode = 400;
+        return res.status(400).json({ error: { status: 400, message: error.message } });
       }
-
-      res.status(statusCode).json({
-        error: {
-          status: statusCode,
-          message: error.message || 'Failed to search rooms'
-        }
-      });
+      sendServerError(res, error, 'Failed to search rooms');
     }
   }
 
@@ -111,17 +100,10 @@ class RoomController {
     } catch (error) {
       console.error('Get room error:', error);
 
-      let statusCode = 500;
       if (error.message.includes('not found')) {
-        statusCode = 404;
+        return res.status(404).json({ error: { status: 404, message: error.message } });
       }
-
-      res.status(statusCode).json({
-        error: {
-          status: statusCode,
-          message: error.message || 'Failed to get room'
-        }
-      });
+      sendServerError(res, error, 'Failed to get room');
     }
   }
 
@@ -152,17 +134,10 @@ class RoomController {
     } catch (error) {
       console.error('Create room error:', error);
 
-      let statusCode = 500;
       if (error.message.includes('Missing') || error.message.includes('required')) {
-        statusCode = 400;
+        return res.status(400).json({ error: { status: 400, message: error.message } });
       }
-
-      res.status(statusCode).json({
-        error: {
-          status: statusCode,
-          message: error.message || 'Failed to create room'
-        }
-      });
+      sendServerError(res, error, 'Failed to create room');
     }
   }
 
@@ -193,17 +168,10 @@ class RoomController {
     } catch (error) {
       console.error('Update room error:', error);
 
-      let statusCode = 500;
       if (error.message.includes('not found')) {
-        statusCode = 404;
+        return res.status(404).json({ error: { status: 404, message: error.message } });
       }
-
-      res.status(statusCode).json({
-        error: {
-          status: statusCode,
-          message: error.message || 'Failed to update room'
-        }
-      });
+      sendServerError(res, error, 'Failed to update room');
     }
   }
 
@@ -234,17 +202,10 @@ class RoomController {
     } catch (error) {
       console.error('Delete room error:', error);
 
-      let statusCode = 500;
       if (error.message.includes('not found')) {
-        statusCode = 404;
+        return res.status(404).json({ error: { status: 404, message: error.message } });
       }
-
-      res.status(statusCode).json({
-        error: {
-          status: statusCode,
-          message: error.message || 'Failed to delete room'
-        }
-      });
+      sendServerError(res, error, 'Failed to delete room');
     }
   }
 }

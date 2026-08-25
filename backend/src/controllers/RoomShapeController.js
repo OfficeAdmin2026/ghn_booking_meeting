@@ -1,4 +1,5 @@
 const RoomShapeService = require('../services/RoomShapeService');
+const { sendServerError } = require('../utils/sendServerError');
 
 /**
  * Controller layer cho khung phòng vẽ tay trên Bản đồ văn phòng.
@@ -14,7 +15,7 @@ class RoomShapeController {
       res.json({ status: 'success', data: { shapes } });
     } catch (error) {
       console.error('List room shapes error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 
@@ -43,7 +44,7 @@ class RoomShapeController {
       res.json({ status: 'success', message: 'Đã xoá khung phòng' });
     } catch (error) {
       console.error('Remove room shape error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 
@@ -56,7 +57,7 @@ class RoomShapeController {
       res.json({ status: 'success', message: `Đã xoá ${count} khung phòng` });
     } catch (error) {
       console.error('Remove all room shapes error:', error);
-      res.status(500).json({ error: { status: 500, message: error.message } });
+      sendServerError(res, error);
     }
   }
 }
