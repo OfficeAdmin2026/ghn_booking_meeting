@@ -33,8 +33,12 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Mặc định của express.json()/urlencoded() chỉ 100kb — quá nhỏ cho import Excel danh sách
+// nhân viên (gửi lên dạng JSON rows sau khi parse client-side), 10mb khớp với
+// client_max_body_size của nginx phía trước để giới hạn thực sự nằm ở đây chứ không phải bị
+// chặn sớm hơn dự kiến.
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging middleware
 app.use((req, res, next) => {
