@@ -38,6 +38,13 @@ class FloorBackgroundService {
       throw new Error('Không đọc được kích thước ảnh — file có thể bị hỏng');
     }
 
+    // L-03: mimetype ở trên là client tự khai trong multipart header, không đáng tin.
+    // imageSize() đọc magic byte thật của buffer để suy ra định dạng — đối chiếu với
+    // mimetype client khai, lệch nhau là file đã bị đổi đuôi/giả mạo Content-Type.
+    if (dimensions.type !== ext) {
+      throw new Error('Nội dung file không khớp định dạng ảnh đã khai báo — file có thể bị đổi tên hoặc giả mạo.');
+    }
+
     const imageUrl = `data:${mimetype};base64,${buffer.toString('base64')}`;
 
     const existing = await FloorBackground.findOne({ where: { location, floor } });
