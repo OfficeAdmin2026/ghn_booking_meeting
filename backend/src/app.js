@@ -51,6 +51,19 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Giới hạn chung cho toàn bộ /api — /api/auth/login đã có loginLimiter riêng chặt hơn,
+// đây là lớp ngoài rộng hơn chặn kiểu client hỏng/vòng lặp gọi API dồn dập làm cạn pool
+// DB (5 kết nối). Ngưỡng đặt cao vì nhiều nhân viên GHN dùng chung 1 IP NAT văn phòng —
+// chặt quá sẽ khoá nhầm cả văn phòng thay vì chỉ chặn client bất thường.
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { status: 429, message: 'Quá nhiều request, vui lòng thử lại sau ít phút.' } },
+});
+app.use('/api', apiLimiter);
+
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/rooms', require('./routes/rooms'));
